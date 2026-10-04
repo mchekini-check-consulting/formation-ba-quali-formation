@@ -6,7 +6,7 @@ applications:
   - name: backend
     type: backend
     image: 205493924920.dkr.ecr.eu-west-3.amazonaws.com/formation-ba-quali-formation/backend
-    tag: {dev: "36ced49211b9b10a6eca6f38a323f522c817cbef", qualif: "", prod: ""} # dev : écrit par la CI ; qualif/prod : promotion manuelle (PR)
+    tag: {dev: "412223e", qualif: "", prod: ""} # dev : écrit par la CI ; qualif/prod : promotion manuelle (PR)
     containerPort: 8000
     replicas: {dev: 1, qualif: 2, prod: 3}
     service:
@@ -26,7 +26,7 @@ applications:
   - name: frontend
     type: frontend
     image: 205493924920.dkr.ecr.eu-west-3.amazonaws.com/formation-ba-quali-formation/frontend
-    tag: {dev: "36ced49211b9b10a6eca6f38a323f522c817cbef", qualif: "", prod: ""} # dev : écrit par la CI ; qualif/prod : promotion manuelle (PR)
+    tag: {dev: "412223e", qualif: "", prod: ""} # dev : écrit par la CI ; qualif/prod : promotion manuelle (PR)
     containerPort: 8080
     replicas: {dev: 1, qualif: 2, prod: 3}
     service:
