@@ -6,30 +6,29 @@ applications:
   - name: backend
     type: backend
     image: 205493924920.dkr.ecr.eu-west-3.amazonaws.com/formation-ba-quali-formation/backend
-    tag: { dev: "", qualif: "", prod: "" }   # dev : écrit par la CI ; qualif/prod : promotion manuelle (PR)
+    tag: {dev: "36ced49211b9b10a6eca6f38a323f522c817cbef", qualif: "", prod: ""} # dev : écrit par la CI ; qualif/prod : promotion manuelle (PR)
     containerPort: 8000
-    replicas: { dev: 1, qualif: 2, prod: 3 }
+    replicas: {dev: 1, qualif: 2, prod: 3}
     service:
       port: 80
     ingress:
       enabled: true
       path: /api
-      stripPrefix: true          # le pod reçoit /hello pour /api/hello
+      stripPrefix: true # le pod reçoit /hello pour /api/hello
     envList:
       - key: LOG_LEVEL
-        value: { dev: debug, qualif: info, prod: warn }
+        value: {dev: debug, qualif: info, prod: warn}
       - key: ALLOWED_HOSTS
         value:
           dev: dev-formation-ba-quali-formation.check-consulting.net
           qualif: qualif-formation-ba-quali-formation.check-consulting.net
           prod: prod-formation-ba-quali-formation.check-consulting.net
-
   - name: frontend
     type: frontend
     image: 205493924920.dkr.ecr.eu-west-3.amazonaws.com/formation-ba-quali-formation/frontend
-    tag: { dev: "", qualif: "", prod: "" }   # dev : écrit par la CI ; qualif/prod : promotion manuelle (PR)
+    tag: {dev: "36ced49211b9b10a6eca6f38a323f522c817cbef", qualif: "", prod: ""} # dev : écrit par la CI ; qualif/prod : promotion manuelle (PR)
     containerPort: 8080
-    replicas: { dev: 1, qualif: 2, prod: 3 }
+    replicas: {dev: 1, qualif: 2, prod: 3}
     service:
       port: 80
     ingress:
