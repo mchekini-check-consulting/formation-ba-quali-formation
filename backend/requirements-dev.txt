@@ -1,0 +1,4 @@
+# Outils de dev / CI (lint, couverture), en plus des dépendances de l'application
+-r requirements.txt
+coverage
+ruff
