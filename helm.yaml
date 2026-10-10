@@ -1,7 +1,7 @@
 # Microservices de ce dépôt, déployés par formation-ba-gitops sur chaque environnement.
 # Valeurs littérales uniquement. replicas, tag et envList[].value acceptent
 # une valeur unique ou une map par environnement : { dev: ..., qualif: ..., prod: ... }
-# URL : http://<env>-formation-ba-quali-formation.check-consulting.net
+# URL : https://<application>.formation-ba-quali-formation.<env>.check-consulting.net (ex. backend.formation-ba-quali-formation.dev.check-consulting.net)
 applications:
   - name: backend
     type: backend
@@ -13,16 +13,16 @@ applications:
       port: 80
     ingress:
       enabled: true
-      path: /api
-      stripPrefix: true # le pod reçoit /hello pour /api/hello
+      path: /
+      stripPrefix: false
     envList:
       - key: LOG_LEVEL
         value: {dev: debug, qualif: info, prod: warn}
       - key: ALLOWED_HOSTS
         value:
-          dev: dev-formation-ba-quali-formation.check-consulting.net
-          qualif: qualif-formation-ba-quali-formation.check-consulting.net
-          prod: prod-formation-ba-quali-formation.check-consulting.net
+          dev: backend.formation-ba-quali-formation.dev.check-consulting.net
+          qualif: backend.formation-ba-quali-formation.qualif.check-consulting.net
+          prod: backend.formation-ba-quali-formation.prod.check-consulting.net
   - name: frontend
     type: frontend
     image: 205493924920.dkr.ecr.eu-west-3.amazonaws.com/formation-ba-quali-formation/frontend
@@ -34,3 +34,4 @@ applications:
     ingress:
       enabled: true
       path: /
+      stripPrefix: false
