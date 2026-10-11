@@ -12,3 +12,8 @@ db.sqlite3
 
 ### IntelliJ / PyCharm ###
 .idea/
+
+### Couverture ###
+.coverage
+coverage.xml
+.ruff_cache/
