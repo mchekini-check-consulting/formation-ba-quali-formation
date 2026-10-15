@@ -1,6 +1,6 @@
 # formation-ba-quali-formation
 
-Monorepo contenant le backend Django et l'application frontend React.
+Monorepo contenant le backend Django et l'application frontend React
 
 ```
 backend/                  # API Django + Django REST Framework

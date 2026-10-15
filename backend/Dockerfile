@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # Backend Django -> image distroless Python, non-root.
-# Django 6 exige Python >= 3.12 : build et runtime en Python 3.13 (Debian 13).
+# Django 6 exige Python >= 3.12 : build et runtim en Python 3.13 (Debian 13).
 
 # ---- Build : installe les dépendances dans /deps (pip n'existe pas au runtime)
 FROM python:3.13-slim-trixie AS build
