@@ -6,7 +6,7 @@ applications:
   - name: backend
     type: backend
     image: 205493924920.dkr.ecr.eu-west-3.amazonaws.com/formation-ba-quali-formation/backend
-    tag: {dev: "cd72567", qualif: "", preprod: "", prod: ""} # écrit par Kargo : dev automatique ; qualif/preprod/prod : promotion par clic
+    tag: {dev: 9f2f9ba
     containerPort: 8000
     replicas: {dev: 1, qualif: 2, preprod: 2, prod: 3}
     service:
@@ -27,7 +27,7 @@ applications:
   - name: frontend
     type: frontend
     image: 205493924920.dkr.ecr.eu-west-3.amazonaws.com/formation-ba-quali-formation/frontend
-    tag: {dev: "cd72567", qualif: "", preprod: "", prod: ""} # écrit par Kargo : dev automatique ; qualif/preprod/prod : promotion par clic
+    tag: {dev: cd72567
     containerPort: 8080
     replicas: {dev: 1, qualif: 2, preprod: 2, prod: 3}
     service:
