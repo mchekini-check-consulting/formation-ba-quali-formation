@@ -1,14 +1,14 @@
 # Microservices de ce dépôt, déployés par formation-ba-gitops sur chaque environnement.
 # Valeurs littérales uniquement. replicas, tag et envList[].value acceptent
-# une valeur unique ou une map par environnement : { dev: ..., qualif: ..., prod: ... }
+# une valeur unique ou une map par environnement : { dev: ..., qualif: ..., preprod: ..., prod: ... }
 # URL : https://<application>.formation-ba-quali-formation.<env>.check-consulting.net (ex. backend.formation-ba-quali-formation.dev.check-consulting.net)
 applications:
   - name: backend
     type: backend
     image: 205493924920.dkr.ecr.eu-west-3.amazonaws.com/formation-ba-quali-formation/backend
-    tag: {dev: "cd72567", qualif: "", prod: ""} # dev : écrit par la CI ; qualif/prod : promotion manuelle (PR)
+    tag: {dev: "cd72567", qualif: "", preprod: "", prod: ""} # écrit par Kargo : dev automatique ; qualif/preprod/prod : promotion par clic
     containerPort: 8000
-    replicas: {dev: 1, qualif: 2, prod: 3}
+    replicas: {dev: 1, qualif: 2, preprod: 2, prod: 3}
     service:
       port: 80
     ingress:
@@ -17,18 +17,19 @@ applications:
       stripPrefix: false
     envList:
       - key: LOG_LEVEL
-        value: {dev: debug, qualif: info, prod: warn}
+        value: {dev: debug, qualif: info, preprod: info, prod: warn}
       - key: ALLOWED_HOSTS
         value:
           dev: backend.formation-ba-quali-formation.dev.check-consulting.net
           qualif: backend.formation-ba-quali-formation.qualif.check-consulting.net
+          preprod: backend.formation-ba-quali-formation.preprod.check-consulting.net
           prod: backend.formation-ba-quali-formation.prod.check-consulting.net
   - name: frontend
     type: frontend
     image: 205493924920.dkr.ecr.eu-west-3.amazonaws.com/formation-ba-quali-formation/frontend
-    tag: {dev: "cd72567", qualif: "", prod: ""} # dev : écrit par la CI ; qualif/prod : promotion manuelle (PR)
+    tag: {dev: "cd72567", qualif: "", preprod: "", prod: ""} # écrit par Kargo : dev automatique ; qualif/preprod/prod : promotion par clic
     containerPort: 8080
-    replicas: {dev: 1, qualif: 2, prod: 3}
+    replicas: {dev: 1, qualif: 2, preprod: 2, prod: 3}
     service:
       port: 80
     ingress:
