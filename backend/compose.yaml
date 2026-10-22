@@ -1,0 +1,12 @@
+# Base locale (optionnelle ; sans DATABASE_URL, Django utilise SQLite) :
+#   docker compose up -d
+#   DATABASE_URL=postgresql://app:app@localhost:5432/quali_formation python manage.py runserver
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: quali_formation
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+    ports:
+      - "5432:5432"

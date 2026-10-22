@@ -21,5 +21,6 @@ COPY --from=build /app /app
 USER nonroot
 EXPOSE 8000
 # ENTRYPOINT de l'image : ["/usr/bin/python3.13"]
-CMD ["-m", "gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2"]
+# gunicorn.conf.py : applique les migrations Django avant de démarrer les workers
+CMD ["-m", "gunicorn", "config.wsgi:application", "--config", "gunicorn.conf.py", "--bind", "0.0.0.0:8000", "--workers", "2"]
 # Image construite par la CI (.github/workflows/ci.yaml), taguée avec le sha court du commit

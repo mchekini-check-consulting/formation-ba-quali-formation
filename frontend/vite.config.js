@@ -6,6 +6,13 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
+    // Appels au backend en local : /api -> backend lancé sur le poste (src/api.js)
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8000',
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+    },
   },
   // Tests unitaires (vitest) : DOM simulé par jsdom
   test: {
