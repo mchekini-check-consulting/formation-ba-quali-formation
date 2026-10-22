@@ -1,7 +1,8 @@
 # Microservices de ce dépôt, déployés par formation-ba-gitops sur chaque environnement.
 # Valeurs littérales uniquement. replicas, tag et envList[].value acceptent
 # une valeur unique ou une map par environnement : { dev: ..., qualif: ..., preprod: ..., prod: ... }
-# URL : https://<application>.formation-ba-quali-formation.<env>.check-consulting.net (ex. backend.formation-ba-quali-formation.dev.check-consulting.net)
+# URL : frontend https://<application>.formation-ba-quali-formation.<env>.check-consulting.net ;
+#       backend  https://api.<env>.check-consulting.net/formation-ba-quali-formation/<application>
 applications:
   - name: backend
     type: backend
@@ -18,22 +19,29 @@ applications:
     replicas: {dev: 1, qualif: 1, preprod: 2, prod: 2}
     service:
       port: 80
+    # Exposé par la passerelle de l'environnement (préfixe retiré avant le pod) :
+    #   https://api.<env>.check-consulting.net/formation-ba-quali-formation/backend/...
+    # Appelable depuis le navigateur uniquement par le frontend du projet (CORS).
     ingress:
       enabled: true
-      path: /
-      stripPrefix: false
-    # Base PostgreSQL "backend" créée automatiquement (Cluster app-db du namespace,
-    # sauvegardée sur S3) ; connexion injectée : SPRING_DATASOURCE_*, PG*, DATABASE_URL
-    database: true
+    # Base PostgreSQL quali_formation : créée et sauvegardée automatiquement.
+    # Consigne : dans backend/config/settings.py, construire DATABASES à partir de la
+    # variable injectée DATABASE_URL :
+    #   DATABASES = {"default": dj_database_url.config(default=...)}
+    # DATABASE_URL (postgresql://<user>:<password>@<hôte>:<port>/<base>) contient déjà
+    # l'utilisateur et le mot de passe. Valeurs séparées, injectées aussi :
+    #   PGUSER, PGPASSWORD, PGHOST, PGPORT, PGDATABASE
+    database:
+      name: quali_formation
     envList:
       - key: LOG_LEVEL
         value: {dev: debug, qualif: info, preprod: info, prod: warn}
       - key: ALLOWED_HOSTS
         value:
-          dev: backend.formation-ba-quali-formation.dev.check-consulting.net
-          qualif: backend.formation-ba-quali-formation.qualif.check-consulting.net
-          preprod: backend.formation-ba-quali-formation.preprod.check-consulting.net
-          prod: backend.formation-ba-quali-formation.prod.check-consulting.net
+          dev: api.dev.check-consulting.net
+          qualif: api.qualif.check-consulting.net
+          preprod: api.preprod.check-consulting.net
+          prod: api.prod.check-consulting.net
   - name: frontend
     type: frontend
     image: 205493924920.dkr.ecr.eu-west-3.amazonaws.com/formation-ba-quali-formation/frontend
