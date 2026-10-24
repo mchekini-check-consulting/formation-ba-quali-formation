@@ -1,6 +1,6 @@
 // URL du backend du projet, déduite du host du frontend :
 //   https://<application>.<projet>.<env>.<domaine>
-//   -> passerelle https://api.<env>.<domaine>/<projet>/backend
+//   -> passerelle https://gateway.<projet>.<env>.<domaine>/backend (pod gateway du projet)
 // Même image dans tous les environnements (promotion Kargo) : rien à configurer.
 // En local (localhost) : /api, relayé vers le backend par le serveur de dev
 // (server.proxy de vite.config.js).
@@ -9,7 +9,7 @@ export function apiBase(hostname = window.location.hostname) {
   if (!projet || !env || domaine.length === 0) {
     return '/api'
   }
-  return `https://api.${env}.${domaine.join('.')}/${projet}/backend`
+  return `https://gateway.${projet}.${env}.${domaine.join('.')}/backend`
 }
 
 async function appeler(chemin, options, base) {

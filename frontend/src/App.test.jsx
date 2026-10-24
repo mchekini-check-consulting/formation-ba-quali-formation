@@ -22,7 +22,7 @@ afterEach(() => {
 describe('apiBase', () => {
   it("pointe la passerelle de l'environnement du frontend", () => {
     expect(apiBase('frontend.formation-ba-projet.qualif.check-consulting.net')).toBe(
-      'https://api.qualif.check-consulting.net/formation-ba-projet/backend',
+      'https://gateway.formation-ba-projet.qualif.check-consulting.net/backend',
     )
   })
 
