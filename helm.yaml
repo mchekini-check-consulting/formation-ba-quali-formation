@@ -1,8 +1,9 @@
 # Microservices de ce dépôt, déployés par formation-ba-gitops sur chaque environnement.
 # Valeurs littérales uniquement. replicas, tag et envList[].value acceptent
 # une valeur unique ou une map par environnement : { dev: ..., qualif: ..., preprod: ..., prod: ... }
-# URL : frontend https://<application>.formation-ba-quali-formation.<env>.check-consulting.net ;
-#       backend  https://api.<env>.check-consulting.net/formation-ba-quali-formation/<application>
+# URL : frontend/gateway https://<application>.formation-ba-quali-formation.<env>.check-consulting.net
+#       backend : jamais d'URL directe (Service ClusterIP seulement), exposé par
+#       le pod "gateway" ci-dessous (type: gateway) : .../gateway/<backend>/...
 applications:
   - name: backend
     type: backend
@@ -19,9 +20,9 @@ applications:
     replicas: {dev: 1, qualif: 1, preprod: 2, prod: 2}
     service:
       port: 80
-    # Pas d'Ingress : Service ClusterIP seulement. Exposé par la passerelle de
-    # l'environnement (backend listé dans business.projects[].api de formation-ba-gitops) :
-    #   https://api.<env>.check-consulting.net/formation-ba-quali-formation/backend/...  (préfixe retiré)
+    # Pas d'Ingress direct : Service ClusterIP seulement. Exposé par le pod
+    # "gateway" ci-dessous :
+    #   https://gateway.formation-ba-quali-formation.<env>.check-consulting.net/backend/...  (préfixe retiré)
     # Appelable depuis le navigateur uniquement par les frontends de l'environnement (CORS).
     # Base PostgreSQL quali_formation : créée et sauvegardée automatiquement.
     # Consigne : dans backend/config/settings.py, construire DATABASES à partir de la
@@ -35,12 +36,27 @@ applications:
     envList:
       - key: LOG_LEVEL
         value: {dev: debug, qualif: info, preprod: info, prod: warn}
+      # Host reçu par le backend : celui du pod gateway (ci-dessous), qui le
+      # transmet tel quel (pas de réécriture de Host par Traefik).
       - key: ALLOWED_HOSTS
         value:
-          dev: api.dev.check-consulting.net
-          qualif: api.qualif.check-consulting.net
-          preprod: api.preprod.check-consulting.net
-          prod: api.prod.check-consulting.net
+          dev: gateway.formation-ba-quali-formation.dev.check-consulting.net
+          qualif: gateway.formation-ba-quali-formation.qualif.check-consulting.net
+          preprod: gateway.formation-ba-quali-formation.preprod.check-consulting.net
+          prod: gateway.formation-ba-quali-formation.prod.check-consulting.net
+  - name: gateway
+    type: gateway
+    # Pas d'image/tag : fourni par la plateforme (petit Traefik autonome),
+    # rien à construire ni à promouvoir. Expose les backends ci-dessus
+    # (type: backend) sous https://gateway.formation-ba-quali-formation.<env>.check-consulting.net/<backend>/...
+    # (préfixe retiré) ; CORS limité aux frontends de l'environnement.
+    # Configuration personnalisée (routage, rate limiting, authentification
+    # centralisée...) : voir gateway.yaml à la racine du dépôt. Si ce fichier
+    # est absent, le routage vers les backends ci-dessus est généré
+    # automatiquement (comportement par défaut).
+    replicas: {dev: 1, qualif: 1, preprod: 2, prod: 2}
+    ingress:
+      enabled: true
   - name: frontend
     type: frontend
     image: 205493924920.dkr.ecr.eu-west-3.amazonaws.com/formation-ba-quali-formation/frontend
