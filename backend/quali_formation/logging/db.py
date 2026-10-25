@@ -18,7 +18,7 @@ def log_slow_or_failed_queries(execute, sql, params, many, context):
     try:
         result = execute(sql, params, many, context)
     except Exception as exc:
-        logger.error(
+        logger.exception(
             "requête en erreur",
             extra={
                 "layer": "db",
