@@ -2,8 +2,8 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from quali_formation.models import Item
 from quali_formation.serializers import ItemSerializer
+from quali_formation.services import item_service
 
 
 @api_view(["GET"])
@@ -13,12 +13,10 @@ def hello(request):
 
 # GET /items : liste ; POST /items {nom, description} : création (nom obligatoire).
 # Exposé par la passerelle :
-# https://api.<env>.check-consulting.net/formation-ba-quali-formation/backend/items
+# https://gateway.formation-ba-quali-formation.<env>.check-consulting.net/backend/items
 @api_view(["GET", "POST"])
 def items(request):
     if request.method == "POST":
-        serializer = ItemSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
+        serializer = item_service.create_item(request.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response(ItemSerializer(Item.objects.all(), many=True).data)
+    return Response(ItemSerializer(item_service.list_items(), many=True).data)
