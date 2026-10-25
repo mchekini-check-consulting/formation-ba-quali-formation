@@ -1,0 +1,13 @@
+# qualif : ce qui change dans cet environnement (fusionné avec helm.yaml).
+# tag : écrit par Kargo à chaque promotion (applications.<nom>.tag) ;
+# vide : application pas encore déployée dans cet environnement.
+applications:
+  backend:
+    tag: "75292c0"
+    replicas: 1
+    env:
+      # Host reçu par le backend : celui du gateway, transmis tel quel par Traefik
+      ALLOWED_HOSTS: gateway.formation-ba-quali-formation.qualif.check-consulting.net
+  frontend:
+    tag: "cf24772"
+    replicas: 1
