@@ -206,7 +206,7 @@ function FormationForm() {
                 {ts.map((t) => {
                   const done = tileDone(t, vals, form), pv = done ? apercu(t, vals, form) : ''
                   return (
-                    <button type="button" key={t.id} className={`tile acc${t.sec} ${done ? 'done' : ''} ${!done && signaler ? 'flag' : ''}`} aria-label={`${t.title} : ${done ? 'complété' : 'à remplir'}`} title={pv || undefined} onClick={() => ouvrirBloc(TILES.indexOf(t))}>
+                    <button type="button" key={t.id} data-tile={t.id} className={`tile acc${t.sec} ${done ? 'done' : ''} ${!done && signaler ? 'flag' : ''}`} aria-label={`${t.title} : ${done ? 'complété' : 'à remplir'}`} title={pv || undefined} onClick={() => ouvrirBloc(TILES.indexOf(t))}>
                       <span className="ti"><Icone nom={t.id} taille={22} /></span><span className="tn">{t.title}</span>
                       {done && <span className="tick" aria-hidden="true"><Icone nom="check" taille={12} epaisseur={3.4} /></span>}
                     </button>
