@@ -1,6 +1,7 @@
 import { Navigate } from 'react-router-dom'
 import Layout from './components/Layout'
 import TableauDeBord from './pages/TableauDeBord'
+import FormationForm from './pages/FormationForm'
 import FormationsListe from './pages/FormationsListe'
 
 // Écran pas encore livré (remplacé aux étapes suivantes)
@@ -13,8 +14,8 @@ export const routes = [
     children: [
       { path: '/', element: <TableauDeBord /> },
       { path: '/formations', element: <FormationsListe /> },
-      { path: '/formations/nouvelle', element: <EnConstruction /> },
-      { path: '/formations/:id/modifier', element: <EnConstruction /> },
+      { path: '/formations/nouvelle', element: <FormationForm /> },
+      { path: '/formations/:id/modifier', element: <FormationForm /> },
       { path: '/formations/:id', element: <EnConstruction /> },
       { path: '*', element: <Navigate to="/" replace /> },
     ],
