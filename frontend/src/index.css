@@ -140,3 +140,9 @@ svg{flex-shrink:0}
 /* Liens « Démo : charger des exemples · vider » (repris de la maquette) */
 .demo-note{text-align:center}
 .reset{font-size:13px;color:var(--texte-3);background:none;border:0;text-decoration:underline;padding:0}
+
+/* Icônes du menu : pastille teintée de la couleur de la fonctionnalité (--ic) */
+.nav-ic{width:30px;height:30px;flex-shrink:0;border-radius:9px;display:grid;place-items:center;color:var(--ic);background:color-mix(in srgb,var(--ic) 13%,var(--carte));transition:background .15s,color .15s}
+.nav a:hover .nav-ic{background:color-mix(in srgb,var(--ic) 20%,var(--carte))}
+.nav a[aria-current="page"] .nav-ic{background:var(--ic);color:#fff}
+.nav a:has(.nav-ic){padding:7px 10px}
