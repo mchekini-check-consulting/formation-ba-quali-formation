@@ -23,23 +23,19 @@ function FormationsListe() {
   const [filtre, setFiltre] = useState('all')
   const [recherche, setRecherche] = useState('')
   const [menu, setMenu] = useState(null)        // id de la carte dont le menu « ··· » est ouvert
-  const [sessions, setSessions] = useState(null) // id de la carte dont la liste des sessions est ouverte
   const [dialogue, setDialogue] = useState(null) // { type, formation }
 
   const [erreur, setErreur] = useState(null)
   const recharger = useCallback(() => service.listerFormations().then((l) => { setFormations(l); setErreur(null) }).catch((e) => setErreur(e.message)), [])
   useEffect(() => { recharger() }, [recharger])
 
-  // Un clic en dehors d'un menu ouvert le referme
+  // Un clic en dehors du menu ouvert le referme
   useEffect(() => {
-    if (menu === null && sessions === null) return
-    const fermer = (e) => {
-      if (!e.target.closest('[data-menu], .menu-pop')) setMenu(null)
-      if (!e.target.closest('[data-sessions], .sess-pop')) setSessions(null)
-    }
+    if (menu === null) return
+    const fermer = (e) => { if (!e.target.closest('[data-menu], .menu-pop')) setMenu(null) }
     document.addEventListener('mousedown', fermer)
     return () => document.removeEventListener('mousedown', fermer)
-  }, [menu, sessions])
+  }, [menu])
 
   const fermerDialogue = () => setDialogue(null)
   const ouvrirFormulaire = (f, params = {}) => {
@@ -73,7 +69,7 @@ function FormationsListe() {
   }
 
   const onAction = (nom, f) => {
-    setMenu(null); setSessions(null)
+    setMenu(null)
     switch (nom) {
       case 'voir': return navigate(`/formations/${f.id}`)
       case 'modifier': return ouvrirFormulaire(f)
@@ -117,7 +113,7 @@ function FormationsListe() {
     {dialogue.type === 'suppressionImpossible' && <ConfirmDialog titre="Suppression impossible" texte={`Cette formation a ${f.sess.length} session${f.sess.length > 1 ? 's' : ''}. Elle ne peut pas être supprimée. Vous pouvez l'archiver : elle ne sera plus proposée, mais son historique sera conservé.`}
       action="Archiver à la place" icone="trash" fondIcone="var(--warn-soft)" couleurIcone="var(--warn)" onAnnuler={fermerDialogue} onOk={() => executer(service.archiver(f.id), `« ${f.title} » est archivée.`)} />}
     {dialogue.type === 'supprimer' && <SuppressionDialog formation={f} onAnnuler={fermerDialogue} onSupprimer={(saisie) => executer(service.supprimer(f.id, saisie), `« ${f.title} » a été supprimée.`)} />}
-    {dialogue.type === 'session' && <SessionDialog formation={f} onAnnuler={fermerDialogue} onAjouter={(s) => executer(service.ajouterSession(f.id, s).then(() => setSessions(f.id)), 'Session ajoutée à la formation.')} />}
+    {dialogue.type === 'session' && <SessionDialog formation={f} onAnnuler={fermerDialogue} onAjouter={(s) => executer(service.ajouterSession(f.id, s), 'Session ajoutée à la formation.')} />}
     {dialogue.type === 'vider' && <ConfirmDialog titre="Vider la démo ?" texte="Toutes les formations de la démo sont supprimées. Vous revenez à l'écran de départ, sans aucune formation."
       action="Vider la démo" icone="restore" fondIcone="var(--brand-soft)" couleurIcone="var(--brand-text)" onAnnuler={fermerDialogue}
       onOk={() => { setFiltre('all'); setRecherche(''); executer(service.viderDemo(), 'La démo est vide : vous pouvez créer votre première formation.') }} />}
@@ -165,10 +161,7 @@ function FormationsListe() {
       {affichees.length ? (
         <div className="fgrid">
           {affichees.map((x) => (
-            <CarteFormation key={x.id} f={x} menuOuvert={menu === x.id} sessionsOuvertes={sessions === x.id}
-              onMenu={(id) => { setSessions(null); setMenu(menu === id ? null : id) }}
-              onSessions={(id) => { setMenu(null); setSessions(sessions === id ? null : id) }}
-              onAction={onAction} />
+            <CarteFormation key={x.id} f={x} menuOuvert={menu === x.id} onMenu={(id) => setMenu(menu === id ? null : id)} onAction={onAction} />
           ))}
         </div>
       ) : (

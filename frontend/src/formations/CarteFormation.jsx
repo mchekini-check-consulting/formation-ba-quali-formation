@@ -6,9 +6,9 @@ import { artAccent } from './themes'
 const ICONE_MODALITE = { Présentiel: 'organisation', Distanciel: 'moyens' }
 
 // Une carte de la liste des formations (RG31 à RG33)
-function CarteFormation({ f, menuOuvert, sessionsOuvertes, onMenu, onSessions, onAction }) {
+function CarteFormation({ f, menuOuvert, onMenu, onAction }) {
   const L = life(f), st = LC[L], miss = missingTiles(f).length
-  const sess = f.sess || [], n = sess.length
+  const n = (f.sess || []).length
   const publiable = L === 'incomplete' || L === 'apublier'
   const prix = money(f)
   const action = (nom) => () => onAction(nom, f)
@@ -24,25 +24,6 @@ function CarteFormation({ f, menuOuvert, sessionsOuvertes, onMenu, onSessions, o
   } else {
     principal = <button type="button" className="btn btn-soft btn-sm" onClick={action('restaurer')}><Icone nom="restore" taille={16} />Restaurer la formation</button>
   }
-  // Une formation publiée affiche ses sessions à la place
-  if (publiable && isPub(f)) {
-    principal = (
-      <div className="sess-wrap">
-        <button type="button" className={`btn btn-soft btn-sm sess-btn2 ${sessionsOuvertes ? 'open' : ''}`} data-sessions aria-expanded={sessionsOuvertes} onClick={() => onSessions(f.id)}>
-          <Icone nom="cal" taille={16} />Sessions ({n})<Icone nom="chev" taille={14} epaisseur={2.4} />
-        </button>
-        {sessionsOuvertes && (
-          <div className="sess-pop up" role="menu">
-            {n ? sess.map((x, i) => (
-              <div className="sp-item" key={i}><Icone nom="cal" taille={15} /><span><b>Du {frDate(x.debut)} au {frDate(x.fin)}</b><small>{x.lieu || '—'} · {x.places || '—'} places</small></span></div>
-            )) : <p className="sp-empty">Aucune session pour le moment.</p>}
-            <button type="button" className="sp-add" onClick={action('nouvelleSession')}><Icone nom="plus" taille={15} epaisseur={2.6} />Ajouter une session</button>
-          </div>
-        )}
-      </div>
-    )
-  }
-
   const item = (nom, ic, lab, cls = '') => <button type="button" className={`mn-i ${cls}`} role="menuitem" onClick={action(nom)}><Icone nom={ic} taille={16} />{lab}</button>
 
   return (
@@ -82,6 +63,8 @@ function CarteFormation({ f, menuOuvert, sessionsOuvertes, onMenu, onSessions, o
               {L !== 'archivee' && item('modifier', 'pen', 'Modifier')}
               {/* RG25 : publier / retirer de la publication depuis le menu */}
               {publiable && (isPub(f) ? item('retirer', 'globe', 'Retirer de la publication') : item('publier', 'publication', 'Publier'))}
+              {/* RG34 : pas de nouvelle session pour une formation archivée */}
+              {L !== 'archivee' && item('nouvelleSession', 'cal', 'Ajouter une session')}
               {L !== 'archivee' ? item('archiver', 'box', 'Archiver') : item('restaurer', 'restore', 'Restaurer')}
               {item('supprimer', 'trash', 'Supprimer', 'danger')}
             </div>
