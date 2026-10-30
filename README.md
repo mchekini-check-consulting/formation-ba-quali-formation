@@ -31,6 +31,15 @@ frontend/                 # application React (Vite)
 
 ## Lancer en local
 
+### Base de données (PostgreSQL)
+
+```bash
+docker compose up -d
+```
+
+PostgreSQL 18 sur `localhost:5432` (base, utilisateur et mot de passe : `backend`).
+Le backend l'utilise dès que `PGHOST` est défini, sinon il reste sur SQLite.
+
 ### Backend
 
 ```bash
@@ -38,6 +47,7 @@ cd backend
 python3.13 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+export PGHOST=localhost   # pour utiliser la base PostgreSQL du docker compose
 python manage.py migrate
 python manage.py runserver
 ```

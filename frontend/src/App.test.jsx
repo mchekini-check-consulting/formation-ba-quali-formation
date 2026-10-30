@@ -7,14 +7,21 @@ afterEach(cleanup)
 describe('App', () => {
   it('affiche le titre', () => {
     render(<App />)
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Get started')
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bonjour Nassiba')
   })
 
-  it('incrémente le compteur au clic', () => {
-    render(<App />)
-    const button = screen.getByRole('button', { name: /count is/i })
-    expect(button.textContent).toBe('Count is 0')
+  it('affiche les 9 fonctionnalités', () => {
+    const { container } = render(<App />)
+    expect(container.querySelectorAll('.module')).toHaveLength(9)
+  })
+
+  it('ouvre et ferme le menu au clic', () => {
+    const { container } = render(<App />)
+    const sidebar = container.querySelector('.sidebar')
+    const button = screen.getByRole('button', { name: /ouvrir le menu/i })
     fireEvent.click(button)
-    expect(button.textContent).toBe('Count is 1')
+    expect(sidebar.classList.contains('ouverte')).toBe(true)
+    fireEvent.click(button)
+    expect(sidebar.classList.contains('ouverte')).toBe(false)
   })
 })
