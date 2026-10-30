@@ -1,0 +1,69 @@
+import { useState } from 'react'
+import Icone from '../components/Icone'
+import { Modal } from '../components/Modal'
+
+// RG26 : pop-up « Programme requis pour publier »
+export function ProgrammeRequisDialog({ formation, onCreer, onAnnuler }) {
+  return (
+    <Modal onFermer={onAnnuler}>
+      <div className="dialog dlg-warn" role="dialog" aria-modal="true" aria-labelledby="pr">
+        <div className="dw-head"><span className="dw-ic"><Icone nom="programme" taille={24} /></span><div><h2 id="pr">Programme requis pour publier</h2><p>« {formation.title} »</p></div></div>
+        <div className="dw-alert" role="alert"><Icone nom="info" taille={20} /><span>Une formation ne peut pas être publiée sans son programme. Créez le programme, puis publiez la formation.</span></div>
+        <div className="foot">
+          <button type="button" className="btn btn-line" onClick={onAnnuler}>Annuler</button>
+          <button type="button" className="btn btn-primary" onClick={onCreer} autoFocus><Icone nom="plus" taille={16} epaisseur={2.4} />Créer le programme</button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+// RG37 : il faut taper « supprimer » pour confirmer
+export function SuppressionDialog({ formation, onSupprimer, onAnnuler }) {
+  const [saisie, setSaisie] = useState('')
+  const ok = saisie.trim().toLowerCase() === 'supprimer'
+  return (
+    <Modal onFermer={onAnnuler}>
+      <div className="dialog del-dlg" role="dialog" aria-modal="true" aria-labelledby="dd">
+        <span className="dlg-ic" style={{ background: 'var(--danger-soft)', color: 'var(--danger)' }}><Icone nom="trash" taille={24} /></span>
+        <h2 id="dd">Supprimer « {formation.title} » ?</h2>
+        <p>Cette action est définitive. La formation et toutes ses informations seront supprimées et ne pourront pas être récupérées.</p>
+        <label className="del-l" htmlFor="del-in">Pour confirmer la suppression, saisissez <b>supprimer</b> ci-dessous</label>
+        <input className="inp" id="del-in" autoComplete="off" placeholder="supprimer" value={saisie} onChange={(e) => setSaisie(e.target.value)} autoFocus />
+        <div className="foot">
+          <button type="button" className="btn btn-line" onClick={onAnnuler}>Annuler</button>
+          <button type="button" className="btn btn-danger" disabled={!ok} onClick={() => onSupprimer(saisie)}>Supprimer</button>
+        </div>
+      </div>
+    </Modal>
+  )
+}
+
+// RG38 : ajout d'une session (début et fin obligatoires, fin ≥ début)
+export function SessionDialog({ formation, onAjouter, onAnnuler }) {
+  const [s, setS] = useState({ debut: '', fin: '', lieu: (formation.values && formation.values.lieu) || '', places: '' })
+  const [erreur, setErreur] = useState(false)
+  const champ = (k) => ({ value: s[k], onChange: (e) => setS({ ...s, [k]: e.target.value }) })
+  const ajouter = () => {
+    if (!s.debut || !s.fin || s.fin < s.debut) { setErreur(true); return }
+    onAjouter(s)
+  }
+  return (
+    <Modal onFermer={onAnnuler}>
+      <div className="dialog sess-dlg" role="dialog" aria-modal="true" aria-labelledby="sd">
+        <h2 id="sd">Ajouter une session</h2><p style={{ marginTop: -8 }}>{formation.title}</p>
+        <div className="sess-form">
+          <label>Date de début<input className="inp" type="date" {...champ('debut')} /></label>
+          <label>Date de fin<input className="inp" type="date" {...champ('fin')} /></label>
+          <label>Lieu<input className="inp" placeholder="Ex. : Lyon ou Teams" {...champ('lieu')} /></label>
+          <label>Places<input className="inp" inputMode="numeric" placeholder="Ex. : 12" {...champ('places')} /></label>
+          <span className="errtxt full" role="alert" hidden={!erreur}>Indiquez une date de début et une date de fin (la fin après le début).</span>
+        </div>
+        <div className="foot">
+          <button type="button" className="btn btn-line" onClick={onAnnuler}>Annuler</button>
+          <button type="button" className="btn btn-primary" onClick={ajouter}><Icone nom="plus" taille={16} epaisseur={2.4} />Ajouter la session</button>
+        </div>
+      </div>
+    </Modal>
+  )
+}

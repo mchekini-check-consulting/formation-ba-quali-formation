@@ -136,3 +136,7 @@ svg{flex-shrink:0}
   .contenu{padding:16px}
 }
 @media (max-width:480px){.kpis,.modules{grid-template-columns:1fr}}
+
+/* Liens « Démo : charger des exemples · vider » (repris de la maquette) */
+.demo-note{text-align:center}
+.reset{font-size:13px;color:var(--texte-3);background:none;border:0;text-decoration:underline;padding:0}
