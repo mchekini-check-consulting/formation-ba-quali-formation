@@ -269,7 +269,7 @@ function FormationForm() {
             </ul>
             <div className="foot">
               <button type="button" className="btn btn-line" onClick={() => { setDialogue(null); terminerValidation() }}>Valider quand même</button>
-              <button type="button" className="btn btn-primary" autoFocus onClick={() => { setDialogue(null); setSignaler(true); contenuRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }}>Compléter la formation</button>
+              <button type="button" className="btn btn-primary" autoFocus onClick={() => { setDialogue(null); setSignaler(true); contenuRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }) }}>Compléter la formation</button>
             </div>
           </div>
         </Modal>
@@ -280,7 +280,7 @@ function FormationForm() {
         const seqs = sequencesIncompletes(form.values), nf = seqs.reduce((a, x) => a + x.miss.length, 0)
         const completer = (i) => {
           setDialogue(null); setProgErr(true)
-          setTimeout(() => { const s = document.getElementById(`seq-${i ?? seqs[0].i}`); if (s) { s.scrollIntoView({ block: 'center' }); s.querySelector('.inp.err')?.focus({ preventScroll: true }) } }, 50)
+          setTimeout(() => { const s = document.getElementById(`seq-${i ?? seqs[0].i}`); if (s) { s.scrollIntoView?.({ block: 'center' }); s.querySelector('.inp.err')?.focus({ preventScroll: true }) } }, 50)
         }
         // Les séquences incomplètes ne sont pas gardées
         const quitterSansProgramme = () => { majValeur('modules', (form.values.modules || []).filter((m) => MOD_REQ.every((k) => filled(m[k])))); setDialogue(null); setProgErr(false); setAssistant(null) }
