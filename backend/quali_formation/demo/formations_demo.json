@@ -1,0 +1,1036 @@
+[
+ {
+  "intitule": "Business Analyst — les fondamentaux en contexte agile",
+  "duree_heures": "35",
+  "modalite": "MIXTE",
+  "organisme": "Cap Compétences",
+  "preparee_par": "Camille Laurent",
+  "valeurs": {
+   "public": [
+    "Salariés",
+    "Demandeurs d'emploi",
+    "Chefs de projet et consultants fonctionnels",
+    "Personnes en reconversion vers le métier de BA"
+   ],
+   "besoin": "Comprendre et formaliser les besoins métier, puis les traduire en exigences claires pour l'équipe de développement.",
+   "prerequis": "Aisance avec les outils bureautiques. Une première expérience en entreprise ou en projet est un plus, mais pas obligatoire.",
+   "objectifs": "Cadrer un projet (enjeux, périmètre, parties prenantes) ; animer un atelier de recueil des besoins ; modéliser un processus en BPMN ; rédiger des user stories avec critères d'acceptation ; préparer et suivre une recette.",
+   "methodes": [
+    "Exposés",
+    "Ateliers",
+    "Mises en situation",
+    "Études de cas"
+   ],
+   "materiel": [
+    "Salle équipée",
+    "Vidéoprojecteur",
+    "Logiciels",
+    "Classe virtuelle"
+   ],
+   "supports": [
+    "Support de cours",
+    "Fiches outils",
+    "Exercices corrigés"
+   ],
+   "formateurs": [
+    "Sarah Benali — Business Analyst senior"
+   ],
+   "assistance_dist": "support@capcompetences.fr — du lundi au vendredi, 9h–17h — réponse sous 24 h",
+   "lieu": "Présentiel : 12 rue des Lilas, 69003 Lyon — Distanciel : Microsoft Teams (lien envoyé 48 h avant)",
+   "acces": [
+    "Formulaire",
+    "Entretien préalable"
+   ],
+   "delai": "15 jours ouvrés entre la demande et l'entrée en formation",
+   "contact": "Camille Laurent — formation@capcompetences.fr — 04 72 00 00 00",
+   "tarif": "2 450",
+   "unite": "Par apprenant",
+   "taxe": "HT",
+   "financements": [
+    "CPF",
+    "OPCO",
+    "France Travail",
+    "Entreprise"
+   ],
+   "ref_handicap": "Yanis Morel",
+   "amenagements": [
+    "Supports adaptés",
+    "Rythme aménagé",
+    "Formation à distance possible",
+    "Accompagnement individuel"
+   ],
+   "locaux": "Locaux accessibles PMR (ascenseur). Supports en gros caractères sur demande. Les vidéos sont sous-titrées.",
+   "positionnement": [
+    "Questionnaire de positionnement",
+    "Entretien préalable"
+   ],
+   "eval_pendant": [
+    "Quiz",
+    "Exercices",
+    "Cas pratiques"
+   ],
+   "evaluation": [
+    "QCM",
+    "Étude de cas",
+    "Projet",
+    "Soutenance du dossier BA devant le formateur"
+   ],
+   "criteres": "Au moins 70 % au QCM final et un dossier BA validé sur la grille de compétences",
+   "document": "Certificat de réalisation",
+   "satisfaction": [
+    "À chaud (fin de formation)",
+    "À froid (3 mois après)",
+    "Auprès de l'entreprise"
+   ],
+   "resultats_plan": "Questionnaire à chaud dès la 1re session (février 2027). Taux de satisfaction et de réussite publiés après 3 sessions."
+  },
+  "autres_informations": [
+   {
+    "titre": "Outils utilisés",
+    "contenu": "Jira, Confluence, draw.io (comptes fournis pendant la formation)."
+   }
+  ],
+  "sequences": [
+   {
+    "titre": "Le rôle du BA et le cadrage",
+    "duree_heures": "7",
+    "objectif_vise": "Cadrer un projet (enjeux, périmètre, parties prenantes)",
+    "modalite": "PRESENTIEL",
+    "contenu": "Missions du BA, parties prenantes, note de cadrage, périmètre",
+    "methodes_activites": "Étude de cas, matrice des parties prenantes",
+    "supports": "Note de cadrage type",
+    "evaluation": "Quiz"
+   },
+   {
+    "titre": "Recueillir les besoins",
+    "duree_heures": "7",
+    "objectif_vise": "Animer un atelier de recueil des besoins",
+    "modalite": "PRESENTIEL",
+    "contenu": "Entretiens, ateliers, observation, questionnaire ; reformulation",
+    "methodes_activites": "Jeux de rôle : entretien avec un « client »",
+    "supports": "Guide d’entretien",
+    "evaluation": "Mise en situation"
+   },
+   {
+    "titre": "Modéliser processus et règles",
+    "duree_heures": "7",
+    "objectif_vise": "Modéliser un processus en BPMN",
+    "modalite": "DISTANCIEL_SYNCHRONE",
+    "contenu": "BPMN, règles de gestion, cas d’utilisation, maquettes",
+    "methodes_activites": "Modélisation sur outil (draw.io / Bizagi)",
+    "supports": "Mémo BPMN",
+    "evaluation": "Exercice"
+   },
+   {
+    "titre": "Le BA dans l’équipe agile",
+    "duree_heures": "7",
+    "objectif_vise": "Rédiger des user stories avec critères d'acceptation",
+    "modalite": "DISTANCIEL_SYNCHRONE",
+    "contenu": "Scrum, user stories, critères d’acceptation, backlog, refinement, priorisation",
+    "methodes_activites": "Atelier Jira : construire un backlog",
+    "supports": "Modèle de user story",
+    "evaluation": "Cas pratique"
+   },
+   {
+    "titre": "Recette et cas fil rouge",
+    "duree_heures": "7",
+    "objectif_vise": "Préparer et suivre une recette",
+    "modalite": "PRESENTIEL",
+    "contenu": "Plan et cas de test, suivi des anomalies, présentation finale",
+    "methodes_activites": "Soutenance du cas fil rouge",
+    "supports": "Cahier de recette type",
+    "evaluation": "Mise en situation"
+   }
+  ],
+  "reference": "FOR-2026-019",
+  "version": 1,
+  "statut": "VALIDEE",
+  "publication": "A_PUBLIER",
+  "date_mise_a_jour": "2026-10-28",
+  "sessions": []
+ },
+ {
+  "intitule": "Management d'équipe — niveau 2",
+  "duree_heures": "14",
+  "modalite": "PRESENTIEL",
+  "organisme": "Cap Compétences",
+  "preparee_par": "Camille Laurent",
+  "valeurs": {
+   "public": [
+    "Managers"
+   ],
+   "besoin": "Managers de proximité qui doivent animer et faire progresser une équipe.",
+   "prerequis": "Avoir suivi le niveau 1 ou 1 an d'expérience en encadrement.",
+   "objectifs": "Fixer des objectifs SMART ; déléguer une tâche ; conduire un entretien individuel.",
+   "methodes": [
+    "Exposés",
+    "Études de cas",
+    "Mises en situation"
+   ],
+   "materiel": [],
+   "supports": [],
+   "formateurs": [
+    "Thomas Martin — consultant en management"
+   ],
+   "assistance_dist": "support@capcompetences.fr — 9h–17h — réponse sous 24 h",
+   "lieu": "12 rue des Lilas, 69003 Lyon",
+   "acces": [
+    "Inscription par le centre",
+    "Entretien préalable"
+   ],
+   "delai": "",
+   "contact": "Camille Laurent — formation@capcompetences.fr — 04 72 00 00 00",
+   "tarif": "1 200",
+   "unite": "Par apprenant",
+   "taxe": "HT",
+   "financements": [
+    "OPCO",
+    "Entreprise"
+   ],
+   "ref_handicap": "Yanis Morel",
+   "amenagements": [
+    "Supports adaptés",
+    "Rythme aménagé"
+   ],
+   "locaux": "Locaux accessibles PMR ; supports disponibles en gros caractères.",
+   "positionnement": [],
+   "eval_pendant": [
+    "Exercices",
+    "Cas pratiques"
+   ],
+   "evaluation": [
+    "QCM",
+    "Mise en situation"
+   ],
+   "criteres": "",
+   "document": "Attestation de réalisation",
+   "satisfaction": [
+    "À chaud (fin de formation)",
+    "À froid (3 mois après)"
+   ],
+   "resultats_mesures": "Satisfaction 2025 : 4,6/5 — 38 répondants — questionnaire à chaud"
+  },
+  "autres_informations": [],
+  "sequences": [
+   {
+    "titre": "Fédérer son équipe",
+    "duree_heures": "3.5",
+    "objectif_vise": "Fixer des objectifs SMART",
+    "modalite": "PRESENTIEL",
+    "contenu": "Rôle du manager, objectifs SMART",
+    "methodes_activites": "Études de cas",
+    "supports": "Fiche outil SMART",
+    "evaluation": "Exercice"
+   },
+   {
+    "titre": "Déléguer",
+    "duree_heures": "3.5",
+    "objectif_vise": "Déléguer une tâche",
+    "modalite": "PRESENTIEL",
+    "contenu": "Délégation, suivi, feedback",
+    "methodes_activites": "Jeux de rôle",
+    "supports": "",
+    "evaluation": "Mise en situation"
+   },
+   {
+    "titre": "Entretien individuel",
+    "duree_heures": "7",
+    "objectif_vise": "Conduire un entretien individuel",
+    "modalite": "PRESENTIEL",
+    "contenu": "Préparer et mener un entretien",
+    "methodes_activites": "Mises en situation filmées",
+    "supports": "Grille d’entretien",
+    "evaluation": "Mise en situation"
+   }
+  ],
+  "reference": "FOR-2026-018",
+  "version": 1,
+  "statut": "INCOMPLETE",
+  "publication": null,
+  "date_mise_a_jour": "2026-10-27",
+  "sessions": []
+ },
+ {
+  "intitule": "Excel avancé",
+  "duree_heures": "7",
+  "modalite": "DISTANCIEL",
+  "organisme": "Cap Compétences",
+  "preparee_par": "Camille Laurent",
+  "valeurs": {
+   "public": [
+    "Salariés"
+   ],
+   "besoin": "Managers de proximité qui doivent animer et faire progresser une équipe.",
+   "prerequis": "Avoir suivi le niveau 1 ou 1 an d'expérience en encadrement.",
+   "objectifs": "Fixer des objectifs SMART ; déléguer une tâche ; conduire un entretien individuel.",
+   "methodes": [
+    "Exposés",
+    "Études de cas",
+    "Mises en situation"
+   ],
+   "materiel": [
+    "Salle équipée",
+    "Vidéoprojecteur"
+   ],
+   "supports": [
+    "Support de cours",
+    "Fiches outils"
+   ],
+   "formateurs": [
+    "Thomas Martin — consultant en management"
+   ],
+   "assistance_dist": "support@capcompetences.fr — 9h–17h — réponse sous 24 h",
+   "lieu": "Classe virtuelle (Teams)",
+   "acces": [
+    "Inscription par le centre",
+    "Entretien préalable"
+   ],
+   "delai": "15 jours après la demande",
+   "contact": "Camille Laurent — formation@capcompetences.fr — 04 72 00 00 00",
+   "tarif": "1 200",
+   "unite": "Par apprenant",
+   "taxe": "HT",
+   "financements": [
+    "OPCO",
+    "Entreprise"
+   ],
+   "ref_handicap": "Yanis Morel",
+   "amenagements": [
+    "Supports adaptés",
+    "Rythme aménagé"
+   ],
+   "locaux": "Locaux accessibles PMR ; supports disponibles en gros caractères.",
+   "positionnement": [
+    "Questionnaire de positionnement"
+   ],
+   "eval_pendant": [
+    "Exercices",
+    "Cas pratiques"
+   ],
+   "evaluation": [
+    "QCM",
+    "Mise en situation"
+   ],
+   "criteres": "70 % de bonnes réponses au QCM final",
+   "document": "Attestation de réalisation",
+   "satisfaction": [
+    "À chaud (fin de formation)",
+    "À froid (3 mois après)"
+   ],
+   "resultats_mesures": "Satisfaction 2025 : 4,6/5 — 38 répondants — questionnaire à chaud"
+  },
+  "autres_informations": [],
+  "sequences": [
+   {
+    "titre": "Fédérer son équipe",
+    "duree_heures": "3.5",
+    "objectif_vise": "Fixer des objectifs SMART",
+    "modalite": "PRESENTIEL",
+    "contenu": "Rôle du manager, objectifs SMART",
+    "methodes_activites": "Études de cas",
+    "supports": "Fiche outil SMART",
+    "evaluation": "Exercice"
+   },
+   {
+    "titre": "Déléguer",
+    "duree_heures": "3.5",
+    "objectif_vise": "Déléguer une tâche",
+    "modalite": "PRESENTIEL",
+    "contenu": "Délégation, suivi, feedback",
+    "methodes_activites": "Jeux de rôle",
+    "supports": "",
+    "evaluation": "Mise en situation"
+   },
+   {
+    "titre": "Entretien individuel",
+    "duree_heures": "7",
+    "objectif_vise": "Conduire un entretien individuel",
+    "modalite": "PRESENTIEL",
+    "contenu": "Préparer et mener un entretien",
+    "methodes_activites": "Mises en situation filmées",
+    "supports": "Grille d’entretien",
+    "evaluation": "Mise en situation"
+   }
+  ],
+  "reference": "FOR-2026-017",
+  "version": 1,
+  "statut": "VALIDEE",
+  "publication": "A_PUBLIER",
+  "date_mise_a_jour": "2026-10-25",
+  "sessions": []
+ },
+ {
+  "intitule": "Management d'équipe — niveau 1",
+  "duree_heures": "14",
+  "modalite": "PRESENTIEL",
+  "organisme": "Cap Compétences",
+  "preparee_par": "Camille Laurent",
+  "valeurs": {
+   "public": [
+    "Managers"
+   ],
+   "besoin": "Managers de proximité qui doivent animer et faire progresser une équipe.",
+   "prerequis": "Avoir suivi le niveau 1 ou 1 an d'expérience en encadrement.",
+   "objectifs": "Fixer des objectifs SMART ; déléguer une tâche ; conduire un entretien individuel.",
+   "methodes": [
+    "Exposés",
+    "Études de cas",
+    "Mises en situation"
+   ],
+   "materiel": [
+    "Salle équipée",
+    "Vidéoprojecteur"
+   ],
+   "supports": [
+    "Support de cours",
+    "Fiches outils"
+   ],
+   "formateurs": [
+    "Thomas Martin — consultant en management"
+   ],
+   "assistance_dist": "support@capcompetences.fr — 9h–17h — réponse sous 24 h",
+   "lieu": "12 rue des Lilas, 69003 Lyon",
+   "acces": [
+    "Inscription par le centre",
+    "Entretien préalable"
+   ],
+   "delai": "15 jours après la demande",
+   "contact": "Camille Laurent — formation@capcompetences.fr — 04 72 00 00 00",
+   "tarif": "1 200",
+   "unite": "Par apprenant",
+   "taxe": "HT",
+   "financements": [
+    "OPCO",
+    "Entreprise"
+   ],
+   "ref_handicap": "Yanis Morel",
+   "amenagements": [
+    "Supports adaptés",
+    "Rythme aménagé"
+   ],
+   "locaux": "Locaux accessibles PMR ; supports disponibles en gros caractères.",
+   "positionnement": [
+    "Questionnaire de positionnement"
+   ],
+   "eval_pendant": [
+    "Exercices",
+    "Cas pratiques"
+   ],
+   "evaluation": [
+    "QCM",
+    "Mise en situation"
+   ],
+   "criteres": "70 % de bonnes réponses au QCM final",
+   "document": "Attestation de réalisation",
+   "satisfaction": [
+    "À chaud (fin de formation)",
+    "À froid (3 mois après)"
+   ],
+   "resultats_mesures": "Satisfaction 2025 : 4,6/5 — 38 répondants — questionnaire à chaud"
+  },
+  "autres_informations": [
+   {
+    "titre": "Matériel à apporter",
+    "contenu": "Un carnet et un stylo."
+   }
+  ],
+  "sequences": [
+   {
+    "titre": "Fédérer son équipe",
+    "duree_heures": "3.5",
+    "objectif_vise": "Fixer des objectifs SMART",
+    "modalite": "PRESENTIEL",
+    "contenu": "Rôle du manager, objectifs SMART",
+    "methodes_activites": "Études de cas",
+    "supports": "Fiche outil SMART",
+    "evaluation": "Exercice"
+   },
+   {
+    "titre": "Déléguer",
+    "duree_heures": "3.5",
+    "objectif_vise": "Déléguer une tâche",
+    "modalite": "PRESENTIEL",
+    "contenu": "Délégation, suivi, feedback",
+    "methodes_activites": "Jeux de rôle",
+    "supports": "",
+    "evaluation": "Mise en situation"
+   },
+   {
+    "titre": "Entretien individuel",
+    "duree_heures": "7",
+    "objectif_vise": "Conduire un entretien individuel",
+    "modalite": "PRESENTIEL",
+    "contenu": "Préparer et mener un entretien",
+    "methodes_activites": "Mises en situation filmées",
+    "supports": "Grille d’entretien",
+    "evaluation": "Mise en situation"
+   }
+  ],
+  "reference": "FOR-2026-012",
+  "version": 3,
+  "statut": "VALIDEE",
+  "publication": "PUBLIEE",
+  "date_mise_a_jour": "2026-10-21",
+  "sessions": [
+   {
+    "date_debut": "2026-09-05",
+    "date_fin": "2026-09-06",
+    "lieu": "Lyon",
+    "nombre_places": 12
+   },
+   {
+    "date_debut": "2026-11-08",
+    "date_fin": "2026-11-09",
+    "lieu": "Lyon",
+    "nombre_places": 12
+   },
+   {
+    "date_debut": "2027-01-11",
+    "date_fin": "2027-01-12",
+    "lieu": "Lyon",
+    "nombre_places": 12
+   }
+  ]
+ },
+ {
+  "intitule": "Sauveteur secouriste du travail (SST)",
+  "duree_heures": "14",
+  "modalite": "PRESENTIEL",
+  "organisme": "Cap Compétences",
+  "preparee_par": "Camille Laurent",
+  "valeurs": {
+   "public": [
+    "Managers"
+   ],
+   "besoin": "Managers de proximité qui doivent animer et faire progresser une équipe.",
+   "prerequis": "Avoir suivi le niveau 1 ou 1 an d'expérience en encadrement.",
+   "objectifs": "",
+   "methodes": [
+    "Exposés",
+    "Études de cas",
+    "Mises en situation"
+   ],
+   "materiel": [
+    "Salle équipée",
+    "Vidéoprojecteur"
+   ],
+   "supports": [
+    "Support de cours",
+    "Fiches outils"
+   ],
+   "formateurs": [],
+   "assistance_dist": "support@capcompetences.fr — 9h–17h — réponse sous 24 h",
+   "lieu": "12 rue des Lilas, 69003 Lyon",
+   "acces": [
+    "Inscription par le centre",
+    "Entretien préalable"
+   ],
+   "delai": "",
+   "contact": "",
+   "tarif": "",
+   "unite": "Par apprenant",
+   "taxe": "HT",
+   "financements": [
+    "OPCO",
+    "Entreprise"
+   ],
+   "ref_handicap": "Yanis Morel",
+   "amenagements": [
+    "Supports adaptés",
+    "Rythme aménagé"
+   ],
+   "locaux": "Locaux accessibles PMR ; supports disponibles en gros caractères.",
+   "positionnement": [
+    "Questionnaire de positionnement"
+   ],
+   "eval_pendant": [
+    "Exercices",
+    "Cas pratiques"
+   ],
+   "evaluation": [
+    "QCM",
+    "Mise en situation"
+   ],
+   "criteres": "70 % de bonnes réponses au QCM final",
+   "document": "Attestation de réalisation",
+   "satisfaction": [
+    "À chaud (fin de formation)",
+    "À froid (3 mois après)"
+   ],
+   "resultats_mesures": "Satisfaction 2025 : 4,6/5 — 38 répondants — questionnaire à chaud"
+  },
+  "autres_informations": [],
+  "sequences": [],
+  "reference": "FOR-2026-015",
+  "version": 1,
+  "statut": "BROUILLON",
+  "publication": null,
+  "date_mise_a_jour": "2026-10-15",
+  "sessions": []
+ },
+ {
+  "intitule": "Prise de parole en public",
+  "duree_heures": "21",
+  "modalite": "MIXTE",
+  "organisme": "Cap Compétences",
+  "preparee_par": "Camille Laurent",
+  "valeurs": {
+   "public": [
+    "Managers"
+   ],
+   "besoin": "Managers de proximité qui doivent animer et faire progresser une équipe.",
+   "prerequis": "Avoir suivi le niveau 1 ou 1 an d'expérience en encadrement.",
+   "objectifs": "Fixer des objectifs SMART ; déléguer une tâche ; conduire un entretien individuel.",
+   "methodes": [
+    "Exposés",
+    "Études de cas",
+    "Mises en situation"
+   ],
+   "materiel": [
+    "Salle équipée",
+    "Vidéoprojecteur"
+   ],
+   "supports": [
+    "Support de cours",
+    "Fiches outils"
+   ],
+   "formateurs": [
+    "Thomas Martin — consultant en management"
+   ],
+   "assistance_dist": "support@capcompetences.fr — 9h–17h — réponse sous 24 h",
+   "lieu": "12 rue des Lilas, 69003 Lyon",
+   "acces": [
+    "Inscription par le centre",
+    "Entretien préalable"
+   ],
+   "delai": "15 jours après la demande",
+   "contact": "Camille Laurent — formation@capcompetences.fr — 04 72 00 00 00",
+   "tarif": "1 200",
+   "unite": "Par apprenant",
+   "taxe": "HT",
+   "financements": [
+    "OPCO",
+    "Entreprise"
+   ],
+   "ref_handicap": "Yanis Morel",
+   "amenagements": [
+    "Supports adaptés",
+    "Rythme aménagé"
+   ],
+   "locaux": "Locaux accessibles PMR ; supports disponibles en gros caractères.",
+   "positionnement": [
+    "Questionnaire de positionnement"
+   ],
+   "eval_pendant": [
+    "Exercices",
+    "Cas pratiques"
+   ],
+   "evaluation": [
+    "QCM",
+    "Mise en situation"
+   ],
+   "criteres": "70 % de bonnes réponses au QCM final",
+   "document": "Attestation de réalisation",
+   "satisfaction": [
+    "À chaud (fin de formation)",
+    "À froid (3 mois après)"
+   ],
+   "resultats_mesures": "Satisfaction 2025 : 4,6/5 — 38 répondants — questionnaire à chaud"
+  },
+  "autres_informations": [],
+  "sequences": [
+   {
+    "titre": "Fédérer son équipe",
+    "duree_heures": "3.5",
+    "objectif_vise": "Fixer des objectifs SMART",
+    "modalite": "PRESENTIEL",
+    "contenu": "Rôle du manager, objectifs SMART",
+    "methodes_activites": "Études de cas",
+    "supports": "Fiche outil SMART",
+    "evaluation": "Exercice"
+   },
+   {
+    "titre": "Déléguer",
+    "duree_heures": "3.5",
+    "objectif_vise": "Déléguer une tâche",
+    "modalite": "PRESENTIEL",
+    "contenu": "Délégation, suivi, feedback",
+    "methodes_activites": "Jeux de rôle",
+    "supports": "",
+    "evaluation": "Mise en situation"
+   },
+   {
+    "titre": "Entretien individuel",
+    "duree_heures": "7",
+    "objectif_vise": "Conduire un entretien individuel",
+    "modalite": "PRESENTIEL",
+    "contenu": "Préparer et mener un entretien",
+    "methodes_activites": "Mises en situation filmées",
+    "supports": "Grille d’entretien",
+    "evaluation": "Mise en situation"
+   }
+  ],
+  "reference": "FOR-2026-009",
+  "version": 2,
+  "statut": "VALIDEE",
+  "publication": "PUBLIEE",
+  "date_mise_a_jour": "2026-10-02",
+  "sessions": [
+   {
+    "date_debut": "2026-09-05",
+    "date_fin": "2026-09-06",
+    "lieu": "Lyon",
+    "nombre_places": 12
+   }
+  ]
+ },
+ {
+  "intitule": "Anglais professionnel",
+  "duree_heures": "30",
+  "modalite": "DISTANCIEL",
+  "organisme": "Cap Compétences",
+  "preparee_par": "Camille Laurent",
+  "valeurs": {
+   "public": [
+    "Managers"
+   ],
+   "besoin": "Managers de proximité qui doivent animer et faire progresser une équipe.",
+   "prerequis": "Avoir suivi le niveau 1 ou 1 an d'expérience en encadrement.",
+   "objectifs": "Fixer des objectifs SMART ; déléguer une tâche ; conduire un entretien individuel.",
+   "methodes": [
+    "Exposés",
+    "Études de cas",
+    "Mises en situation"
+   ],
+   "materiel": [
+    "Salle équipée",
+    "Vidéoprojecteur"
+   ],
+   "supports": [
+    "Support de cours",
+    "Fiches outils"
+   ],
+   "formateurs": [
+    "Thomas Martin — consultant en management"
+   ],
+   "assistance_dist": "support@capcompetences.fr — 9h–17h — réponse sous 24 h",
+   "lieu": "12 rue des Lilas, 69003 Lyon",
+   "acces": [
+    "Inscription par le centre",
+    "Entretien préalable"
+   ],
+   "delai": "15 jours après la demande",
+   "contact": "Camille Laurent — formation@capcompetences.fr — 04 72 00 00 00",
+   "tarif": "1 200",
+   "unite": "Par apprenant",
+   "taxe": "HT",
+   "financements": [
+    "OPCO",
+    "Entreprise"
+   ],
+   "ref_handicap": "Yanis Morel",
+   "amenagements": [
+    "Supports adaptés",
+    "Rythme aménagé"
+   ],
+   "locaux": "Locaux accessibles PMR ; supports disponibles en gros caractères.",
+   "positionnement": [
+    "Questionnaire de positionnement"
+   ],
+   "eval_pendant": [
+    "Exercices",
+    "Cas pratiques"
+   ],
+   "evaluation": [
+    "QCM",
+    "Mise en situation"
+   ],
+   "criteres": "70 % de bonnes réponses au QCM final",
+   "document": "Attestation de réalisation",
+   "satisfaction": [
+    "À chaud (fin de formation)",
+    "À froid (3 mois après)"
+   ],
+   "resultats_mesures": "Satisfaction 2025 : 4,6/5 — 38 répondants — questionnaire à chaud"
+  },
+  "autres_informations": [],
+  "sequences": [
+   {
+    "titre": "Fédérer son équipe",
+    "duree_heures": "3.5",
+    "objectif_vise": "Fixer des objectifs SMART",
+    "modalite": "PRESENTIEL",
+    "contenu": "Rôle du manager, objectifs SMART",
+    "methodes_activites": "Études de cas",
+    "supports": "Fiche outil SMART",
+    "evaluation": "Exercice"
+   },
+   {
+    "titre": "Déléguer",
+    "duree_heures": "3.5",
+    "objectif_vise": "Déléguer une tâche",
+    "modalite": "PRESENTIEL",
+    "contenu": "Délégation, suivi, feedback",
+    "methodes_activites": "Jeux de rôle",
+    "supports": "",
+    "evaluation": "Mise en situation"
+   },
+   {
+    "titre": "Entretien individuel",
+    "duree_heures": "7",
+    "objectif_vise": "Conduire un entretien individuel",
+    "modalite": "PRESENTIEL",
+    "contenu": "Préparer et mener un entretien",
+    "methodes_activites": "Mises en situation filmées",
+    "supports": "Grille d’entretien",
+    "evaluation": "Mise en situation"
+   }
+  ],
+  "reference": "FOR-2026-014",
+  "version": 1,
+  "statut": "BROUILLON",
+  "publication": null,
+  "date_mise_a_jour": "2026-09-28",
+  "sessions": []
+ },
+ {
+  "intitule": "Gestion de projet agile",
+  "duree_heures": "21",
+  "modalite": "DISTANCIEL",
+  "organisme": "Cap Compétences",
+  "preparee_par": "Camille Laurent",
+  "valeurs": {
+   "public": [
+    "Managers"
+   ],
+   "besoin": "Managers de proximité qui doivent animer et faire progresser une équipe.",
+   "prerequis": "Avoir suivi le niveau 1 ou 1 an d'expérience en encadrement.",
+   "objectifs": "Fixer des objectifs SMART ; déléguer une tâche ; conduire un entretien individuel.",
+   "methodes": [
+    "Exposés",
+    "Études de cas",
+    "Mises en situation"
+   ],
+   "materiel": [
+    "Salle équipée",
+    "Vidéoprojecteur"
+   ],
+   "supports": [
+    "Support de cours",
+    "Fiches outils"
+   ],
+   "formateurs": [],
+   "assistance_dist": "support@capcompetences.fr — 9h–17h — réponse sous 24 h",
+   "lieu": "12 rue des Lilas, 69003 Lyon",
+   "acces": [
+    "Inscription par le centre",
+    "Entretien préalable"
+   ],
+   "delai": "15 jours après la demande",
+   "contact": "Camille Laurent — formation@capcompetences.fr — 04 72 00 00 00",
+   "tarif": "",
+   "unite": "Par apprenant",
+   "taxe": "HT",
+   "financements": [],
+   "ref_handicap": "",
+   "amenagements": [],
+   "locaux": "",
+   "positionnement": [
+    "Questionnaire de positionnement"
+   ],
+   "eval_pendant": [
+    "Exercices",
+    "Cas pratiques"
+   ],
+   "evaluation": [
+    "QCM",
+    "Mise en situation"
+   ],
+   "criteres": "70 % de bonnes réponses au QCM final",
+   "document": "Attestation de réalisation",
+   "satisfaction": [],
+   "resultats_mesures": "",
+   "resultats_plan": ""
+  },
+  "autres_informations": [],
+  "sequences": [
+   {
+    "titre": "Fédérer son équipe",
+    "duree_heures": "3.5",
+    "objectif_vise": "Fixer des objectifs SMART",
+    "modalite": "PRESENTIEL",
+    "contenu": "Rôle du manager, objectifs SMART",
+    "methodes_activites": "Études de cas",
+    "supports": "Fiche outil SMART",
+    "evaluation": "Exercice"
+   },
+   {
+    "titre": "Déléguer",
+    "duree_heures": "3.5",
+    "objectif_vise": "Déléguer une tâche",
+    "modalite": "PRESENTIEL",
+    "contenu": "Délégation, suivi, feedback",
+    "methodes_activites": "Jeux de rôle",
+    "supports": "",
+    "evaluation": "Mise en situation"
+   },
+   {
+    "titre": "Entretien individuel",
+    "duree_heures": "7",
+    "objectif_vise": "Conduire un entretien individuel",
+    "modalite": "PRESENTIEL",
+    "contenu": "Préparer et mener un entretien",
+    "methodes_activites": "Mises en situation filmées",
+    "supports": "Grille d’entretien",
+    "evaluation": "Mise en situation"
+   }
+  ],
+  "reference": "FOR-2026-016",
+  "version": 1,
+  "statut": "INCOMPLETE",
+  "publication": "PUBLIEE",
+  "date_mise_a_jour": "2026-10-20",
+  "sessions": [
+   {
+    "date_debut": "2026-09-05",
+    "date_fin": "2026-09-06",
+    "lieu": "Lyon",
+    "nombre_places": 12
+   }
+  ]
+ },
+ {
+  "intitule": "Bureautique — initiation",
+  "duree_heures": "14",
+  "modalite": "PRESENTIEL",
+  "organisme": "Cap Compétences",
+  "preparee_par": "Camille Laurent",
+  "valeurs": {
+   "public": [
+    "Managers"
+   ],
+   "besoin": "Managers de proximité qui doivent animer et faire progresser une équipe.",
+   "prerequis": "Avoir suivi le niveau 1 ou 1 an d'expérience en encadrement.",
+   "objectifs": "Fixer des objectifs SMART ; déléguer une tâche ; conduire un entretien individuel.",
+   "methodes": [
+    "Exposés",
+    "Études de cas",
+    "Mises en situation"
+   ],
+   "materiel": [
+    "Salle équipée",
+    "Vidéoprojecteur"
+   ],
+   "supports": [
+    "Support de cours",
+    "Fiches outils"
+   ],
+   "formateurs": [
+    "Thomas Martin — consultant en management"
+   ],
+   "assistance_dist": "support@capcompetences.fr — 9h–17h — réponse sous 24 h",
+   "lieu": "12 rue des Lilas, 69003 Lyon",
+   "acces": [
+    "Inscription par le centre",
+    "Entretien préalable"
+   ],
+   "delai": "15 jours après la demande",
+   "contact": "Camille Laurent — formation@capcompetences.fr — 04 72 00 00 00",
+   "tarif": "1 200",
+   "unite": "Par apprenant",
+   "taxe": "HT",
+   "financements": [
+    "OPCO",
+    "Entreprise"
+   ],
+   "ref_handicap": "Yanis Morel",
+   "amenagements": [
+    "Supports adaptés",
+    "Rythme aménagé"
+   ],
+   "locaux": "Locaux accessibles PMR ; supports disponibles en gros caractères.",
+   "positionnement": [
+    "Questionnaire de positionnement"
+   ],
+   "eval_pendant": [
+    "Exercices",
+    "Cas pratiques"
+   ],
+   "evaluation": [
+    "QCM",
+    "Mise en situation"
+   ],
+   "criteres": "70 % de bonnes réponses au QCM final",
+   "document": "Attestation de réalisation",
+   "satisfaction": [
+    "À chaud (fin de formation)",
+    "À froid (3 mois après)"
+   ],
+   "resultats_mesures": "Satisfaction 2025 : 4,6/5 — 38 répondants — questionnaire à chaud"
+  },
+  "autres_informations": [],
+  "sequences": [
+   {
+    "titre": "Fédérer son équipe",
+    "duree_heures": "3.5",
+    "objectif_vise": "Fixer des objectifs SMART",
+    "modalite": "PRESENTIEL",
+    "contenu": "Rôle du manager, objectifs SMART",
+    "methodes_activites": "Études de cas",
+    "supports": "Fiche outil SMART",
+    "evaluation": "Exercice"
+   },
+   {
+    "titre": "Déléguer",
+    "duree_heures": "3.5",
+    "objectif_vise": "Déléguer une tâche",
+    "modalite": "PRESENTIEL",
+    "contenu": "Délégation, suivi, feedback",
+    "methodes_activites": "Jeux de rôle",
+    "supports": "",
+    "evaluation": "Mise en situation"
+   },
+   {
+    "titre": "Entretien individuel",
+    "duree_heures": "7",
+    "objectif_vise": "Conduire un entretien individuel",
+    "modalite": "PRESENTIEL",
+    "contenu": "Préparer et mener un entretien",
+    "methodes_activites": "Mises en situation filmées",
+    "supports": "Grille d’entretien",
+    "evaluation": "Mise en situation"
+   }
+  ],
+  "reference": "FOR-2025-031",
+  "version": 1,
+  "statut": "ARCHIVEE",
+  "publication": null,
+  "date_mise_a_jour": "2026-09-12",
+  "sessions": [
+   {
+    "date_debut": "2026-09-05",
+    "date_fin": "2026-09-06",
+    "lieu": "Lyon",
+    "nombre_places": 12
+   },
+   {
+    "date_debut": "2026-11-08",
+    "date_fin": "2026-11-09",
+    "lieu": "Lyon",
+    "nombre_places": 12
+   },
+   {
+    "date_debut": "2027-01-11",
+    "date_fin": "2027-01-12",
+    "lieu": "Lyon",
+    "nombre_places": 12
+   },
+   {
+    "date_debut": "2027-03-14",
+    "date_fin": "2027-03-15",
+    "lieu": "Lyon",
+    "nombre_places": 12
+   }
+  ]
+ }
+]

@@ -6,8 +6,11 @@ Monorepo contenant le backend Django et l'application frontend React
 backend/                  # API Django + Django REST Framework
   manage.py
   config/                  # configuration du projet (settings, urls)
-  quali_formation/         # app "Hello World"
+  quali_formation/         # module Formations : modèles, règles de gestion (services.py), API
 frontend/                 # application React (Vite)
+  src/formations/          # catalogue des 13 blocs Qualiopi, cartes, assistant, accès aux données
+  src/pages/               # tableau de bord, liste, formulaire et fiche des formations
+docs/quali-formation-dev/  # brief, maquette validée et règles de gestion (RG01 à RG40), non versionnés
 ```
 
 ## Versions
@@ -49,10 +52,11 @@ source .venv/bin/activate
 pip install -r requirements.txt
 export PGHOST=localhost   # pour utiliser la base PostgreSQL du docker compose
 python manage.py migrate
+python manage.py charger_demo   # facultatif : les 9 formations d'exemple de la maquette (base vide uniquement)
 python manage.py runserver
 ```
 
-Disponible sur http://localhost:8000/
+API disponible sur http://localhost:8000/api/ (`/api/sante/`, `/api/formations/`…), administration sur http://localhost:8000/admin/
 
 ### Frontend
 
@@ -62,4 +66,13 @@ npm install
 npm run dev
 ```
 
-Disponible sur http://localhost:5173/
+Disponible sur http://localhost:5173/ (module Formations : http://localhost:5173/formations).
+En local, Vite envoie `/api/...` au backend (port 8000).
+Sans backend, `VITE_DONNEES=demo npm run dev` utilise les données d'exemple gardées dans le navigateur.
+
+### Tests
+
+```bash
+cd backend && make lint && make test-unit     # règles de gestion côté serveur
+cd frontend && npm run lint && npm test       # écrans et règles côté navigateur
+```

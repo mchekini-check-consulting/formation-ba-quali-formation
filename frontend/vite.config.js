@@ -14,6 +14,8 @@ export default defineConfig({
   // Tests unitaires (vitest) : DOM simulé par jsdom
   test: {
     environment: 'jsdom',
+    // Les tests utilisent les données de démo (pas besoin du backend)
+    env: { VITE_DONNEES: 'demo' },
     coverage: {
       include: ['src/**/*.{js,jsx}'], // pas les css / images importés
     },

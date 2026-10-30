@@ -5,7 +5,7 @@ import { ConfirmDialog, Modal } from '../components/Modal'
 import { useToast } from '../components/toastContext'
 import { filled, fmt, frDate, MOD_LBL, MOD_REQ, MODALITES, missingTiles, num, SECTIONS, STATUS, TILES, tileDone, visibleQs } from '../formations/catalogue'
 import AssistantBloc from '../formations/AssistantBloc'
-import * as service from '../formations/service'
+import * as service from '../formations/donnees'
 
 const NOUVELLE = { id: null, ref: '', title: '', duree: '', modalite: 'Présentiel', organisme: 'Cap Compétences', prepare: 'Camille Laurent', version: 1, statut: 'brouillon', values: {}, others: [], sess: [] }
 const copie = (x) => JSON.parse(JSON.stringify(x))

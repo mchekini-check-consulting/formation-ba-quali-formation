@@ -72,6 +72,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
+# API : pas encore d'authentification dans l'application (à ajouter avant l'ouverture aux utilisateurs).
+# Sans SessionAuthentication, une session admin ouverte n'impose pas de jeton CSRF aux appels du frontend.
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [],
+    'UNAUTHENTICATED_USER': None,
+}
+
 
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases

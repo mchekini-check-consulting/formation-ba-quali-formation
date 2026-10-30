@@ -6,7 +6,7 @@ import { useToast } from '../components/toastContext'
 import { isPub, life } from '../formations/catalogue'
 import CarteFormation from '../formations/CarteFormation'
 import { ProgrammeRequisDialog, SessionDialog, SuppressionDialog } from '../formations/Dialogues'
-import * as service from '../formations/service'
+import * as service from '../formations/donnees'
 
 // Couleur de la pastille de chaque filtre
 const PC = { all: '#0F766E', brouillon: '#64748B', incomplete: '#E11D48', apublier: '#10B981', publiee: '#6366F1', archivee: '#A1A1AA' }
@@ -26,7 +26,8 @@ function FormationsListe() {
   const [sessions, setSessions] = useState(null) // id de la carte dont la liste des sessions est ouverte
   const [dialogue, setDialogue] = useState(null) // { type, formation }
 
-  const recharger = useCallback(() => service.listerFormations().then(setFormations), [])
+  const [erreur, setErreur] = useState(null)
+  const recharger = useCallback(() => service.listerFormations().then((l) => { setFormations(l); setErreur(null) }).catch((e) => setErreur(e.message)), [])
   useEffect(() => { recharger() }, [recharger])
 
   // Un clic en dehors d'un menu ouvert le referme
@@ -91,7 +92,9 @@ function FormationsListe() {
     }
   }
 
-  if (formations === null) return <div className="wrap"><p className="chargement">Chargement des formations…</p></div>
+  if (formations === null) {
+    return <div className="wrap"><p className="chargement" role={erreur ? 'alert' : undefined}>{erreur || 'Chargement des formations…'}</p></div>
+  }
 
   const entete = (
     <div className="page-head">
@@ -99,7 +102,7 @@ function FormationsListe() {
       {formations.length > 0 && <button type="button" className="btn btn-primary" onClick={() => navigate('/formations/nouvelle')}><Icone nom="plus" taille={18} epaisseur={2.4} />Créer une formation</button>}
     </div>
   )
-  const lienDemo = (
+  const lienDemo = service.modeDemo && (
     <p className="demo-note">Démo : <button type="button" className="reset" onClick={() => executer(service.chargerExemples(), 'Formations d’exemple chargées.')}>charger des exemples</button>
       {' · '}<button type="button" className="reset" onClick={() => setDialogue({ type: 'vider' })}>vider</button></p>
   )

@@ -4,7 +4,7 @@ import Icone from '../components/Icone'
 import { Modal } from '../components/Modal'
 import { fmt, frDate, life, missingTiles, num, one, SECTIONS, TILES, tileDone, visibleQs } from '../formations/catalogue'
 import Illustration from '../formations/Illustration'
-import * as service from '../formations/service'
+import * as service from '../formations/donnees'
 
 const ETAT = { brouillon: ['Brouillon', 'lc-draft', 'pen'], incomplete: ['Incomplète selon Qualiopi', 'lc-inc', 'alert'], apublier: ['Validée', 'lc-ready', 'check'], archivee: ['Archivée', 'lc-arch', 'box'] }
 
