@@ -5,7 +5,7 @@ import { ToastProvider } from './Toast'
 import { FONCTIONNALITES } from '../pages/fonctionnalites'
 
 // Fonctionnalités affichées dans le menu, dans cet ordre
-const MENU = ['Sessions & planning', 'Émargement', 'Signature électronique', 'Modèles de documents', 'E-learning']
+const MENU = ['Sessions & planning', 'Émargement', 'Signature électronique', 'Modèles de documents', 'E-learning', 'Suivi Qualiopi']
 
 // Barre latérale + barre du haut, communes à toutes les pages
 function Layout() {
