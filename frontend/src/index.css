@@ -54,7 +54,7 @@ h1,h2,h3{text-wrap:balance}
 svg{flex-shrink:0}
 
 /* ---------- Mise en page ---------- */
-.app{display:grid;grid-template-columns:248px 1fr;min-height:100vh}
+.app{display:grid;grid-template-columns:280px 1fr;min-height:100vh}
 
 /* ---------- Barre latérale ---------- */
 .sidebar{background:var(--carte);border-right:1px solid var(--bordure);padding:22px 14px;display:flex;flex-direction:column;gap:20px;position:sticky;top:0;height:100vh;overflow-y:auto}
@@ -128,10 +128,10 @@ svg{flex-shrink:0}
 
 /* ---------- Responsive ---------- */
 @media (max-width:1200px){.kpis{grid-template-columns:repeat(2,1fr)}.modules{grid-template-columns:repeat(2,1fr)}}
-@media (max-width:1000px){.app{grid-template-columns:232px 1fr}.grille{grid-template-columns:1fr}.contenu{padding:24px}}
+@media (max-width:1000px){.app{grid-template-columns:256px 1fr}.grille{grid-template-columns:1fr}.contenu{padding:24px}}
 @media (max-width:760px){
   .app{grid-template-columns:1fr}
-  .sidebar{position:fixed;left:0;top:0;width:270px;z-index:20;transform:translateX(-100%);transition:transform .2s;box-shadow:var(--ombre-forte)}
+  .sidebar{position:fixed;left:0;top:0;width:290px;z-index:20;transform:translateX(-100%);transition:transform .2s;box-shadow:var(--ombre-forte)}
   .sidebar.ouverte{transform:none}
   .menu-btn{display:grid;place-items:center}
   .recherche{display:none}
