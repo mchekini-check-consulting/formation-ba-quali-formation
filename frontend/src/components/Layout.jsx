@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import Icone from './Icone'
 import { ToastProvider } from './Toast'
-import { FONCTIONNALITES } from '../pages/fonctionnalites'
 
 // Barre latérale + barre du haut, communes à toutes les pages
 function Layout() {
@@ -34,15 +33,6 @@ function Layout() {
             <NavLink to="/" end><Icone nom="tableau" />Tableau de bord</NavLink>
             <NavLink to="/formations"><Icone nom="formations" />Formations</NavLink>
           </nav>
-
-          <div>
-            <div className="nav-titre">Fonctionnalités</div>
-            <nav className="nav">
-              {FONCTIONNALITES.filter((f) => !f.lien).map((f) => (
-                <a href="#" key={f.titre}><Icone nom={f.icone} />{f.titre}</a>
-              ))}
-            </nav>
-          </div>
 
           <nav className="nav nav-bas">
             <a href="#"><Icone nom="parametres" />Paramètres</a>
