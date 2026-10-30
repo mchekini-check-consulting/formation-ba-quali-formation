@@ -6,6 +6,10 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
+    // En local, /api/... est envoyé au backend Django (même origine : pas besoin de CORS)
+    proxy: {
+      '/api': 'http://127.0.0.1:8000',
+    },
   },
   // Tests unitaires (vitest) : DOM simulé par jsdom
   test: {

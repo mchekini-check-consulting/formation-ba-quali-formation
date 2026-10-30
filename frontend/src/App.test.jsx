@@ -1,27 +1,37 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { afterEach, describe, expect, it } from 'vitest'
-import App from './App'
+import { routes } from './App'
 
 afterEach(cleanup)
 
+const afficher = (adresse = '/') => render(<RouterProvider router={createMemoryRouter(routes, { initialEntries: [adresse] })} />)
+
 describe('App', () => {
   it('affiche le titre', () => {
-    render(<App />)
+    afficher()
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bonjour Nassiba')
   })
 
   it('affiche les 9 fonctionnalités', () => {
-    const { container } = render(<App />)
+    const { container } = afficher()
     expect(container.querySelectorAll('.module')).toHaveLength(9)
   })
 
   it('ouvre et ferme le menu au clic', () => {
-    const { container } = render(<App />)
+    const { container } = afficher()
     const sidebar = container.querySelector('.sidebar')
     const button = screen.getByRole('button', { name: /ouvrir le menu/i })
     fireEvent.click(button)
     expect(sidebar.classList.contains('ouverte')).toBe(true)
     fireEvent.click(button)
     expect(sidebar.classList.contains('ouverte')).toBe(false)
+  })
+
+  it('le lien « Formations » de la barre latérale ouvre la liste des formations', async () => {
+    afficher()
+    const menu = screen.getByRole('navigation', { name: 'Menu principal' })
+    fireEvent.click(Array.from(menu.querySelectorAll('a')).find((a) => a.textContent === 'Formations'))
+    expect((await screen.findByRole('heading', { level: 1 })).textContent).toBe('Formations')
   })
 })

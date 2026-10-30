@@ -3,5 +3,6 @@ from rest_framework.response import Response
 
 
 @api_view(["GET"])
-def hello(request):
-    return Response("Hello, World!")
+def sante(request):
+    """Contrôle de vie : le frontend l'appelle pour savoir si l'API répond."""
+    return Response({"statut": "ok"})

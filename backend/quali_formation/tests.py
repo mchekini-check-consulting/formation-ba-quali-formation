@@ -1,8 +1,8 @@
 from django.test import SimpleTestCase
 
 
-class HelloViewTests(SimpleTestCase):
-    def test_hello_retourne_le_message(self):
-        response = self.client.get("/")
+class SanteViewTests(SimpleTestCase):
+    def test_sante_repond_ok(self):
+        response = self.client.get("/api/sante/")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json(), "Hello, World!")
+        self.assertEqual(response.json(), {"statut": "ok"})
