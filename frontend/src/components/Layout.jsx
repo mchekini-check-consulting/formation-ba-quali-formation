@@ -2,6 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import Icone from './Icone'
 import { ToastProvider } from './Toast'
+import { FONCTIONNALITES } from '../pages/fonctionnalites'
+
+// Fonctionnalités affichées dans le menu, dans cet ordre
+const MENU = ['Sessions & planning', 'Émargement', 'Signature électronique', 'Modèles de documents', 'E-learning']
 
 // Barre latérale + barre du haut, communes à toutes les pages
 function Layout() {
@@ -32,6 +36,10 @@ function Layout() {
           <nav className="nav" aria-label="Menu principal">
             <NavLink to="/" end><Icone nom="tableau" />Tableau de bord</NavLink>
             <NavLink to="/formations"><Icone nom="formations" />Formations</NavLink>
+            {/* Fonctionnalités à venir (pas encore de page) */}
+            {MENU.map((titre) => FONCTIONNALITES.find((f) => f.titre === titre)).map((f) => (
+              <a href="#" key={f.titre}><Icone nom={f.icone} />{f.titre}</a>
+            ))}
           </nav>
 
           <nav className="nav nav-bas">
