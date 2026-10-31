@@ -14,9 +14,10 @@ describe('App', () => {
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bonjour Nassiba')
   })
 
-  it('affiche les 9 fonctionnalités', () => {
+  it('le tableau de bord est vide pour l’instant (titre seulement)', () => {
     const { container } = afficher()
-    expect(container.querySelectorAll('.module')).toHaveLength(9)
+    expect(container.querySelector('.contenu').textContent).not.toContain('Conformité Qualiopi')
+    expect(container.querySelectorAll('.module, .kpi, .carte')).toHaveLength(0)
   })
 
   it('ouvre et ferme le menu au clic', () => {
