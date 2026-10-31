@@ -1,7 +1,9 @@
 # Microservices de ce dépôt, déployés par formation-ba-gitops sur chaque environnement.
 # Valeurs littérales uniquement. replicas, tag et envList[].value acceptent
 # une valeur unique ou une map par environnement : { dev: ..., qualif: ..., preprod: ..., prod: ... }
-# URL : https://<application>.formation-ba-quali-formation.<env>.check-consulting.net (ex. backend.formation-ba-quali-formation.dev.check-consulting.net)
+# URL : frontend/gateway https://<application>.formation-ba-quali-formation.<env>.check-consulting.net
+#       backend : jamais d'URL directe (Service ClusterIP seulement), exposé par
+#       le pod "gateway" ci-dessous (type: gateway) : .../gateway/<backend>/...
 applications:
   - name: backend
     type: backend
@@ -10,30 +12,51 @@ applications:
     # Garder une valeur par ligne, sans commentaire en fin de ligne : Kargo
     # remplace tout jusqu'à la fin de la ligne.
     tag:
-      dev: 7706f36
-      qualif: 7706f36
+      dev: 6225c1d
+      qualif: 6225c1d
       preprod: ""
       prod: ""
     containerPort: 8000
     replicas: {dev: 1, qualif: 1, preprod: 2, prod: 2}
     service:
       port: 80
-    ingress:
-      enabled: true
-      path: /
-      stripPrefix: false
-    # Base PostgreSQL "backend" créée automatiquement (Cluster app-db du namespace,
-    # sauvegardée sur S3) ; connexion injectée : SPRING_DATASOURCE_*, PG*, DATABASE_URL
-    database: true
+    # Pas d'Ingress direct : Service ClusterIP seulement. Exposé par le pod
+    # "gateway" ci-dessous :
+    #   https://gateway.formation-ba-quali-formation.<env>.check-consulting.net/backend/...  (préfixe retiré)
+    # Appelable depuis le navigateur uniquement par les frontends de l'environnement (CORS).
+    # Base PostgreSQL quali_formation : créée et sauvegardée automatiquement.
+    # Consigne : dans backend/config/settings.py, construire DATABASES à partir de la
+    # variable injectée DATABASE_URL :
+    #   DATABASES = {"default": dj_database_url.config(default=...)}
+    # DATABASE_URL (postgresql://<user>:<password>@<hôte>:<port>/<base>) contient déjà
+    # l'utilisateur et le mot de passe. Valeurs séparées, injectées aussi :
+    #   PGUSER, PGPASSWORD, PGHOST, PGPORT, PGDATABASE
+    database:
+      name: quali_formation
     envList:
       - key: LOG_LEVEL
         value: {dev: debug, qualif: info, preprod: info, prod: warn}
+      # Host reçu par le backend : celui du pod gateway (ci-dessous), qui le
+      # transmet tel quel (pas de réécriture de Host par Traefik).
       - key: ALLOWED_HOSTS
         value:
-          dev: backend.formation-ba-quali-formation.dev.check-consulting.net
-          qualif: backend.formation-ba-quali-formation.qualif.check-consulting.net
-          preprod: backend.formation-ba-quali-formation.preprod.check-consulting.net
-          prod: backend.formation-ba-quali-formation.prod.check-consulting.net
+          dev: gateway.formation-ba-quali-formation.dev.check-consulting.net
+          qualif: gateway.formation-ba-quali-formation.qualif.check-consulting.net
+          preprod: gateway.formation-ba-quali-formation.preprod.check-consulting.net
+          prod: gateway.formation-ba-quali-formation.prod.check-consulting.net
+  - name: gateway
+    type: gateway
+    # Pas d'image/tag : fourni par la plateforme (petit Traefik autonome),
+    # rien à construire ni à promouvoir. Expose les backends ci-dessus
+    # (type: backend) sous https://gateway.formation-ba-quali-formation.<env>.check-consulting.net/<backend>/...
+    # (préfixe retiré) ; CORS limité aux frontends de l'environnement.
+    # Configuration personnalisée (routage, rate limiting, authentification
+    # centralisée...) : voir gateway.yaml à la racine du dépôt. Si ce fichier
+    # est absent, le routage vers les backends ci-dessus est généré
+    # automatiquement (comportement par défaut).
+    replicas: {dev: 1, qualif: 1, preprod: 2, prod: 2}
+    ingress:
+      enabled: true
   - name: frontend
     type: frontend
     image: 205493924920.dkr.ecr.eu-west-3.amazonaws.com/formation-ba-quali-formation/frontend
@@ -41,8 +64,8 @@ applications:
     # Garder une valeur par ligne, sans commentaire en fin de ligne : Kargo
     # remplace tout jusqu'à la fin de la ligne.
     tag:
-      dev: cd72567
-      qualif: cd72567
+      dev: cf24772
+      qualif: cf24772
       preprod: ""
       prod: ""
     containerPort: 8080

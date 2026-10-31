@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 import os
 from pathlib import Path
 
+import dj_database_url
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -44,6 +46,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'quali_formation.logging.middleware.RequestLoggingMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -83,26 +86,16 @@ REST_FRAMEWORK = {
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 
-# PostgreSQL dès que PGHOST est défini (injecté en cluster, ou docker-compose.yml en local),
-# sinon SQLite (tests, lancement sans base)
-if os.environ.get('PGHOST'):
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'HOST': os.environ['PGHOST'],
-            'PORT': os.environ.get('PGPORT', '5432'),
-            'NAME': os.environ.get('PGDATABASE', 'backend'),
-            'USER': os.environ.get('PGUSER', 'backend'),
-            'PASSWORD': os.environ.get('PGPASSWORD', 'backend'),
-        }
-    }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
+# Base PostgreSQL : DATABASE_URL, injectée par la plateforme (helm.yaml : database).
+# Sans DATABASE_URL (poste de dev, tests) : SQLite local, ou la base de compose.yaml
+# avec DATABASE_URL=postgresql://app:app@localhost:5432/backend
+DATABASES = {
+    'default': dj_database_url.config(
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=60,
+        conn_health_checks=True,
+    )
+}
 
 
 # Password validation
@@ -140,6 +133,28 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.1/howto/static-files/
 
 STATIC_URL = 'static/'
+
+
+# Logging
+# Une ligne JSON par log sur stdout (quali_formation/logging). Seules les
+# lignes avec un champ "layer" (controller | service | db) sont collectées
+# dans Loki ; le reste (démarrage Django, routage...) reste visible via
+# kubectl logs. Niveau minimal : LOG_LEVEL (debug|info|warn|error), injecté
+# par helm.yaml (envList).
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'json': {'()': 'quali_formation.logging.formatter.JsonFormatter'},
+    },
+    'handlers': {
+        'console': {'class': 'logging.StreamHandler', 'formatter': 'json'},
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': os.environ.get('LOG_LEVEL', 'info').upper(),
+    },
+}
 
 
 # Email

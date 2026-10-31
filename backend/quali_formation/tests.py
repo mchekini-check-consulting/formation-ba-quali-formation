@@ -6,7 +6,7 @@ from django.test import SimpleTestCase, TestCase
 from django.utils import timezone
 
 from quali_formation.blocs import BLOCS, blocs_manquants
-from quali_formation.models import Formation
+from quali_formation.models import Formation, Item
 
 ANNEE = timezone.localdate().year
 
@@ -27,9 +27,41 @@ SEQUENCE = {'titre': 'Fédérer', 'duree_heures': '7', 'objectif_vise': 'Fixer d
             'contenu': 'Rôle du manager', 'methodes_activites': 'Études de cas'}
 
 
+class HelloViewTests(SimpleTestCase):
+    def test_hello_retourne_le_message(self):
+        response = self.client.get("/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), "Hello, World!")
+
+
+class ItemsViewTests(TestCase):
+    def test_liste_les_items_par_id(self):
+        Item.objects.create(nom="a")
+        Item.objects.create(nom="b", description="d")
+        response = self.client.get("/items")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual([i["nom"] for i in response.json()], ["a", "b"])
+        self.assertEqual(set(response.json()[1]), {"id", "nom", "description", "creeLe"})
+
+    def test_cree_un_item_nettoye(self):
+        response = self.client.post(
+            "/items", {"nom": "  Premier  ", "description": "  "}, content_type="application/json"
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()["nom"], "Premier")
+        self.assertIsNone(response.json()["description"])
+        self.assertIsNotNone(response.json()["creeLe"])
+        self.assertEqual(Item.objects.count(), 1)
+
+    def test_refuse_un_nom_vide(self):
+        response = self.client.post("/items", {"nom": " "}, content_type="application/json")
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(Item.objects.count(), 0)
+
+
 class SanteViewTests(SimpleTestCase):
     def test_sante_repond_ok(self):
-        response = self.client.get("/api/sante/")
+        response = self.client.get("/sante/")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"statut": "ok"})
 
@@ -60,13 +92,13 @@ class BlocsTests(SimpleTestCase):
 class ApiFormationsTests(TestCase):
     def creer(self, **donnees):
         corps = {'action': 'brouillon', 'intitule': 'Management', 'modalite': 'PRESENTIEL', **donnees}
-        return self.client.post('/api/formations/', corps, content_type='application/json')
+        return self.client.post('/formations/', corps, content_type='application/json')
 
     def modifier(self, pk, **donnees):
-        f = self.client.get(f'/api/formations/{pk}/').json()
+        f = self.client.get(f'/formations/{pk}/').json()
         corps = {'action': 'brouillon', 'intitule': f['intitule'], 'modalite': f['modalite'], 'duree_heures': f['duree_heures'],
                  'valeurs': f['valeurs'], 'sequences': f['sequences'], **donnees}
-        return self.client.put(f'/api/formations/{pk}/', corps, content_type='application/json')
+        return self.client.put(f'/formations/{pk}/', corps, content_type='application/json')
 
     def formation_validee(self, **donnees):
         r = self.creer(action='valider', duree_heures='7', valeurs=VALEURS_COMPLETES, sequences=[SEQUENCE], **donnees)
@@ -74,7 +106,7 @@ class ApiFormationsTests(TestCase):
         return r.json()
 
     def action(self, pk, nom, **corps):
-        return self.client.post(f'/api/formations/{pk}/{nom}/', corps, content_type='application/json')
+        return self.client.post(f'/formations/{pk}/{nom}/', corps, content_type='application/json')
 
     # ---------- Créer et modifier (RG01 à RG04) ----------
     def test_brouillon_avec_le_seul_intitule(self):  # RG02
@@ -160,7 +192,7 @@ class ApiFormationsTests(TestCase):
     def test_liste_de_la_plus_recente_a_la_plus_ancienne(self):
         a, b = self.creer(intitule='A').json(), self.creer(intitule='B').json()
         self.modifier(a['id'])
-        self.assertEqual([f['intitule'] for f in self.client.get('/api/formations/').json()], ['A', 'B'])
+        self.assertEqual([f['intitule'] for f in self.client.get('/formations/').json()], ['A', 'B'])
         self.assertEqual(b['version'], 1)
 
     # ---------- Archiver, restaurer, supprimer (RG34 à RG37) ----------
@@ -180,16 +212,16 @@ class ApiFormationsTests(TestCase):
     def test_suppression_refusee_avec_des_sessions_sauf_archivee(self):  # RG36
         f = self.creer().json()
         self.action(f['id'], 'sessions', date_debut='2027-02-08', date_fin='2027-02-09')
-        r = self.client.delete(f'/api/formations/{f["id"]}/?confirmation=supprimer')
+        r = self.client.delete(f'/formations/{f["id"]}/?confirmation=supprimer')
         self.assertEqual(r.json()['code'], 'A_DES_SESSIONS')
         self.action(f['id'], 'archiver')
-        self.assertEqual(self.client.delete(f'/api/formations/{f["id"]}/?confirmation=supprimer').status_code, 204)
+        self.assertEqual(self.client.delete(f'/formations/{f["id"]}/?confirmation=supprimer').status_code, 204)
 
     def test_suppression_demande_le_mot_supprimer(self):  # RG37
         f = self.creer().json()
-        r = self.client.delete(f'/api/formations/{f["id"]}/?confirmation=oui')
+        r = self.client.delete(f'/formations/{f["id"]}/?confirmation=oui')
         self.assertEqual(r.json()['code'], 'CONFIRMATION_INVALIDE')
-        self.assertEqual(self.client.delete(f'/api/formations/{f["id"]}/?confirmation=Supprimer').status_code, 204)
+        self.assertEqual(self.client.delete(f'/formations/{f["id"]}/?confirmation=Supprimer').status_code, 204)
         self.assertFalse(Formation.objects.exists())
 
     # ---------- Sessions (RG38) ----------

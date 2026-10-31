@@ -1,9 +1,9 @@
-// Accès aux formations par l'API Django (/api/formations/...). Mêmes fonctions que service.js (mode démo) :
+// Accès aux formations par l'API Django (/formations/...). Mêmes fonctions que service.js (mode démo) :
 // les écrans travaillent sur le format « maquette », traduit ici depuis / vers le format de l'API.
+// Adresse du backend : apiBase() (src/api.js), passerelle de l'environnement ou /api en local.
+import { apiBase } from '../api'
 import { num, SEQ_MODES } from './catalogue'
 import { ErreurMetier } from './service'
-
-const BASE = `${import.meta.env?.VITE_API_URL || ''}/api`
 
 const MODALITE = { Présentiel: 'PRESENTIEL', Distanciel: 'DISTANCIEL', Mixte: 'MIXTE' }
 const MODALITE_SEQ = { [SEQ_MODES[0]]: 'PRESENTIEL', [SEQ_MODES[1]]: 'DISTANCIEL_SYNCHRONE', [SEQ_MODES[2]]: 'DISTANCIEL_ASYNCHRONE' }
@@ -44,7 +44,7 @@ export function versApi(f) {
 async function appel(chemin, { method = 'GET', corps } = {}) {
   let reponse
   try {
-    reponse = await fetch(`${BASE}${chemin}`, {
+    reponse = await fetch(`${apiBase()}${chemin}`, {
       method,
       headers: corps ? { 'Content-Type': 'application/json' } : {},
       body: corps ? JSON.stringify(corps) : undefined,

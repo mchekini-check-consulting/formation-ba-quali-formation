@@ -17,7 +17,12 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 
+from quali_formation.views import hello, items
+
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include('quali_formation.urls')),
+    path('', hello),
+    path('items', items),
+    # Module Formations : /sante/, /formations/... (exposé par la passerelle sous /backend)
+    path('', include('quali_formation.urls')),
 ]

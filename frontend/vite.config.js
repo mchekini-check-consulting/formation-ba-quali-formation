@@ -6,15 +6,18 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
-    // En local, /api/... est envoyé au backend Django (même origine : pas besoin de CORS)
+    // Appels au backend en local : /api -> backend lancé sur le poste (src/api.js)
     proxy: {
-      '/api': 'http://127.0.0.1:8000',
+      '/api': {
+        target: 'http://localhost:8000',
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
     },
   },
   // Tests unitaires (vitest) : DOM simulé par jsdom
   test: {
     environment: 'jsdom',
-    // Les tests utilisent les données de démo (pas besoin du backend)
+    // Les tests des écrans Formations utilisent les données de démo (pas besoin du backend)
     env: { VITE_DONNEES: 'demo' },
     coverage: {
       include: ['src/**/*.{js,jsx}'], // pas les css / images importés

@@ -1,2 +1,2 @@
-# Les migrations sont générées par Django (makemigrations) : on ne les analyse pas
+# Migrations générées par Django (manage.py makemigrations) : hors lint
 extend-exclude = ["*/migrations/*"]

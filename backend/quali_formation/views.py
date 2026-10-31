@@ -3,13 +3,30 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from quali_formation import services
 from quali_formation.models import Formation
 from quali_formation.serializers import (
     FormationEcritureSerializer,
     FormationSerializer,
+    ItemSerializer,
     SessionSerializer,
 )
+from quali_formation.services import ErreurMetier, formation_service, item_service
+
+
+@api_view(["GET"])
+def hello(request):
+    return Response("Hello, World!")
+
+
+# GET /items : liste ; POST /items {nom, description} : création (nom obligatoire).
+# Exposé par la passerelle :
+# https://gateway.formation-ba-quali-formation.<env>.check-consulting.net/backend/items
+@api_view(["GET", "POST"])
+def items(request):
+    if request.method == "POST":
+        serializer = item_service.create_item(request.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(ItemSerializer(item_service.list_items(), many=True).data)
 
 
 @api_view(["GET"])
@@ -38,8 +55,8 @@ def _enregistrer(request, formation):
     donnees['autres_informations'] = [dict(o) for o in donnees['autres_informations']]
     donnees['sequences'] = [dict(s) for s in donnees['sequences']]
     try:
-        formation = services.enregistrer(formation, donnees, action, forcer)
-    except services.ErreurMetier as e:
+        formation = formation_service.enregistrer(formation, donnees, action, forcer)
+    except ErreurMetier as e:
         return _erreur(e)
     return Response(FormationSerializer(_formations().get(pk=formation.pk)).data,
                     status=status.HTTP_201_CREATED if request.method == 'POST' else status.HTTP_200_OK)
@@ -60,8 +77,8 @@ def formation(request, pk):
         return _enregistrer(request, f)
     if request.method == 'DELETE':
         try:
-            services.supprimer(f, request.query_params.get('confirmation'))
-        except services.ErreurMetier as e:
+            formation_service.supprimer(f, request.query_params.get('confirmation'))
+        except ErreurMetier as e:
             return _erreur(e)
         return Response(status=status.HTTP_204_NO_CONTENT)
     return _lire(f)
@@ -74,16 +91,16 @@ def _action(fonction):
         f = get_object_or_404(_formations(), pk=pk)
         try:
             fonction(f, request)
-        except services.ErreurMetier as e:
+        except ErreurMetier as e:
             return _erreur(e)
         return _lire(_formations().get(pk=pk))
     return vue
 
 
-publier = _action(lambda f, request: services.publier(f, confirmer=bool(request.data.get('confirmer'))))
-retirer_publication = _action(lambda f, request: services.retirer_publication(f))
-archiver = _action(lambda f, request: services.archiver(f))
-restaurer = _action(lambda f, request: services.restaurer(f))
+publier = _action(lambda f, request: formation_service.publier(f, confirmer=bool(request.data.get('confirmer'))))
+retirer_publication = _action(lambda f, request: formation_service.retirer_publication(f))
+archiver = _action(lambda f, request: formation_service.archiver(f))
+restaurer = _action(lambda f, request: formation_service.restaurer(f))
 
 
 @api_view(["POST"])
@@ -93,7 +110,7 @@ def sessions(request, pk):
     entree = SessionSerializer(data=request.data)
     entree.is_valid(raise_exception=True)
     try:
-        services.ajouter_session(f, **entree.validated_data)
-    except services.ErreurMetier as e:
+        formation_service.ajouter_session(f, **entree.validated_data)
+    except ErreurMetier as e:
         return _erreur(e)
     return Response(FormationSerializer(_formations().get(pk=pk)).data, status=status.HTTP_201_CREATED)

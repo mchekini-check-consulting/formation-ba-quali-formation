@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { afterEach, describe, expect, it } from 'vitest'
+import { apiBase } from './api'
 import { routes } from './App'
 
 afterEach(cleanup)
@@ -33,5 +34,17 @@ describe('App', () => {
     const menu = screen.getByRole('navigation', { name: 'Menu principal' })
     fireEvent.click(Array.from(menu.querySelectorAll('a')).find((a) => a.textContent === 'Formations'))
     expect((await screen.findByRole('heading', { level: 1 })).textContent).toBe('Formations')
+  })
+})
+
+describe('apiBase', () => {
+  it("pointe la passerelle de l'environnement du frontend", () => {
+    expect(apiBase('frontend.formation-ba-projet.qualif.check-consulting.net')).toBe(
+      'https://gateway.formation-ba-projet.qualif.check-consulting.net/backend',
+    )
+  })
+
+  it('utilise le proxy du serveur de dev en local', () => {
+    expect(apiBase('localhost')).toBe('/api')
   })
 })
