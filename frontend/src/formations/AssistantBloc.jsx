@@ -87,6 +87,8 @@ function Question({ q, id, valeur, onChange }) {
 function AssistantBloc({ form, index, onValeur, onAller, onFermer, progErr, onSequences }) {
   const [liste, setListe] = useState(null) // clé de la question à choix multiples ouverte
   const t = TILES[index], vals = form.values, n = TILES.length
+  // Le programme a sa propre pop-up : titre « Programme », sans les étapes des 3 parties
+  const programme = t.id === 'programme'
   const aller = (i) => { setListe(null); onAller(i) }
   // Échap ferme d'abord la liste ouverte, puis l'assistant
   const fermer = () => { if (liste) setListe(null); else onFermer() }
@@ -95,8 +97,8 @@ function AssistantBloc({ form, index, onValeur, onAller, onFermer, progErr, onSe
     <Modal onFermer={fermer}>
       <div className={`wiz ws${t.sec} ${t.wide ? 'wide' : ''}`} role="dialog" aria-modal="true" aria-labelledby="wt">
         <div className="wiz-head">
-          <div className="wiz-top"><h2 id="wt">Informations de la formation</h2><button type="button" className="close" aria-label="Fermer" onClick={onFermer}><Icone nom="x" taille={18} epaisseur={2.2} /></button></div>
-          <ol className="steps" aria-label="Étapes">
+          <div className="wiz-top"><h2 id="wt">{programme ? 'Programme' : 'Informations de la formation'}</h2><button type="button" className="close" aria-label="Fermer" onClick={onFermer}><Icone nom="x" taille={18} epaisseur={2.2} /></button></div>
+          {!programme && <ol className="steps" aria-label="Étapes">
             {SECTIONS.map((s, i) => (
               <li key={s} className={i < t.sec ? 'done' : i === t.sec ? 'now' : ''}>
                 <button type="button" className="step-btn" aria-current={i === t.sec ? 'step' : undefined} onClick={() => aller(TILES.findIndex((x) => x.sec === i))}>
@@ -104,7 +106,7 @@ function AssistantBloc({ form, index, onValeur, onAller, onFermer, progErr, onSe
                 </button><span className="bar"></span>
               </li>
             ))}
-          </ol>
+          </ol>}
         </div>
         <div className="wiz-body">
           <div className="wcard">

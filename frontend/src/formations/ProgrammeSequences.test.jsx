@@ -18,6 +18,13 @@ const champ = (seq, nom) => document.querySelector(`#seq-${seq} [data-mf="${nom}
 const remplir = (seq, valeurs) => Object.entries(valeurs).forEach(([k, v]) => fireEvent.change(champ(seq, k), { target: { value: v } }))
 
 describe('Programme et séquences', () => {
+  it('s’ouvre dans une pop-up « Programme », sans les étapes des 3 parties', async () => {
+    await ouvrirProgramme(4)
+    expect(screen.getByRole('heading', { level: 2, name: 'Programme' })).toBeTruthy()
+    expect(screen.queryByText('Informations de la formation')).toBeNull()
+    expect(screen.queryByRole('list', { name: 'Étapes' })).toBeNull()
+  })
+
   it('propose la modalité selon celle de la formation et les objectifs du bloc Objectifs (RG19, RG20)', async () => {
     await ouvrirProgramme(6) // Anglais professionnel : distanciel, programme existant
     fireEvent.click(screen.getByRole('button', { name: 'Ajouter une séquence' }))
