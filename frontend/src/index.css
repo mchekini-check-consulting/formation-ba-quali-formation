@@ -148,3 +148,6 @@ svg{flex-shrink:0}
 .nav a:hover .nav-ic{background:color-mix(in srgb,var(--vert) 20%,var(--carte))}
 .nav a[aria-current="page"] .nav-ic{background:var(--vert);color:var(--sur-vert)}
 .nav a:has(.nav-ic){padding:7px 10px}
+
+/* Pop-ups des blocs : toutes de la même taille ; un contenu plus long défile à l'intérieur (.wiz-body) */
+.wiz{height:min(720px,100%)}

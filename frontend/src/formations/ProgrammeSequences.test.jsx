@@ -23,6 +23,10 @@ describe('Programme et séquences', () => {
     expect(screen.getByRole('heading', { level: 2, name: 'Programme' })).toBeTruthy()
     expect(screen.queryByText('Informations de la formation')).toBeNull()
     expect(screen.queryByRole('list', { name: 'Étapes' })).toBeNull()
+    // Pas de pagination dans le programme : seulement « Terminer »
+    expect(screen.queryByText(/Champ \d+ sur/)).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Suivant →' })).toBeNull()
+    expect(screen.getByRole('button', { name: 'Terminer' })).toBeTruthy()
   })
 
   it('propose la modalité selon celle de la formation et les objectifs du bloc Objectifs (RG19, RG20)', async () => {
@@ -44,7 +48,7 @@ describe('Programme et séquences', () => {
     await ouvrirProgramme(4) // SST : pas de programme
     fireEvent.click(screen.getByRole('button', { name: 'Ajouter une séquence' }))
     remplir(0, { seq: 'Les gestes qui sauvent' })
-    fireEvent.click(screen.getByRole('button', { name: 'Suivant →' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Terminer' }))
     expect(await screen.findByRole('heading', { name: 'Le programme n’est pas complet' })).toBeTruthy()
     expect(screen.getByText('Objectif visé · Contenu abordé · Durée · Méthodes et activités')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Compléter le programme' }))

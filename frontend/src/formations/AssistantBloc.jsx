@@ -82,13 +82,18 @@ function Question({ q, id, valeur, onChange }) {
   return <div className="q"><label htmlFor={id}>{q.label}</label>{q.help && <span className="help">{q.help}</span>}{ctl}</div>
 }
 
+// Index (dans TILES) des blocs de « Contenu de la formation », dans l'ordre d'affichage
+const BLOCS_CONTENU = TILES.map((t, i) => i).filter((i) => TILES[i].id !== 'programme')
+
 // Assistant : une pop-up par bloc, avec les 3 parties en étapes (renderWiz de la maquette)
 // index : bloc affiché ; onAller(i) : changer de bloc ; onFermer : terminer ; progErr : champs du programme en rouge
 function AssistantBloc({ form, index, onValeur, onAller, onFermer, progErr, onSequences }) {
   const [liste, setListe] = useState(null) // clé de la question à choix multiples ouverte
-  const t = TILES[index], vals = form.values, n = TILES.length
+  const t = TILES[index], vals = form.values
   // Le programme a sa propre pop-up : titre « Programme », sans les étapes des 3 parties
   const programme = t.id === 'programme'
+  // Pagination : les 12 blocs de « Contenu de la formation » (le programme a son propre bouton)
+  const pos = BLOCS_CONTENU.indexOf(index), n = BLOCS_CONTENU.length
   const aller = (i) => { setListe(null); onAller(i) }
   // Échap ferme d'abord la liste ouverte, puis l'assistant
   const fermer = () => { if (liste) setListe(null); else onFermer() }
@@ -123,10 +128,10 @@ function AssistantBloc({ form, index, onValeur, onAller, onFermer, progErr, onSe
         <div className="wiz-foot">
           <span className="note">Vos réponses sont gardées automatiquement.</span>
           <div className="r">
-            <span className="note">Champ {index + 1} sur {n}</span>
-            {index > 0 && <button type="button" className="btn btn-line" onClick={() => aller(index - 1)}>← Précédent</button>}
-            {index < n - 1
-              ? <button type="button" className="btn btn-primary" onClick={() => aller(index + 1)}>Suivant →</button>
+            {!programme && <span className="note">Champ {pos + 1} sur {n}</span>}
+            {!programme && pos > 0 && <button type="button" className="btn btn-line" onClick={() => aller(BLOCS_CONTENU[pos - 1])}>← Précédent</button>}
+            {!programme && pos < n - 1
+              ? <button type="button" className="btn btn-primary" onClick={() => aller(BLOCS_CONTENU[pos + 1])}>Suivant →</button>
               : <button type="button" className="btn btn-primary" onClick={onFermer}>Terminer</button>}
           </div>
         </div>
