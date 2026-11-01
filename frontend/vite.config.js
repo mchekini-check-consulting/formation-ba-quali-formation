@@ -19,6 +19,8 @@ export default defineConfig({
     environment: 'jsdom',
     // Les tests des écrans Formations utilisent les données de démo (pas besoin du backend)
     env: { VITE_DONNEES: 'demo' },
+    // Écrans Formations chargés : les recherches par rôle dépassent les 5 s par défaut sous couverture
+    testTimeout: 20000,
     coverage: {
       include: ['src/**/*.{js,jsx}'], // pas les css / images importés
     },
