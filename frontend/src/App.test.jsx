@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { apiBase } from './api'
@@ -12,7 +12,21 @@ function reponse(corps, status = 200) {
   })
 }
 
-beforeEach(() => vi.stubGlobal('fetch', vi.fn()))
+// <App /> affiche Items et Formations ensemble : chacun fait son propre appel
+// au chargement. On route les réponses simulées par URL (file d'attente par
+// URL) plutôt que par ordre d'appel, pour ne pas dépendre de l'ordre des
+// deux montages. Les URL absentes de la map reçoivent une liste vide.
+function simulerFetch(reponsesParUrl) {
+  const compteurs = {}
+  return vi.fn((url) => {
+    const liste = reponsesParUrl[url] ?? [reponse([])]
+    const i = compteurs[url] ?? 0
+    compteurs[url] = i + 1
+    return liste[Math.min(i, liste.length - 1)]
+  })
+}
+
+beforeEach(() => vi.stubGlobal('fetch', simulerFetch({})))
 
 afterEach(() => {
   cleanup()
@@ -33,7 +47,10 @@ describe('apiBase', () => {
 
 describe('App', () => {
   it('affiche les items du backend', async () => {
-    fetch.mockReturnValueOnce(reponse([{ id: 1, nom: 'a', description: 'd' }]))
+    vi.stubGlobal(
+      'fetch',
+      simulerFetch({ '/api/items': [reponse([{ id: 1, nom: 'a', description: 'd' }])] }),
+    )
     render(<App />)
     expect(await screen.findByText('a')).toBeTruthy()
     expect(screen.getByText(': d')).toBeTruthy()
@@ -41,31 +58,40 @@ describe('App', () => {
   })
 
   it('ajoute un item', async () => {
-    fetch
-      .mockReturnValueOnce(reponse([]))
-      .mockReturnValueOnce(reponse({ id: 2, nom: 'Premier', description: null }, 201))
+    vi.stubGlobal(
+      'fetch',
+      simulerFetch({
+        '/api/items': [reponse([]), reponse({ id: 2, nom: 'Premier', description: null }, 201)],
+      }),
+    )
     render(<App />)
-    await screen.findByText('Aucun item')
-    fireEvent.change(screen.getByRole('textbox', { name: 'Nom' }), {
+    const main = screen.getByRole('main')
+    await within(main).findByText('Aucun item')
+    fireEvent.change(within(main).getByRole('textbox', { name: 'Nom' }), {
       target: { value: 'Premier' },
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Ajouter' }))
-    expect(await screen.findByText('Premier')).toBeTruthy()
-    const [url, options] = fetch.mock.calls[1]
+    fireEvent.click(within(main).getByRole('button', { name: 'Ajouter' }))
+    expect(await within(main).findByText('Premier')).toBeTruthy()
+    const appelsItems = fetch.mock.calls.filter(([url]) => url === '/api/items')
+    const [url, options] = appelsItems[1]
     expect(url).toBe('/api/items')
     expect(options.method).toBe('POST')
     expect(JSON.parse(options.body)).toEqual({ nom: 'Premier', description: '' })
-    expect(screen.getByRole('textbox', { name: 'Nom' }).value).toBe('')
+    expect(within(main).getByRole('textbox', { name: 'Nom' }).value).toBe('')
   })
 
   it('signale une erreur du backend', async () => {
-    fetch.mockReturnValueOnce(reponse('', 503)).mockReturnValueOnce(reponse('', 400))
+    vi.stubGlobal(
+      'fetch',
+      simulerFetch({ '/api/items': [reponse('', 503), reponse('', 400)] }),
+    )
     render(<App />)
-    expect((await screen.findByRole('alert')).textContent).toContain('503')
-    fireEvent.change(screen.getByRole('textbox', { name: 'Nom' }), {
+    const main = screen.getByRole('main')
+    expect((await within(main).findByRole('alert')).textContent).toContain('503')
+    fireEvent.change(within(main).getByRole('textbox', { name: 'Nom' }), {
       target: { value: 'x' },
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Ajouter' }))
-    expect((await screen.findByText(/Ajout impossible/)).textContent).toContain('400')
+    fireEvent.click(within(main).getByRole('button', { name: 'Ajouter' }))
+    expect((await within(main).findByText(/Ajout impossible/)).textContent).toContain('400')
   })
 })
