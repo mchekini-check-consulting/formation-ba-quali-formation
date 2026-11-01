@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { creerItem, listerItems } from './api'
-import Formations from './Formations'
 import './App.css'
 
 // Liste des items du backend (GET) et formulaire d'ajout (POST)
@@ -30,51 +29,48 @@ function App() {
   }
 
   return (
-    <>
-      <main className="items">
-        <h1>Items</h1>
+    <main className="items">
+      <h1>Items</h1>
 
-        <form onSubmit={ajouter}>
-          <label>
-            Nom
-            <input
-              name="nom"
-              value={nom}
-              onChange={(e) => setNom(e.target.value)}
-              required
-              maxLength={200}
-            />
-          </label>
-          <label>
-            Description
-            <input
-              name="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              maxLength={1000}
-            />
-          </label>
-          <button type="submit">Ajouter</button>
-        </form>
+      <form onSubmit={ajouter}>
+        <label>
+          Nom
+          <input
+            name="nom"
+            value={nom}
+            onChange={(e) => setNom(e.target.value)}
+            required
+            maxLength={200}
+          />
+        </label>
+        <label>
+          Description
+          <input
+            name="description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            maxLength={1000}
+          />
+        </label>
+        <button type="submit">Ajouter</button>
+      </form>
 
-        {erreur && (
-          <p className="erreur" role="alert">
-            {erreur}
-          </p>
-        )}
+      {erreur && (
+        <p className="erreur" role="alert">
+          {erreur}
+        </p>
+      )}
 
-        <ul>
-          {items.length === 0 && <li className="vide">Aucun item</li>}
-          {items.map((item) => (
-            <li key={item.id}>
-              <strong>{item.nom}</strong>
-              {item.description && <span> : {item.description}</span>}
-            </li>
-          ))}
-        </ul>
-      </main>
-      <Formations />
-    </>
+      <ul>
+        {items.length === 0 && <li className="vide">Aucun item</li>}
+        {items.map((item) => (
+          <li key={item.id}>
+            <strong>{item.nom}</strong>
+            {item.description && <span> : {item.description}</span>}
+          </li>
+        ))}
+      </ul>
+    </main>
   )
 }
 
