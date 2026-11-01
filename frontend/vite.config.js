@@ -19,6 +19,7 @@ export default defineConfig({
     environment: 'jsdom',
     coverage: {
       include: ['src/**/*.{js,jsx}'], // pas les css / images importés
+      reporter: ['text', 'html', 'lcov', 'clover', 'json'], // lcov.info lu par SonarQube (sonar-project.properties)
     },
   },
 })
