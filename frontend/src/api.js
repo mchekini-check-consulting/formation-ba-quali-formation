@@ -17,9 +17,6 @@ async function appeler(chemin, options, base) {
   if (!reponse.ok) {
     throw new Error(`HTTP ${reponse.status}`)
   }
-  if (reponse.status === 204) {
-    return undefined
-  }
   return reponse.json()
 }
 
@@ -39,40 +36,4 @@ export function creerItem(item, base = apiBase()) {
     },
     base,
   )
-}
-
-// GET /formations
-export function listerFormations(base = apiBase()) {
-  return appeler('/formations', undefined, base)
-}
-
-// POST /formations {nom, description, dureeHeures, dateDebut}
-export function creerFormation(formation, base = apiBase()) {
-  return appeler(
-    '/formations',
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formation),
-    },
-    base,
-  )
-}
-
-// PUT /formations/:id {nom, description, dureeHeures, dateDebut}
-export function modifierFormation(id, formation, base = apiBase()) {
-  return appeler(
-    `/formations/${id}`,
-    {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formation),
-    },
-    base,
-  )
-}
-
-// DELETE /formations/:id
-export function supprimerFormation(id, base = apiBase()) {
-  return appeler(`/formations/${id}`, { method: 'DELETE' }, base)
 }

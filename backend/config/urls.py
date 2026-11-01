@@ -17,12 +17,10 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
-from quali_formation.views import formation_detail, formations, hello, items
+from quali_formation.views import hello, items
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', hello),
     path('items', items),
-    path('formations', formations),
-    path('formations/<int:formation_id>', formation_detail),
 ]
