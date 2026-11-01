@@ -37,12 +37,12 @@ docs/quali-formation-dev/  # brief, maquette validée et règles de gestion (RG0
 ### Base de données (PostgreSQL)
 
 ```bash
+cd backend
 docker compose up -d
 ```
 
-PostgreSQL 18 sur `localhost:5432` (base, utilisateur et mot de passe : `backend`).
+PostgreSQL 16 sur `localhost:5432` (`backend/compose.yaml` : base `quali_formation`, utilisateur et mot de passe `app`).
 Le backend l'utilise quand `DATABASE_URL` est défini, sinon il reste sur SQLite.
-(`backend/compose.yaml`, ajouté par l'équipe, propose une autre base : `quali_formation`, utilisateur `app`.)
 
 ### Backend
 
@@ -51,7 +51,7 @@ cd backend
 python3.13 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-export DATABASE_URL=postgresql://backend:backend@localhost:5432/backend   # pour utiliser la base du docker compose
+export DATABASE_URL=postgresql://app:app@localhost:5432/quali_formation   # pour utiliser la base de backend/compose.yaml
 python manage.py migrate
 python manage.py charger_demo   # facultatif : les 9 formations d'exemple de la maquette (base vide uniquement)
 python manage.py runserver

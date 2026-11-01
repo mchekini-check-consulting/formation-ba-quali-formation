@@ -88,7 +88,7 @@ REST_FRAMEWORK = {
 
 # Base PostgreSQL : DATABASE_URL, injectée par la plateforme (helm.yaml : database).
 # Sans DATABASE_URL (poste de dev, tests) : SQLite local, ou la base de compose.yaml
-# avec DATABASE_URL=postgresql://app:app@localhost:5432/backend
+# avec DATABASE_URL=postgresql://app:app@localhost:5432/quali_formation
 DATABASES = {
     'default': dj_database_url.config(
         default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
