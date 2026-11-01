@@ -93,7 +93,6 @@ function FormationForm() {
 
   const edit = !!form.id, vals = form.values
   const miss = missingTiles(form), doneN = TILES.length - miss.length, pct = Math.round((doneN / TILES.length) * 100)
-  const nbSessions = (form.sess || []).length
   const maj = (champs) => setForm((f) => ({ ...f, ...champs }))
   const majValeur = (k, v) => setForm((f) => ({ ...f, values: { ...f.values, [k]: v } }))
 
@@ -122,7 +121,7 @@ function FormationForm() {
   // RG02 : en brouillon, seul l'intitulé est obligatoire
   const brouillon = () => {
     if (!form.title.trim()) { setErreurBase(true); window.scrollTo({ top: 0, behavior: 'smooth' }); return }
-    persister(form.statut === 'archivee' ? 'archivee' : 'brouillon', (f) => `« ${f.title} » est enregistrée en brouillon.`)
+    persister('brouillon', (f) => `« ${f.title} » est enregistrée en brouillon.`)
   }
   // RG13 à RG15 : validée si tout est complet, sinon pop-up puis « Incomplète selon Qualiopi »
   const terminerValidation = () => {
@@ -155,8 +154,6 @@ function FormationForm() {
       {edit && form.statut === 'incomplete' && miss.length > 0 && (
         <div className="dw-alert" style={{ marginTop: 0 }}><Icone nom="info" taille={20} /><span><b>Formation incomplète :</b> {miss.length} bloc{miss.length > 1 ? 's manquent' : ' manque'} pour répondre aux exigences de l’audit Qualiopi. Complétez-{miss.length > 1 ? 'les' : 'le'} puis validez.</span></div>
       )}
-      {/* RG06 : les changements s'appliqueront aux prochaines sessions */}
-      {edit && nbSessions > 0 && <div className="banner info"><Icone nom="info" taille={20} /><span><b>Cette formation a {nbSessions} session{nbSessions > 1 ? 's' : ''}.</b> Les changements s'appliqueront aux prochaines sessions.</span></div>}
 
       <section className="card sec" aria-labelledby="h-base">
         <div className="sec-head"><h2 id="h-base">Informations de base</h2></div>

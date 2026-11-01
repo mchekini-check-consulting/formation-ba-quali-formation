@@ -65,6 +65,6 @@ export function seed() {
     base({ id: 5, ref: 'FOR-2026-009', title: 'Prise de parole en public', duree: '21', modalite: 'Mixte', statut: 'validee', pub: 'publiee', sess: mk(1), maj: '2026-10-02', version: 2, values: fullValues() }),
     base({ id: 6, ref: 'FOR-2026-014', title: 'Anglais professionnel', duree: '30', modalite: 'Distanciel', statut: 'brouillon', maj: '2026-09-28', values: fullValues() }),
     base({ id: 9, ref: 'FOR-2026-016', title: 'Gestion de projet agile', duree: '21', modalite: 'Distanciel', statut: 'incomplete', pub: 'publiee', sess: mk(1), maj: '2026-10-20', values: clear(fullValues(), ['formateurs', 'tarif', 'financements', 'ref_handicap', 'amenagements', 'locaux', 'satisfaction', 'resultats_mesures', 'resultats_plan']) }),
-    base({ id: 7, ref: 'FOR-2025-031', title: 'Bureautique — initiation', duree: '14', modalite: 'Présentiel', statut: 'archivee', sess: mk(4), maj: '2026-09-12', values: fullValues() }),
+    base({ id: 7, ref: 'FOR-2025-031', title: 'Bureautique — initiation', duree: '14', modalite: 'Présentiel', statut: 'validee', pub: 'apublier', sess: mk(4), maj: '2026-09-12', values: fullValues() }),
   ]
 }

@@ -59,11 +59,6 @@ describe('Formulaire de création / modification', () => {
     expect((await service.obtenirFormation(6)).version).toBe(3)
   })
 
-  it('prévient que les changements s’appliqueront aux prochaines sessions (RG06)', async () => {
-    await ouvrir('/formations/3/modifier')
-    expect(screen.getByText('Cette formation a 3 sessions.')).toBeTruthy()
-  })
-
   it('demande confirmation en quittant avec des modifications non enregistrées (RG05)', async () => {
     const router = await ouvrir('/formations/2/modifier')
     fireEvent.click(screen.getByRole('button', { name: 'Quitter sans sauvegarder' }))

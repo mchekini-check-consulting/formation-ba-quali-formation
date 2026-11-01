@@ -66,8 +66,6 @@ class FormationService:
                 raise ErreurMetier('BLOCS_MANQUANTS', f'{len(manque)} bloc(s) ne sont pas remplis.', 409,
                                    blocs=[b.id for b in manque])
             statut = Statut.INCOMPLETE if manque else Statut.VALIDEE
-        elif formation is not None and formation.statut == Statut.ARCHIVEE:
-            statut = Statut.ARCHIVEE  # enregistrer une formation archivée la laisse archivée
         else:
             statut = Statut.BROUILLON
 
@@ -107,7 +105,7 @@ class FormationService:
 
 
     def publier(self, formation, confirmer=False):
-        # RG24 : un brouillon (ou une formation archivée) ne peut pas être publié
+        # RG24 : un brouillon ne peut pas être publié
         if formation.statut not in (Statut.VALIDEE, Statut.INCOMPLETE):
             raise ErreurMetier('NON_PUBLIABLE', 'Seule une formation validée ou incomplète peut être publiée.', 409)
         # RG26
@@ -127,35 +125,7 @@ class FormationService:
         return formation
 
 
-    def archiver(self, formation):
-        # RG34 : la confirmation est demandée par l'écran ; une formation archivée ne reçoit plus de session
-        formation.statut = Statut.ARCHIVEE
-        formation.save()
-        return formation
-
-
-    def restaurer(self, formation):
-        # RG35 : retour en brouillon (et donc « À publier », RG28)
-        formation.statut = Statut.BROUILLON
-        if formation.publication == Publication.PUBLIEE:
-            formation.publication = Publication.A_PUBLIER
-        formation.save()
-        return formation
-
-
-    def supprimer(self, formation, confirmation):
-        # RG36 : pas de suppression d'une formation qui a des sessions, sauf si elle est archivée
-        if formation.sessions.exists() and formation.statut != Statut.ARCHIVEE:
-            raise ErreurMetier('A_DES_SESSIONS', 'Cette formation a des sessions : archivez-la plutôt.', 409)
-        # RG37 : il faut taper « supprimer »
-        if str(confirmation or '').strip().lower() != 'supprimer':
-            raise ErreurMetier('CONFIRMATION_INVALIDE', 'Tapez « supprimer » pour confirmer.')
-        formation.delete()
-
-
     def ajouter_session(self, formation, date_debut, date_fin, lieu='', nombre_places=None):
-        if formation.statut == Statut.ARCHIVEE:  # RG34
-            raise ErreurMetier('ARCHIVEE', 'Une formation archivée ne reçoit plus de nouvelle session.', 409)
         if date_fin < date_debut:  # RG38
             raise ErreurMetier('DATES_INVALIDES', 'La date de fin ne peut pas être avant la date de début.')
         return Session.objects.create(formation=formation, date_debut=date_debut, date_fin=date_fin,

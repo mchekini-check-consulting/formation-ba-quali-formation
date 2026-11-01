@@ -26,7 +26,6 @@ class Formation(models.Model):
         BROUILLON = 'BROUILLON', 'Brouillon'
         INCOMPLETE = 'INCOMPLETE', 'Incomplète selon Qualiopi'
         VALIDEE = 'VALIDEE', 'Validée'
-        ARCHIVEE = 'ARCHIVEE', 'Archivée'
 
     # RG24 : seulement pour les formations validées ou incomplètes
     class Publication(models.TextChoices):

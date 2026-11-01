@@ -195,35 +195,6 @@ class ApiFormationsTests(TestCase):
         self.assertEqual([f['intitule'] for f in self.client.get('/formations/').json()], ['A', 'B'])
         self.assertEqual(b['version'], 1)
 
-    # ---------- Archiver, restaurer, supprimer (RG34 à RG37) ----------
-    def test_archivee_ne_recoit_plus_de_session(self):  # RG34
-        f = self.creer().json()
-        self.action(f['id'], 'archiver')
-        r = self.action(f['id'], 'sessions', date_debut='2027-02-08', date_fin='2027-02-09')
-        self.assertEqual(r.json()['code'], 'ARCHIVEE')
-
-    def test_restauree_revient_en_brouillon(self):  # RG35
-        f = self.formation_validee()
-        self.action(f['id'], 'publier')
-        self.action(f['id'], 'archiver')
-        f = self.action(f['id'], 'restaurer').json()
-        self.assertEqual((f['statut'], f['publication']), ('BROUILLON', 'A_PUBLIER'))
-
-    def test_suppression_refusee_avec_des_sessions_sauf_archivee(self):  # RG36
-        f = self.creer().json()
-        self.action(f['id'], 'sessions', date_debut='2027-02-08', date_fin='2027-02-09')
-        r = self.client.delete(f'/formations/{f["id"]}/?confirmation=supprimer')
-        self.assertEqual(r.json()['code'], 'A_DES_SESSIONS')
-        self.action(f['id'], 'archiver')
-        self.assertEqual(self.client.delete(f'/formations/{f["id"]}/?confirmation=supprimer').status_code, 204)
-
-    def test_suppression_demande_le_mot_supprimer(self):  # RG37
-        f = self.creer().json()
-        r = self.client.delete(f'/formations/{f["id"]}/?confirmation=oui')
-        self.assertEqual(r.json()['code'], 'CONFIRMATION_INVALIDE')
-        self.assertEqual(self.client.delete(f'/formations/{f["id"]}/?confirmation=Supprimer').status_code, 204)
-        self.assertFalse(Formation.objects.exists())
-
     # ---------- Sessions (RG38) ----------
     def test_session_dates_obligatoires_et_fin_apres_debut(self):
         f = self.creer().json()

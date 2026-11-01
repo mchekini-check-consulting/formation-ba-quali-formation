@@ -5,16 +5,16 @@ import { ConfirmDialog } from '../components/Modal'
 import { useToast } from '../components/toastContext'
 import { isPub, life } from '../formations/catalogue'
 import CarteFormation from '../formations/CarteFormation'
-import { ProgrammeRequisDialog, SessionDialog, SuppressionDialog } from '../formations/Dialogues'
+import { ProgrammeRequisDialog, SessionDialog } from '../formations/Dialogues'
 import * as service from '../formations/donnees'
 
 // Couleur de la pastille de chaque filtre
-const PC = { all: '#0F766E', brouillon: '#64748B', incomplete: '#E11D48', apublier: '#10B981', publiee: '#6366F1', archivee: '#A1A1AA' }
+const PC = { all: '#0F766E', brouillon: '#64748B', incomplete: '#E11D48', apublier: '#10B981', publiee: '#6366F1' }
 // RG30 : filtres de la liste
-const FILTRES = [['all', 'Toutes'], ['brouillon', 'Brouillons'], ['incomplete', 'Incomplètes'], ['apublier', 'Validées'], ['publiee', 'Publiées'], ['archivee', 'Archivées']]
+const FILTRES = [['all', 'Toutes'], ['brouillon', 'Brouillons'], ['incomplete', 'Incomplètes'], ['apublier', 'Validées'], ['publiee', 'Publiées']]
 
-// « Toutes » exclut les archivées ; « Publiées » regroupe les validées et incomplètes publiées
-const dansFiltre = (f, filtre) => filtre === 'all' ? f.statut !== 'archivee' : filtre === 'publiee' ? isPub(f) : life(f) === filtre
+// « Publiées » regroupe les validées et incomplètes publiées
+const dansFiltre = (f, filtre) => filtre === 'all' || (filtre === 'publiee' ? isPub(f) : life(f) === filtre)
 
 function FormationsListe() {
   const navigate = useNavigate()
@@ -72,17 +72,11 @@ function FormationsListe() {
     setMenu(null)
     switch (nom) {
       case 'voir': return navigate(`/formations/${f.id}`)
-      case 'modifier': return ouvrirFormulaire(f)
       // Depuis la carte, les blocs manquants sont signalés (sauf pour une formation validée)
       case 'saisir': return ouvrirFormulaire(f, f.statut !== 'validee' ? { signaler: 1 } : {})
       case 'creerProgramme': return ouvrirFormulaire(f, { bloc: 'programme', signaler: 1 })
       case 'publier': return publier(f)
       case 'retirer': return executer(service.retirerPublication(f.id), `« ${f.title} » repasse en « À publier » : elle n’est plus visible dans le catalogue.`)
-      case 'archiver': return setDialogue({ type: 'archiver', formation: f })
-      case 'restaurer': return executer(service.restaurer(f.id), `« ${f.title} » est restaurée en brouillon.`)
-      case 'supprimer':
-        // RG36 : pas de suppression d'une formation qui a des sessions (sauf archivée)
-        return setDialogue({ type: (f.sess || []).length > 0 && f.statut !== 'archivee' ? 'suppressionImpossible' : 'supprimer', formation: f })
       case 'nouvelleSession': return setDialogue({ type: 'session', formation: f })
       default: return undefined
     }
@@ -108,11 +102,6 @@ function FormationsListe() {
     {dialogue.type === 'programmeRequis' && <ProgrammeRequisDialog formation={f} onAnnuler={fermerDialogue} onCreer={() => ouvrirFormulaire(f, { bloc: 'programme', signaler: 1 })} />}
     {dialogue.type === 'publierIncomplete' && <ConfirmDialog titre="Publier une formation incomplète ?" texte={`« ${f.title} » ne contient pas toutes les informations demandées lors de l’audit Qualiopi. Vous pouvez la publier maintenant et la compléter plus tard.`}
       action="Publier quand même" icone="alert" fondIcone="#FFEDD5" couleurIcone="#EA580C" onAnnuler={fermerDialogue} onOk={() => publier(f, true)} />}
-    {dialogue.type === 'archiver' && <ConfirmDialog titre={`Archiver « ${f.title} » ?`} texte="Elle n'apparaîtra plus dans la liste principale et ne pourra plus recevoir de nouvelle session. Vous la retrouverez dans l'onglet « Archivées » et pourrez la restaurer à tout moment."
-      action="Archiver" icone="box" fondIcone="var(--brand-soft)" couleurIcone="var(--brand-text)" onAnnuler={fermerDialogue} onOk={() => executer(service.archiver(f.id), `« ${f.title} » est archivée.`)} />}
-    {dialogue.type === 'suppressionImpossible' && <ConfirmDialog titre="Suppression impossible" texte={`Cette formation a ${f.sess.length} session${f.sess.length > 1 ? 's' : ''}. Elle ne peut pas être supprimée. Vous pouvez l'archiver : elle ne sera plus proposée, mais son historique sera conservé.`}
-      action="Archiver à la place" icone="trash" fondIcone="var(--warn-soft)" couleurIcone="var(--warn)" onAnnuler={fermerDialogue} onOk={() => executer(service.archiver(f.id), `« ${f.title} » est archivée.`)} />}
-    {dialogue.type === 'supprimer' && <SuppressionDialog formation={f} onAnnuler={fermerDialogue} onSupprimer={(saisie) => executer(service.supprimer(f.id, saisie), `« ${f.title} » a été supprimée.`)} />}
     {dialogue.type === 'session' && <SessionDialog formation={f} onAnnuler={fermerDialogue} onAjouter={(s) => executer(service.ajouterSession(f.id, s), 'Session ajoutée à la formation.')} />}
     {dialogue.type === 'vider' && <ConfirmDialog titre="Vider la démo ?" texte="Toutes les formations de la démo sont supprimées. Vous revenez à l'écran de départ, sans aucune formation."
       action="Vider la démo" icone="restore" fondIcone="var(--brand-soft)" couleurIcone="var(--brand-text)" onAnnuler={fermerDialogue}

@@ -44,7 +44,7 @@ export async function enregistrerFormation(form, statut) {
   const f = copie(form)
   // RG02 : l'intitulé suffit pour un brouillon ; RG01 : intitulé, durée > 0 et modalité pour valider
   if (!String(f.title || '').trim()) throw new ErreurMetier('INTITULE_REQUIS', "L'intitulé est obligatoire.")
-  if (statut !== 'brouillon' && statut !== 'archivee' && !(Number(String(f.duree).replace(',', '.')) > 0 && f.modalite)) {
+  if (statut !== 'brouillon' && !(Number(String(f.duree).replace(',', '.')) > 0 && f.modalite)) {
     throw new ErreurMetier('BASE_INCOMPLETE', "Renseignez l'intitulé et une durée supérieure à 0.")
   }
   f.statut = statut
@@ -84,34 +84,9 @@ export async function retirerPublication(id) {
   return copie(f)
 }
 
-// RG34 : une formation archivée ne reçoit plus de session
-export async function archiver(id) {
-  const f = trouver(id)
-  f.statut = 'archivee'; f.maj = today(); sauver()
-  return copie(f)
-}
-
-// RG35 : une formation restaurée revient en brouillon (RG28 : et donc « À publier »)
-export async function restaurer(id) {
-  const f = trouver(id)
-  f.statut = 'brouillon'; f.maj = today()
-  if (f.pub === 'publiee') f.pub = 'apublier'
-  sauver()
-  return copie(f)
-}
-
-// RG36 + RG37 : suppression définitive, refusée si la formation a des sessions (sauf archivée)
-export async function supprimer(id, confirmation) {
-  const f = trouver(id)
-  if ((f.sess || []).length > 0 && f.statut !== 'archivee') throw new ErreurMetier('A_DES_SESSIONS', 'Cette formation a des sessions : archivez-la plutôt.')
-  if (String(confirmation || '').trim().toLowerCase() !== 'supprimer') throw new ErreurMetier('CONFIRMATION_INVALIDE', 'Tapez « supprimer » pour confirmer.')
-  db = charger().filter((x) => x !== f); sauver()
-}
-
-// RG38 : début et fin obligatoires, fin ≥ début ; RG34 : pas de session sur une formation archivée
+// RG38 : début et fin obligatoires, fin ≥ début
 export async function ajouterSession(id, { debut, fin, lieu, places }) {
   const f = trouver(id)
-  if (f.statut === 'archivee') throw new ErreurMetier('ARCHIVEE', 'Une formation archivée ne reçoit plus de nouvelle session.')
   if (!debut || !fin || fin < debut) throw new ErreurMetier('DATES_INVALIDES', 'Indiquez une date de début et une date de fin (la fin après le début).')
   f.sess = [...(f.sess || []), { debut, fin, lieu: String(lieu || '').trim(), places: String(places || '').trim() }]
   sauver()

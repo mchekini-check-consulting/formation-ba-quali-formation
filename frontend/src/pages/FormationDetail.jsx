@@ -6,7 +6,7 @@ import { fmt, frDate, life, missingTiles, num, one, SECTIONS, TILES, tileDone, v
 import Illustration from '../formations/Illustration'
 import * as service from '../formations/donnees'
 
-const ETAT = { brouillon: ['Brouillon', 'lc-draft', 'pen'], incomplete: ['Incomplète selon Qualiopi', 'lc-inc', 'alert'], apublier: ['Validée', 'lc-ready', 'check'], archivee: ['Archivée', 'lc-arch', 'box'] }
+const ETAT = { brouillon: ['Brouillon', 'lc-draft', 'pen'], incomplete: ['Incomplète selon Qualiopi', 'lc-inc', 'alert'], apublier: ['Validée', 'lc-ready', 'check'] }
 
 // Valeur d'une question, affichée selon son type
 function Valeur({ q, v }) {
@@ -110,7 +110,6 @@ function FormationDetail() {
           </div>
         </div>
         <div className="dt-actions">
-          {f.statut !== 'archivee' && <button type="button" className="btn btn-primary" onClick={() => navigate(`/formations/${f.id}/modifier`, retour)}><Icone nom="pen" taille={16} />Modifier</button>}
           <button type="button" className="btn btn-line" onClick={() => window.print()}><Icone nom="doc" taille={16} />Exporter en PDF</button>
         </div>
       </header>

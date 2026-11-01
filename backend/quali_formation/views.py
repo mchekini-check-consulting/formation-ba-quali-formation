@@ -70,17 +70,11 @@ def formations(request):
     return Response(FormationSerializer(_formations(), many=True).data)
 
 
-@api_view(["GET", "PUT", "DELETE"])
+@api_view(["GET", "PUT"])
 def formation(request, pk):
     f = get_object_or_404(_formations(), pk=pk)
     if request.method == 'PUT':
         return _enregistrer(request, f)
-    if request.method == 'DELETE':
-        try:
-            formation_service.supprimer(f, request.query_params.get('confirmation'))
-        except ErreurMetier as e:
-            return _erreur(e)
-        return Response(status=status.HTTP_204_NO_CONTENT)
     return _lire(f)
 
 
@@ -99,8 +93,6 @@ def _action(fonction):
 
 publier = _action(lambda f, request: formation_service.publier(f, confirmer=bool(request.data.get('confirmer'))))
 retirer_publication = _action(lambda f, request: formation_service.retirer_publication(f))
-archiver = _action(lambda f, request: formation_service.archiver(f))
-restaurer = _action(lambda f, request: formation_service.restaurer(f))
 
 
 @api_view(["POST"])

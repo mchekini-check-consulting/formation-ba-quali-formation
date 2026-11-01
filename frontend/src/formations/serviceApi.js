@@ -65,7 +65,7 @@ async function appel(chemin, { method = 'GET', corps } = {}) {
 export const listerFormations = async () => (await appel('/formations/')).map(depuisApi)
 export const obtenirFormation = async (id) => depuisApi(await appel(`/formations/${id}/`))
 
-// statut voulu par l'écran : brouillon (ou archivee), validee, ou incomplete (« Valider quand même »)
+// statut voulu par l'écran : brouillon, validee, ou incomplete (« Valider quand même »)
 export async function enregistrerFormation(form, statut) {
   const valider = statut === 'validee' || statut === 'incomplete'
   const corps = { ...versApi(form), action: valider ? 'valider' : 'brouillon', forcer: statut === 'incomplete' }
@@ -74,9 +74,6 @@ export async function enregistrerFormation(form, statut) {
 
 export const publier = async (id, { confirmer = false } = {}) => depuisApi(await appel(`/formations/${id}/publier/`, { method: 'POST', corps: { confirmer } }))
 export const retirerPublication = async (id) => depuisApi(await appel(`/formations/${id}/retirer-publication/`, { method: 'POST', corps: {} }))
-export const archiver = async (id) => depuisApi(await appel(`/formations/${id}/archiver/`, { method: 'POST', corps: {} }))
-export const restaurer = async (id) => depuisApi(await appel(`/formations/${id}/restaurer/`, { method: 'POST', corps: {} }))
-export const supprimer = async (id, confirmation) => { await appel(`/formations/${id}/?confirmation=${encodeURIComponent(confirmation || '')}`, { method: 'DELETE' }) }
 
 export async function ajouterSession(id, { debut, fin, lieu, places }) {
   const n = String(places || '').trim()

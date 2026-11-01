@@ -19,12 +19,10 @@ function CarteFormation({ f, menuOuvert, onMenu, onAction }) {
     principal = <button type="button" className="btn btn-act btn-sm" onClick={action('saisir')}>{miss ? 'Continuer la saisie' : 'Ouvrir et valider'}<Icone nom="arrow" taille={16} epaisseur={2.2} /></button>
   } else if (L === 'incomplete') {
     principal = <button type="button" className="btn btn-act btn-fix btn-sm" onClick={action('saisir')}>Compléter les informations<Icone nom="arrow" taille={16} epaisseur={2.2} /></button>
-  } else if (L === 'apublier') {
-    principal = <button type="button" className="btn btn-soft btn-sm" data-view onClick={action('voir')}><Icone nom="doc" taille={16} />Voir la formation</button>
   } else {
-    principal = <button type="button" className="btn btn-soft btn-sm" onClick={action('restaurer')}><Icone nom="restore" taille={16} />Restaurer la formation</button>
+    principal = <button type="button" className="btn btn-soft btn-sm" data-view onClick={action('voir')}><Icone nom="doc" taille={16} />Voir la formation</button>
   }
-  const item = (nom, ic, lab, cls = '') => <button type="button" className={`mn-i ${cls}`} role="menuitem" onClick={action(nom)}><Icone nom={ic} taille={16} />{lab}</button>
+  const item = (nom, ic, lab) => <button type="button" className="mn-i" role="menuitem" onClick={action(nom)}><Icone nom={ic} taille={16} />{lab}</button>
 
   return (
     <article className={`fcard ${st.cls}-card ${f.statut === 'incomplete' ? 'is-inc' : ''}`} style={{ '--fc': artAccent(f) }}>
@@ -45,11 +43,9 @@ function CarteFormation({ f, menuOuvert, onMenu, onAction }) {
       </dl>
 
       <div className="fc-head">
-        <button type="button" className={`lc ${st.cls}`} disabled={L === 'archivee'} title={st.help} onClick={action('saisir')}><Icone nom={st.ic} taille={14} epaisseur={2.4} />{st.lab}</button>
-        {/* RG32 : « Programme non créé » seulement sans programme ; pas de lien si la formation est archivée */}
-        {!hasProg(f) && (L === 'archivee'
-          ? <span className="lc lc-noprog"><Icone nom="programme" taille={14} epaisseur={2.4} />Programme non créé</span>
-          : <button type="button" className="lc lc-noprog" title="Cliquez pour créer le programme" onClick={action('creerProgramme')}><Icone nom="programme" taille={14} epaisseur={2.4} />Programme non créé</button>)}
+        <button type="button" className={`lc ${st.cls}`} title={st.help} onClick={action('saisir')}><Icone nom={st.ic} taille={14} epaisseur={2.4} />{st.lab}</button>
+        {/* RG32 : « Programme non créé » seulement sans programme */}
+        {!hasProg(f) && <button type="button" className="lc lc-noprog" title="Cliquez pour créer le programme" onClick={action('creerProgramme')}><Icone nom="programme" taille={14} epaisseur={2.4} />Programme non créé</button>}
       </div>
 
       <div className="fc-foot">
@@ -60,13 +56,9 @@ function CarteFormation({ f, menuOuvert, onMenu, onAction }) {
           </button>
           {menuOuvert && (
             <div className="menu-pop" role="menu">
-              {L !== 'archivee' && item('modifier', 'pen', 'Modifier')}
               {/* RG25 : publier / retirer de la publication depuis le menu */}
               {publiable && (isPub(f) ? item('retirer', 'globe', 'Retirer de la publication') : item('publier', 'publication', 'Publier'))}
-              {/* RG34 : pas de nouvelle session pour une formation archivée */}
-              {L !== 'archivee' && item('nouvelleSession', 'cal', 'Ajouter une session')}
-              {L !== 'archivee' ? item('archiver', 'box', 'Archiver') : item('restaurer', 'restore', 'Restaurer')}
-              {item('supprimer', 'trash', 'Supprimer', 'danger')}
+              {item('nouvelleSession', 'cal', 'Ajouter une session')}
             </div>
           )}
         </div>

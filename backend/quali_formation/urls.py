@@ -9,7 +9,5 @@ urlpatterns = [
     path('formations/<int:pk>/', views.formation),
     path('formations/<int:pk>/publier/', views.publier),
     path('formations/<int:pk>/retirer-publication/', views.retirer_publication),
-    path('formations/<int:pk>/archiver/', views.archiver),
-    path('formations/<int:pk>/restaurer/', views.restaurer),
     path('formations/<int:pk>/sessions/', views.sessions),
 ]
