@@ -1,3 +1,11 @@
 # OS
 .DS_Store
 Thumbs.db
+
+# IDE
+.idea/
+
+# Fichiers de travail locaux (specs, exports, copies)
+docs/*.zip
+docs/quali-formation-dev/
+frontend/tableau-de-bord*.html
