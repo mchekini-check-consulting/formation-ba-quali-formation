@@ -13,7 +13,7 @@ applications:
     # remplace tout jusqu'à la fin de la ligne.
     tag:
       dev: 47f696f
-      qualif: 61ffa60
+      qualif: 47f696f
       preprod: ""
       prod: ""
     containerPort: 8000
@@ -65,7 +65,7 @@ applications:
     # remplace tout jusqu'à la fin de la ligne.
     tag:
       dev: 47f696f
-      qualif: 61ffa60
+      qualif: 47f696f
       preprod: ""
       prod: ""
     containerPort: 8080
