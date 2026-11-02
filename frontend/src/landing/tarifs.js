@@ -4,7 +4,7 @@ export const MOIS_FACTURES_PAR_AN = 11
 
 // Formules : prix mensuel HT
 export const FORMULES = [
-  { nom: 'Découverte', tranche: "Jusqu'à 200 apprenants / an", mensuel: 89 },
+  { nom: 'Découverte', tranche: "Jusqu'à 200 apprenants / an", mensuel: 99 },
   { nom: 'Essentiel', tranche: "Jusqu'à 500 apprenants / an", mensuel: 199, recommandee: true },
   { nom: 'Avancé', tranche: "Jusqu'à 1 500 apprenants / an", mensuel: 349 },
   { nom: 'Premium', tranche: "Jusqu'à 3 000 apprenants / an", mensuel: 549 },

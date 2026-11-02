@@ -6,7 +6,7 @@ const lisible = (texte) => texte.replace(/\s/g, ' ')
 
 describe('tarifs de la landing page', () => {
   it('formate un montant en euros à la française', () => {
-    expect(lisible(enEuros(89))).toBe('89 €')
+    expect(lisible(enEuros(99))).toBe('99 €')
     expect(lisible(enEuros(6039))).toBe('6 039 €')
   })
 
@@ -23,7 +23,7 @@ describe('tarifs de la landing page', () => {
 
   it('applique la règle des 11 mois à toutes les formules', () => {
     expect(MOIS_FACTURES_PAR_AN).toBe(11)
-    expect(FORMULES.map((f) => lisible(prixAffiche(f.mensuel, true).prix))).toEqual(['979 €', '2 189 €', '3 839 €', '6 039 €'])
+    expect(FORMULES.map((f) => lisible(prixAffiche(f.mensuel, true).prix))).toEqual(['1 089 €', '2 189 €', '3 839 €', '6 039 €'])
   })
 
   it('une seule formule est recommandée : Essentiel', () => {
