@@ -79,7 +79,7 @@ describe('Landing page — tarifs (CA3)', () => {
     expect(lisible(essentiel.querySelector('.lp-formule-prix').textContent)).toBe('2 189 €')
     expect(within(essentiel).getByText('HT / an')).toBeTruthy()
     expect(lisible(essentiel.querySelector('.lp-formule-detail').textContent)).toBe('soit 182 € / mois · 1 mois offert')
-    expect(lisible(formule('Découverte').querySelector('.lp-formule-prix').textContent)).toBe('979 €')
+    expect(lisible(formule('Découverte').querySelector('.lp-formule-prix').textContent)).toBe('1 089 €')
   })
 
   it('revient aux prix mensuels', () => {
