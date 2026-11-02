@@ -34,7 +34,7 @@ function Items() {
 
       <form onSubmit={ajouter}>
         <label>
-          Nom
+          Nom{' '}
           <input
             name="nom"
             value={nom}
@@ -44,7 +44,7 @@ function Items() {
           />
         </label>
         <label>
-          Description
+          Description{' '}
           <input
             name="description"
             value={description}

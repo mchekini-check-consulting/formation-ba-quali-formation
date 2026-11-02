@@ -14,6 +14,8 @@ const IconeMenu = ({ nom }) => <span className="nav-ic"><Icone nom={nom} taille=
 function Layout() {
   const [menuOuvert, setMenuOuvert] = useState(false)
   const sidebarRef = useRef(null)
+  // Un clic sur un lien du menu referme le menu (téléphone)
+  const fermerMenu = () => setMenuOuvert(false)
   const menuBtnRef = useRef(null)
 
   // Menu dépliable sur téléphone : un clic en dehors le referme
@@ -32,21 +34,20 @@ function Layout() {
       <div className="app">
 
         {/* ================= BARRE LATÉRALE ================= */}
-        {/* Un clic sur un lien du menu referme le menu (téléphone) */}
-        <aside className={`sidebar${menuOuvert ? ' ouverte' : ''}`} ref={sidebarRef} onClick={(e) => { if (e.target.closest('a')) setMenuOuvert(false) }}>
+        <aside className={`sidebar${menuOuvert ? ' ouverte' : ''}`} ref={sidebarRef}>
           <div className="logo"><div className="logo-badge"><Icone nom="qualiopi" taille={18} epaisseur={2.2} /></div>Quali-formation</div>
 
           <nav className="nav" aria-label="Menu principal">
-            <NavLink to="/" end><IconeMenu nom="tableau" />Tableau de bord</NavLink>
-            <NavLink to="/formations"><IconeMenu nom="formations" />Formations</NavLink>
+            <NavLink to="/" end onClick={fermerMenu}><IconeMenu nom="tableau" />Tableau de bord</NavLink>
+            <NavLink to="/formations" onClick={fermerMenu}><IconeMenu nom="formations" />Formations</NavLink>
             {/* Fonctionnalités à venir (pas encore de page) */}
             {MENU.map((titre) => FONCTIONNALITES.find((f) => f.titre === titre)).map((f) => (
-              <a href="#" key={f.titre}><IconeMenu nom={f.icone} />{f.titre}</a>
+              <span className="nav-a" aria-disabled="true" key={f.titre}><IconeMenu nom={f.icone} />{f.titre}</span>
             ))}
           </nav>
 
           <nav className="nav nav-bas">
-            <a href="#"><IconeMenu nom="parametres" />Paramètres</a>
+            <span className="nav-a" aria-disabled="true"><IconeMenu nom="parametres" />Paramètres</span>
           </nav>
         </aside>
 

@@ -42,6 +42,43 @@ def _remplacer_sequences(formation, sequences):
     )
 
 
+def _statut_demande(donnees, nb_sequences, action, forcer):
+    """Statut visé par l'enregistrement : Brouillon (RG02), ou Validée / Incomplète (RG01, RG13 à RG15)."""
+    if action != 'valider':
+        return Statut.BROUILLON
+    duree = donnees.get('duree_heures')
+    if duree is None or duree <= 0 or not donnees.get('modalite'):
+        raise ErreurMetier('BASE_INCOMPLETE', "Renseignez l'intitulé et une durée supérieure à 0.")
+    manque = blocs_manquants(donnees['valeurs'], donnees['modalite'], nb_sequences)
+    if manque and not forcer:
+        raise ErreurMetier('BLOCS_MANQUANTS', f'{len(manque)} bloc(s) ne sont pas remplis.', 409,
+                           blocs=[b.id for b in manque])
+    return Statut.INCOMPLETE if manque else Statut.VALIDEE
+
+
+def _ajuster_publication(formation):
+    # RG28 : une formation publiée qui repasse en brouillon redevient « À publier »
+    if formation.statut == Statut.BROUILLON:
+        if formation.publication == Publication.PUBLIEE:
+            formation.publication = Publication.A_PUBLIER
+    elif not formation.publication:
+        formation.publication = Publication.A_PUBLIER  # RG24 : validée ou incomplète
+
+
+def _enregistrer_avec_reference(formation):
+    # RG03 + RG04 ; en cas d'enregistrements simultanés, le numéro suivant est repris
+    for _ in range(5):
+        formation.reference = _prochaine_reference()
+        formation.version = 1
+        try:
+            with transaction.atomic():
+                formation.save()
+            return
+        except IntegrityError:
+            continue
+    raise ErreurMetier('REFERENCE', "Impossible d'attribuer une référence, réessayez.", 409)
+
+
 @loggable
 class FormationService:
     """Règles de gestion du module Formations (couche service, journalisée par @loggable)."""
@@ -57,17 +94,7 @@ class FormationService:
             raise ErreurMetier('INTITULE_REQUIS', "L'intitulé est obligatoire.")
         sequences = donnees.pop('sequences')
 
-        if action == 'valider':
-            duree = donnees.get('duree_heures')
-            if duree is None or duree <= 0 or not donnees.get('modalite'):
-                raise ErreurMetier('BASE_INCOMPLETE', "Renseignez l'intitulé et une durée supérieure à 0.")
-            manque = blocs_manquants(donnees['valeurs'], donnees['modalite'], len(sequences))
-            if manque and not forcer:
-                raise ErreurMetier('BLOCS_MANQUANTS', f'{len(manque)} bloc(s) ne sont pas remplis.', 409,
-                                   blocs=[b.id for b in manque])
-            statut = Statut.INCOMPLETE if manque else Statut.VALIDEE
-        else:
-            statut = Statut.BROUILLON
+        statut = _statut_demande(donnees, len(sequences), action, forcer)
 
         with transaction.atomic():
             nouvelle = formation is None
@@ -78,26 +105,9 @@ class FormationService:
             for champ, valeur in donnees.items():
                 setattr(formation, champ, valeur)
             formation.statut = statut
-            # RG28 : une formation publiée qui repasse en brouillon redevient « À publier »
-            if statut == Statut.BROUILLON:
-                if formation.publication == Publication.PUBLIEE:
-                    formation.publication = Publication.A_PUBLIER
-            elif statut in (Statut.VALIDEE, Statut.INCOMPLETE) and not formation.publication:
-                formation.publication = Publication.A_PUBLIER
-
+            _ajuster_publication(formation)
             if nouvelle:
-                # RG03 + RG04 ; en cas d'enregistrements simultanés, le numéro suivant est repris
-                for _ in range(5):
-                    formation.reference = _prochaine_reference()
-                    formation.version = 1
-                    try:
-                        with transaction.atomic():
-                            formation.save()
-                        break
-                    except IntegrityError:
-                        continue
-                else:
-                    raise ErreurMetier('REFERENCE', "Impossible d'attribuer une référence, réessayez.", 409)
+                _enregistrer_avec_reference(formation)
             else:
                 formation.save()
             _remplacer_sequences(formation, sequences)

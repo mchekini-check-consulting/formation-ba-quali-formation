@@ -9,6 +9,9 @@ function ProgrammeSequences({ q, form, progErr, onChange }) {
   const total = mods.reduce((a, m) => a + num(m.duree), 0), duree = num(form.duree)
   // RG21 : avertissement (non bloquant) si le total ne correspond pas à la durée de la formation
   const ecart = duree && total && Math.abs(total - duree) > 0.01
+  let etatDuree = null
+  if (ecart) etatDuree = <span className="warnt">Le total ne correspond pas à la durée de la formation</span>
+  else if (duree && total) etatDuree = <span className="okt"><Icone nom="check" taille={14} epaisseur={3} /> La durée correspond</span>
 
   const maj = (i, champ, valeur) => onChange(mods.map((m, j) => (j === i ? { ...m, [champ]: valeur } : m)))
   // RG20 : la modalité proposée suit celle de la formation
@@ -37,7 +40,7 @@ function ProgrammeSequences({ q, form, progErr, onChange }) {
           const fait = modDone(m)
           const champ = (k, props = {}) => <input className={`inp${err(m, k)}`} data-mf={k} value={m[k] || ''} onChange={(e) => maj(i, k, e.target.value)} {...props} />
           return (
-            <div className={`seq ${fait ? 'ok' : ''}`} id={`seq-${i}`} key={i}>
+            <div className={`seq ${fait ? 'ok' : ''}`} id={`seq-${i}`} key={i /* NOSONAR : séquence modifiable sans identifiant, la position est la seule clé stable pendant la saisie */}>
               <div className="seq-head">
                 <span className="modn">{fait ? <Icone nom="check" taille={14} epaisseur={3} /> : i + 1}</span><b>Séquence {i + 1}</b>
                 {m.seq && <span className="seq-sub">{m.seq}</span>}
@@ -65,8 +68,7 @@ function ProgrammeSequences({ q, form, progErr, onChange }) {
         <div className="seq-sum">
           <span><b>{mods.length}</b> séquence{mods.length > 1 ? 's' : ''}</span>
           <span>Total : <b>{fmt(total)} h</b>{duree ? ` sur ${fmt(duree)} h prévues` : ''}</span>
-          {ecart ? <span className="warnt">Le total ne correspond pas à la durée de la formation</span>
-            : (duree && total ? <span className="okt"><Icone nom="check" taille={14} epaisseur={3} /> La durée correspond</span> : null)}
+          {etatDuree}
         </div>
       </div>
     </div>

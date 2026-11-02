@@ -11,7 +11,7 @@ const ETAT = { brouillon: ['Brouillon', 'lc-draft', 'pen'], incomplete: ['Incomp
 // Valeur d'une question, affichée selon son type
 function Valeur({ q, v }) {
   const a = one(v[q.k])
-  if (q.kind === 'chips') return <div className="dt-chips">{a.map((x, i) => <span key={i}>{x}</span>)}</div>
+  if (q.kind === 'chips') return <div className="dt-chips">{a.map((x) => <span key={x}>{x}</span>)}</div>
   if (q.kind === 'money') return <p className="dt-txt"><b>{a[0]} € {one(v.taxe)[0] || ''}</b>{one(v.unite)[0] && <> <span className="dt-u">{one(v.unite)[0].toLowerCase()}</span></>}</p>
   return <p className="dt-txt">{a.join(', ')}</p>
 }
@@ -24,7 +24,7 @@ function Sequences({ v }) {
   return <>
     <ol className="dt-tl">
       {m.map((x, i) => (
-        <li key={i}><span className="tl-n">{i + 1}</span>
+        <li key={`${x.seq}-${x.duree}-${x.objectif}`}><span className="tl-n">{i + 1}</span>
           <div className="tl-b">
             <div className="tl-h"><b>{x.seq}</b><span className="tl-d"><Icone nom="clock" taille={13} />{x.duree || '—'} h</span>{x.modalite && <span className="tl-m">{x.modalite}</span>}</div>
             {x.objectif && <p className="tl-o"><Icone nom="target" taille={14} /><span>{x.objectif}</span></p>}
@@ -71,11 +71,11 @@ function FormationDetail() {
     let corps = null
     if (t.id === 'programme') corps = <Sequences v={v} />
     else if (t.id === 'objectifs') {
-      const o = String(v.objectifs || '').split(/\n|;/).map((x) => x.trim()).filter(Boolean)
-      if (o.length) corps = <ul className="dt-obj">{o.map((x, i) => <li key={i}><Icone nom="check" taille={15} epaisseur={2.6} /><span>{x[0].toUpperCase() + x.slice(1)}</span></li>)}</ul>
+      const o = String(v.objectifs || '').split(/[\n;]/).map((x) => x.trim()).filter(Boolean)
+      if (o.length) corps = <ul className="dt-obj">{o.map((x) => <li key={x}><Icone nom="check" taille={15} epaisseur={2.6} /><span>{x[0].toUpperCase() + x.slice(1)}</span></li>)}</ul>
     } else {
       const lignes = visibleQs(t, v, f).filter((q) => q.k !== 'unite' && q.k !== 'taxe' && one(v[q.k]).length)
-      if (lignes.length) corps = lignes.map((q) => <div className="dt-row" key={q.k}><span className="dt-k">{q.label.replace(/\s*\?$/, '')}</span><Valeur q={q} v={v} /></div>)
+      if (lignes.length) corps = lignes.map((q) => <div className="dt-row" key={q.k}><span className="dt-k">{q.label.replace(/\?$/, '').trimEnd()}</span><Valeur q={q} v={v} /></div>)
     }
     return (
       <section className="dt-card" id={`s-${t.id}`} data-t={t.id} key={t.id}>
@@ -129,7 +129,7 @@ function FormationDetail() {
           ))}
           {(f.others || []).length > 0 && (
             <div className="dt-group"><h2><span>+</span>Autres informations</h2>
-              <section className="dt-card">{f.others.map((o, i) => <div className="dt-row" key={i}><span className="dt-k">{o.titre}</span><p className="dt-txt">{o.contenu}</p></div>)}</section>
+              <section className="dt-card">{f.others.map((o) => <div className="dt-row" key={`${o.titre}-${o.contenu}`}><span className="dt-k">{o.titre}</span><p className="dt-txt">{o.contenu}</p></div>)}</section>
             </div>
           )}
         </div>
@@ -137,7 +137,7 @@ function FormationDetail() {
 
       {manques && (
         <Modal onFermer={() => setManques(false)}>
-          <div className="dialog dlg-warn" role="dialog" aria-modal="true" aria-labelledby="mm">
+          <dialog open className="dialog dlg-warn" aria-modal="true" aria-labelledby="mm">
             <div className="dw-head"><span className="dw-ic"><Icone nom="alert" taille={24} /></span><div><h2 id="mm">Ce qu’il manque pour Qualiopi</h2><p>{miss.length} bloc{miss.length > 1 ? 's' : ''} à compléter</p></div></div>
             <p className="dw-lead">Cliquez sur un bloc pour le remplir :</p>
             <ul className="misslist">
@@ -146,7 +146,7 @@ function FormationDetail() {
               ))}
             </ul>
             <div className="foot"><button type="button" className="btn btn-line" onClick={() => setManques(false)} autoFocus>Fermer</button></div>
-          </div>
+          </dialog>
         </Modal>
       )}
     </div>

@@ -27,7 +27,7 @@ function FormationsListe() {
 
   const [erreur, setErreur] = useState(null)
   const recharger = useCallback(() => service.listerFormations().then((l) => { setFormations(l); setErreur(null) }).catch((e) => setErreur(e.message)), [])
-  useEffect(() => { recharger() }, [recharger])
+  useEffect(() => { void recharger() }, [recharger])
 
   // Un clic en dehors du menu ouvert le referme
   useEffect(() => {
@@ -40,7 +40,8 @@ function FormationsListe() {
   const fermerDialogue = () => setDialogue(null)
   const ouvrirFormulaire = (f, params = {}) => {
     const q = new URLSearchParams(params).toString()
-    navigate(`/formations/${f.id}/modifier${q ? `?${q}` : ''}`)
+    const suite = q ? '?' + q : ''
+    void navigate(`/formations/${f.id}/modifier${suite}`)
   }
 
   // Exécute une action du service, recharge la liste et affiche le message
@@ -105,7 +106,7 @@ function FormationsListe() {
     {dialogue.type === 'session' && <SessionDialog formation={f} onAnnuler={fermerDialogue} onAjouter={(s) => executer(service.ajouterSession(f.id, s), 'Session ajoutée à la formation.')} />}
     {dialogue.type === 'vider' && <ConfirmDialog titre="Vider la démo ?" texte="Toutes les formations de la démo sont supprimées. Vous revenez à l'écran de départ, sans aucune formation."
       action="Vider la démo" icone="restore" fondIcone="var(--brand-soft)" couleurIcone="var(--brand-text)" onAnnuler={fermerDialogue}
-      onOk={() => { setFiltre('all'); setRecherche(''); executer(service.viderDemo(), 'La démo est vide : vous pouvez créer votre première formation.') }} />}
+      onOk={() => { setFiltre('all'); setRecherche(''); void executer(service.viderDemo(), 'La démo est vide : vous pouvez créer votre première formation.') }} />}
   </>
 
   // Aucune formation : écran d'accueil

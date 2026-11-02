@@ -18,7 +18,7 @@ function charger() {
   return db
 }
 function sauver() { try { localStorage.setItem(CLE, JSON.stringify(db)) } catch { /* navigation privée : on garde en mémoire */ } }
-const copie = (x) => JSON.parse(JSON.stringify(x))
+const copie = (x) => structuredClone(x)
 function trouver(id) {
   const f = charger().find((x) => x.id === Number(id))
   if (!f) throw new ErreurMetier('INTROUVABLE', 'Formation introuvable.')
@@ -35,7 +35,7 @@ export async function obtenirFormation(id) { return copie(trouver(id)) }
 // RG03 : référence FOR-AAAA-NNN, numéro suivant pour l'année en cours
 function prochaineReference() {
   const annee = today().slice(0, 4)
-  const nums = charger().map((f) => /^FOR-(\d{4})-(\d{3})$/.exec(f.ref || '')).filter((m) => m && m[1] === annee).map((m) => Number(m[2]))
+  const nums = charger().map((f) => /^FOR-(\d{4})-(\d{3})$/.exec(f.ref || '')).filter((m) => m?.[1] === annee).map((m) => Number(m[2]))
   return `FOR-${annee}-${String(Math.max(0, ...nums) + 1).padStart(3, '0')}`
 }
 

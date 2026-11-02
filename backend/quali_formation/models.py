@@ -41,7 +41,7 @@ class Formation(models.Model):
     duree_heures = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True)
     modalite = models.CharField(max_length=10, choices=Modalite.choices, default=Modalite.PRESENTIEL)
     statut = models.CharField(max_length=10, choices=Statut.choices, default=Statut.BROUILLON)
-    publication = models.CharField(max_length=10, choices=Publication.choices, null=True, blank=True)
+    publication = models.CharField(max_length=10, choices=Publication.choices, blank=True, default='')
     organisme = models.CharField(max_length=255, default='Cap Compétences')
     preparee_par = models.CharField(max_length=255, default='Camille Laurent')
     valeurs = models.JSONField(default=dict, blank=True)

@@ -18,9 +18,9 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext.Provider value={afficher}>
       {children}
-      <div className="toast" role="status" hidden={!message}>
+      <output className="toast" hidden={!message}>
         {message && <><Icone nom="check" taille={18} epaisseur={2.4} /><span>{message}</span></>}
-      </div>
+      </output>
     </ToastContext.Provider>
   )
 }

@@ -26,8 +26,8 @@ class Command(BaseCommand):
                 sequences, sessions = e.pop('sequences'), e.pop('sessions')
                 maj = timezone.make_aware(datetime.combine(datetime.fromisoformat(e.pop('date_mise_a_jour')).date(), time(12)))
                 # RG24 : une formation validée ou incomplète est au moins « À publier »
-                if e['statut'] in ('VALIDEE', 'INCOMPLETE') and not e['publication']:
-                    e['publication'] = Formation.Publication.A_PUBLIER
+                if not e['publication']:
+                    e['publication'] = Formation.Publication.A_PUBLIER if e['statut'] in ('VALIDEE', 'INCOMPLETE') else ''
                 f = Formation.objects.create(**e)
                 Sequence.objects.bulk_create(Sequence(formation=f, ordre=i, **s) for i, s in enumerate(sequences))
                 Session.objects.bulk_create(Session(formation=f, **s) for s in sessions)

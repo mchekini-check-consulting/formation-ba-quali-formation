@@ -1,7 +1,7 @@
 // Formations d'exemple de la maquette (utilisées tant que l'API n'est pas branchée, et pour les tests)
 
 function fullValues(extra) {
-  return Object.assign({
+  return {
     public: ['Managers'], besoin: 'Managers de proximité qui doivent animer et faire progresser une équipe.',
     prerequis: "Avoir suivi le niveau 1 ou 1 an d'expérience en encadrement.",
     objectifs: 'Fixer des objectifs SMART ; déléguer une tâche ; conduire un entretien individuel.',
@@ -18,7 +18,8 @@ function fullValues(extra) {
     positionnement: ['Questionnaire de positionnement'], eval_pendant: ['Exercices', 'Cas pratiques'], evaluation: ['QCM', 'Mise en situation'], criteres: '70 % de bonnes réponses au QCM final',
     document: 'Attestation de réalisation', satisfaction: ['À chaud (fin de formation)', 'À froid (3 mois après)'],
     resultats_mesures: 'Satisfaction 2025 : 4,6/5 — 38 répondants — questionnaire à chaud',
-  }, extra || {})
+    ...extra,
+  }
 }
 const clear = (vals, keys) => { keys.forEach((k) => { vals[k] = Array.isArray(vals[k]) ? [] : '' }); return vals }
 
@@ -30,7 +31,7 @@ const mk = (n, lieu) => Array.from({ length: n }, (_, i) => {
 })
 
 export function seed() {
-  const base = (o) => Object.assign({ organisme: 'Cap Compétences', prepare: 'Camille Laurent', version: 1, created: o.maj, others: [], sess: [] }, o)
+  const base = (o) => ({ organisme: 'Cap Compétences', prepare: 'Camille Laurent', version: 1, created: o.maj, others: [], sess: [], ...o })
   return [
     base({ id: 8, ref: 'FOR-2026-019', title: 'Business Analyst — les fondamentaux en contexte agile', duree: '35', modalite: 'Mixte', statut: 'validee', pub: 'apublier', maj: '2026-10-28', values: {
       public: ['Salariés', "Demandeurs d'emploi", 'Chefs de projet et consultants fonctionnels', 'Personnes en reconversion vers le métier de BA'],

@@ -62,8 +62,9 @@ svg{flex-shrink:0}
 .logo-badge{width:34px;height:34px;border-radius:10px;background:var(--vert);color:var(--sur-vert);display:grid;place-items:center}
 .nav-titre{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--texte-3);padding:0 12px;margin-bottom:6px}
 .nav{display:flex;flex-direction:column;gap:2px}
-.nav a{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;font-weight:500;font-size:14.5px;color:var(--texte-2);transition:background .15s}
+.nav a,.nav .nav-a{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;font-weight:500;font-size:14.5px;color:var(--texte-2);transition:background .15s}
 .nav a:hover{background:var(--carte-2)}
+.nav .nav-a{cursor:default}
 .nav a[aria-current="page"]{background:var(--vert-doux);color:var(--vert-texte);font-weight:700}
 .nav-bas{margin-top:auto;border-top:1px solid var(--bordure);padding-top:12px}
 
@@ -147,7 +148,12 @@ svg{flex-shrink:0}
 .nav-ic{width:30px;height:30px;flex-shrink:0;border-radius:9px;display:grid;place-items:center;color:var(--vert);background:var(--vert-doux);transition:background .15s,color .15s}
 .nav a:hover .nav-ic{background:color-mix(in srgb,var(--vert) 20%,var(--carte))}
 .nav a[aria-current="page"] .nav-ic{background:var(--vert);color:var(--sur-vert)}
-.nav a:has(.nav-ic){padding:7px 10px}
+.nav a:has(.nav-ic),.nav .nav-a:has(.nav-ic){padding:7px 10px}
 
 /* Pop-ups des blocs : toutes de la même taille ; un contenu plus long défile à l'intérieur (.wiz-body) */
 .wiz{height:min(720px,100%)}
+
+/* Pop-ups en <dialog open> (élément natif, accessible) : même rendu qu'un bloc ordinaire,
+   la mise en forme vient des classes .dialog, .wiz… et la position du fond .overlay */
+dialog{position:static;inset:auto;width:auto;height:auto;max-width:none;max-height:none;margin:0;padding:0;border:0;background:transparent;color:inherit}
+.dialog-form{display:contents}

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Icone from '../components/Icone'
 import { Modal } from '../components/Modal'
-import { SECTIONS, TILES, visibleQs } from './catalogue'
+import { pluriel, SECTIONS, TILES, visibleQs } from './catalogue'
 import ProgrammeSequences from './ProgrammeSequences'
 
 // Zone de texte qui grandit avec son contenu (comme dans la maquette)
@@ -11,11 +11,20 @@ function ZoneTexte(props) {
   return <textarea ref={ref} {...props} />
 }
 
+// Étape de l'assistant : déjà passée, en cours ou à venir
+function etatEtape(i, enCours) {
+  if (i < enCours) return 'done'
+  return i === enCours ? 'now' : ''
+}
+
 // RG11 : choix multiples dans une liste, avec des réponses « Autre » libres
 function ChoixMultiples({ q, id, valeur, onChange, ouvert, onOuvrir, onFermer }) {
   const cur = valeur || []
   const [autre, setAutre] = useState(false)
   const [saisie, setSaisie] = useState('')
+  // Le champ « Autre » prend le focus dès qu'il s'affiche
+  const champAutre = useRef(null)
+  useEffect(() => { if (autre && ouvert) champAutre.current?.focus() }, [autre, ouvert])
   const n = cur.filter((v) => String(v).trim()).length
   const basculer = (o) => onChange(cur.includes(o) ? cur.filter((x) => x !== o) : [...cur, o])
   const ajouterAutre = () => { const v = saisie.trim(); if (v) { onChange([...cur, v]); setSaisie('') } }
@@ -26,7 +35,7 @@ function ChoixMultiples({ q, id, valeur, onChange, ouvert, onOuvrir, onFermer })
       <span className="help">Plusieurs choix possibles{q.help ? ` · ${q.help}` : ''}</span>
       <div className="dd">
         <button type="button" className={`dd-trigger ${ouvert ? 'open' : ''}`} id={id} aria-expanded={ouvert} aria-haspopup="listbox" onClick={() => { setAutre(false); if (ouvert) onFermer(); else onOuvrir() }}>
-          <span>{n ? `${n} choix sélectionné${n > 1 ? 's' : ''}` : 'Choisir dans la liste'}</span><Icone nom="chev" taille={18} epaisseur={2.4} />
+          <span>{n ? `${n} ${pluriel(n, 'choix sélectionné', 'choix sélectionnés')}` : 'Choisir dans la liste'}</span><Icone nom="chev" taille={18} epaisseur={2.4} />
         </button>
         {ouvert && (
           <div className="dd-panel" role="listbox" aria-multiselectable="true" aria-label={q.label}>
@@ -39,7 +48,7 @@ function ChoixMultiples({ q, id, valeur, onChange, ouvert, onOuvrir, onFermer })
               <div className="dd-autre">
                 <label htmlFor="dd-in">Autre : précisez votre réponse</label>
                 <div className="dd-autre-row">
-                  <input className="inp" id="dd-in" placeholder="Saisissez votre réponse" autoComplete="off" autoFocus value={saisie} onChange={(e) => setSaisie(e.target.value)}
+                  <input className="inp" id="dd-in" placeholder="Saisissez votre réponse" autoComplete="off" ref={champAutre} value={saisie} onChange={(e) => setSaisie(e.target.value)}
                     onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); ajouterAutre() } }} />
                   <button type="button" className="btn btn-primary" onClick={ajouterAutre}><Icone nom="plus" taille={16} epaisseur={2.6} />Ajouter</button>
                 </div>
@@ -58,7 +67,7 @@ function ChoixMultiples({ q, id, valeur, onChange, ouvert, onOuvrir, onFermer })
             <li className="sel-row" key={`${v}-${i}`}><span className="ck"><Icone nom="check" taille={14} epaisseur={3} /></span><span className="tx">{v}</span>
               <button type="button" className="ms-btn del" aria-label={`Retirer ${v}`} onClick={() => onChange(cur.filter((_, j) => j !== i))}><Icone nom="x" taille={16} epaisseur={2.4} /></button></li>
           ) : (
-            <li className="sel-row other" key={`autre-${i}`}><span className="tag">Autre</span>
+            <li className="sel-row other" key={`autre-${i}` /* NOSONAR : réponse libre modifiable sans identifiant, la position est la seule clé stable pendant la saisie */}><span className="tag">Autre</span>
               <input className="inp" value={v} placeholder="Précisez…" aria-label="Autre réponse" onChange={(e) => onChange(cur.map((x, j) => (j === i ? e.target.value : x)))} />
               <button type="button" className="ms-btn del" aria-label="Retirer cette réponse" onClick={() => onChange(cur.filter((_, j) => j !== i))}><Icone nom="x" taille={16} epaisseur={2.4} /></button></li>
           ))}
@@ -100,12 +109,12 @@ function AssistantBloc({ form, index, onValeur, onAller, onFermer, progErr, onSe
 
   return (
     <Modal onFermer={fermer}>
-      <div className={`wiz ws${t.sec} ${t.wide ? 'wide' : ''}`} role="dialog" aria-modal="true" aria-labelledby="wt">
+      <dialog open className={`wiz ws${t.sec} ${t.wide ? 'wide' : ''}`} aria-modal="true" aria-labelledby="wt">
         <div className="wiz-head">
           <div className="wiz-top"><h2 id="wt">{programme ? 'Programme' : 'Informations de la formation'}</h2><button type="button" className="close" aria-label="Fermer" onClick={onFermer}><Icone nom="x" taille={18} epaisseur={2.2} /></button></div>
           {!programme && <ol className="steps" aria-label="Étapes">
             {SECTIONS.map((s, i) => (
-              <li key={s} className={i < t.sec ? 'done' : i === t.sec ? 'now' : ''}>
+              <li key={s} className={etatEtape(i, t.sec)}>
                 <button type="button" className="step-btn" aria-current={i === t.sec ? 'step' : undefined} onClick={() => aller(TILES.findIndex((x) => x.sec === i))}>
                   <span className="n">{i < t.sec ? <Icone nom="check" taille={14} epaisseur={3} /> : i + 1}</span><span className="sl">{s}</span>
                 </button><span className="bar"></span>
@@ -135,7 +144,7 @@ function AssistantBloc({ form, index, onValeur, onAller, onFermer, progErr, onSe
               : <button type="button" className="btn btn-primary" onClick={onFermer}>Terminer</button>}
           </div>
         </div>
-      </div>
+      </dialog>
     </Modal>
   )
 }

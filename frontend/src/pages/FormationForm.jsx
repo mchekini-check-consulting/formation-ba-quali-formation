@@ -3,24 +3,30 @@ import { useBlocker, useLocation, useNavigate, useParams, useSearchParams } from
 import Icone from '../components/Icone'
 import { ConfirmDialog, Modal } from '../components/Modal'
 import { useToast } from '../components/toastContext'
-import { filled, fmt, frDate, MOD_LBL, MOD_REQ, MODALITES, missingTiles, num, SECTIONS, STATUS, TILES, tileDone, visibleQs } from '../formations/catalogue'
+import { filled, fmt, frDate, MOD_LBL, MOD_REQ, MODALITES, missingTiles, num, pluriel, SECTIONS, STATUS, TILES, tileDone, visibleQs } from '../formations/catalogue'
 import AssistantBloc from '../formations/AssistantBloc'
 import * as service from '../formations/donnees'
 
 const NOUVELLE = { id: null, ref: '', title: '', duree: '', modalite: 'Présentiel', organisme: 'Cap Compétences', prepare: 'Camille Laurent', version: 1, statut: 'brouillon', values: {}, others: [], sess: [] }
-const copie = (x) => JSON.parse(JSON.stringify(x))
+const copie = (x) => structuredClone(x)
 
 // Aperçu de la réponse d'un bloc complet, affiché sur sa tuile
+function apercuProgramme(vals) {
+  const m = (vals.modules || []).filter((x) => (x.seq || '').trim())
+  return m.length ? `${m.length} ${pluriel(m.length, 'séquence')} · ${fmt(m.reduce((a, x) => a + num(x.duree), 0))} h` : ''
+}
+function apercuReponse(q, v) {
+  if (Array.isArray(v)) {
+    const a = v.filter((x) => String(x).trim())
+    return a.length > 2 ? `${a.slice(0, 2).join(', ')} +${a.length - 2}` : a.join(', ')
+  }
+  if (!String(v ?? '').trim()) return ''
+  return q.kind === 'money' ? `${v} €` : String(v)
+}
 function apercu(t, vals, f) {
   for (const q of visibleQs(t, vals, f)) {
-    if (q.kind === 'modules') {
-      const m = (vals.modules || []).filter((x) => (x.seq || '').trim())
-      if (m.length) return `${m.length} séquence${m.length > 1 ? 's' : ''} · ${fmt(m.reduce((a, x) => a + num(x.duree), 0))} h`
-      continue
-    }
-    const v = vals[q.k]
-    if (Array.isArray(v)) { const a = v.filter((x) => String(x).trim()); if (a.length) return a.slice(0, 2).join(', ') + (a.length > 2 ? ` +${a.length - 2}` : '') }
-    else if (String(v ?? '').trim()) return q.kind === 'money' ? `${v} €` : String(v)
+    const texte = q.kind === 'modules' ? apercuProgramme(vals) : apercuReponse(q, vals[q.k])
+    if (texte) return texte
   }
   return ''
 }
@@ -30,20 +36,103 @@ const sequencesIncompletes = (vals) => (vals.modules || [])
   .map((m, i) => ({ i, titre: String(m.seq || '').trim(), miss: MOD_REQ.filter((k) => !filled(m[k])).map((k) => MOD_LBL[k]) }))
   .filter((x) => x.miss.length)
 
+// RG22 : programme incomplet en quittant l'étape ; « Compléter » amène sur le premier champ manquant
+function ProgrammeIncompletDialog({ form, onCompleter, onQuitterSansProgramme }) {
+  const seqs = sequencesIncompletes(form.values), nf = seqs.reduce((a, x) => a + x.miss.length, 0)
+  const completer = (i = seqs[0].i) => {
+    onCompleter()
+    setTimeout(() => {
+      const s = document.getElementById(`seq-${i}`)
+      s?.scrollIntoView?.({ block: 'center' })
+      s?.querySelector('.inp.err')?.focus({ preventScroll: true })
+    }, 50)
+  }
+  return (
+    <Modal onFermer={() => completer()}>
+      <dialog open className="dialog dlg-warn" aria-modal="true" aria-labelledby="pg">
+        <div className="dw-head"><span className="dw-ic"><Icone nom="alert" taille={24} /></span><div><h2 id="pg">Le programme n’est pas complet</h2><p>{nf} champ{nf > 1 ? 's' : ''} obligatoire{nf > 1 ? 's' : ''} à remplir dans {seqs.length} séquence{seqs.length > 1 ? 's' : ''}.</p></div></div>
+        <div className="dw-alert" role="alert"><Icone nom="info" taille={20} /><span>Pour créer le programme, tous les champs marqués <b>*</b> doivent être remplis dans chaque séquence.</span></div>
+        <p className="dw-lead">Champs manquants — cliquez sur une séquence pour la compléter :</p>
+        <ul className="misslist one">
+          {seqs.map((x) => (
+            <li key={x.i}><button type="button" className="mi" onClick={() => completer(x.i)}>
+              <span className="mi-ic"><Icone nom="programme" taille={18} /></span><span className="mi-t">Séquence {x.i + 1}{x.titre ? ` — ${x.titre}` : ''}<small>{x.miss.join(' · ')}</small></span><span className="mi-go">Compléter <Icone nom="arrow" taille={14} epaisseur={2.4} /></span>
+            </button></li>
+          ))}
+        </ul>
+        <div className="foot">
+          <button type="button" className="btn btn-line" onClick={onQuitterSansProgramme}>Quitter sans enregistrer le programme</button>
+          <button type="button" className="btn btn-primary" autoFocus onClick={() => completer()}>Compléter le programme</button>
+        </div>
+      </dialog>
+    </Modal>
+  )
+}
+
 // Pop-up « Ajouter une information » (RG12 : titre obligatoire)
 function AutreInfoDialog({ onAjouter, onAnnuler }) {
   const [titre, setTitre] = useState('')
   const [contenu, setContenu] = useState('')
   return (
     <Modal onFermer={onAnnuler}>
-      <form className="dialog" role="dialog" aria-modal="true" aria-labelledby="do" onSubmit={(e) => { e.preventDefault(); if (titre.trim()) onAjouter({ titre: titre.trim(), contenu: contenu.trim() || '—' }) }}>
+      <dialog open className="dialog" aria-modal="true" aria-labelledby="do"><form className="dialog-form" onSubmit={(e) => { e.preventDefault(); if (titre.trim()) onAjouter({ titre: titre.trim(), contenu: contenu.trim() || '—' }) }}>
         <h2 id="do">Ajouter une information</h2>
         <div className="field"><label className="lbl" htmlFor="o-t">Titre de l'information</label><input className="inp" id="o-t" placeholder="Ex. : Matériel à apporter" required autoFocus value={titre} onChange={(e) => setTitre(e.target.value)} /></div>
         <div className="field"><label className="lbl" htmlFor="o-c">Contenu</label><textarea className="inp" id="o-c" rows={4} placeholder="Ex. : Ordinateur portable avec Excel installé." value={contenu} onChange={(e) => setContenu(e.target.value)} /></div>
         <div className="foot"><button type="button" className="btn btn-line" onClick={onAnnuler}>Annuler</button><button type="submit" className="btn btn-primary">Ajouter</button></div>
-      </form>
+      </form></dialog>
     </Modal>
   )
+}
+
+// Chargement : formation existante ou nouvelle ; ?bloc= ouvre directement un bloc
+function useFormationChargee(id, params, ouvrirBloc) {
+  const navigate = useNavigate()
+  const [form, setForm] = useState(null)
+  const [instantane, setInstantane] = useState('')   // formulaire tel qu'enregistré, pour détecter les modifications (RG05)
+  useEffect(() => {
+    let actif = true
+    const charger = id ? service.obtenirFormation(id) : Promise.resolve(copie(NOUVELLE))
+    charger.then((f) => {
+      if (!actif) return
+      f.values = f.values || {}; f.others = f.others || []
+      setForm(f); setInstantane(JSON.stringify(f))
+      const bloc = TILES.findIndex((t) => t.id === params.get('bloc'))
+      if (bloc >= 0) ouvrirBloc(bloc)
+    }).catch(() => navigate('/formations', { replace: true }))
+    return () => { actif = false }
+  }, [id, params, navigate, ouvrirBloc])
+  return { form, setForm, instantane }
+}
+
+// RG05 : confirmation si on quitte la page (lien ou fermeture de l'onglet) avec des modifications non enregistrées
+function useProtectionModifications(modifie, enregistre) {
+  const bloqueur = useBlocker(({ currentLocation, nextLocation }) => modifie && !enregistre.current && currentLocation.pathname !== nextLocation.pathname)
+  useEffect(() => {
+    if (!modifie) return
+    const avant = (e) => { e.preventDefault(); e.returnValue = '' }
+    window.addEventListener('beforeunload', avant)
+    return () => window.removeEventListener('beforeunload', avant)
+  }, [modifie])
+  return bloqueur
+}
+
+// Textes au singulier ou au pluriel selon le nombre de blocs manquants
+function texteBlocsManquants(n) {
+  return n > 1
+    ? `${n} blocs manquent pour répondre aux exigences de l’audit Qualiopi. Complétez-les puis validez.`
+    : `${n} bloc manque pour répondre aux exigences de l’audit Qualiopi. Complétez-le puis validez.`
+}
+function texteChampsARemplir(n) {
+  return n > 1
+    ? <><b>{n} champs restent à remplir.</b> Ils sont signalés avec un cadre en pointillés.</>
+    : <><b>{n} champ reste à remplir.</b> Il est signalé avec un cadre en pointillés.</>
+}
+
+// RG13 à RG15 : message affiché après la validation
+function messageValidation(f, nbManquants, edit) {
+  if (nbManquants) return `« ${f.title} » est enregistrée comme incomplète : ${nbManquants} ${pluriel(nbManquants, 'bloc')} à compléter pour Qualiopi.`
+  return edit ? `« ${f.title} » a été modifiée et validée.` : `« ${f.title} » est validée : toutes les informations Qualiopi sont renseignées.`
 }
 
 function FormationForm() {
@@ -54,40 +143,17 @@ function FormationForm() {
   const toast = useToast()
   const retour = state?.retour || '/formations'
 
-  const [form, setForm] = useState(null)
-  const [instantane, setInstantane] = useState('')   // formulaire tel qu'enregistré, pour détecter les modifications (RG05)
   const [signaler, setSignaler] = useState(params.get('signaler') === '1') // blocs manquants en pointillés
   const [erreurBase, setErreurBase] = useState(false)
   const [assistant, setAssistant] = useState(null)   // index du bloc ouvert dans l'assistant
+  const { form, setForm, instantane } = useFormationChargee(id, params, setAssistant)
   const [progErr, setProgErr] = useState(false)
   const [dialogue, setDialogue] = useState(null)
   const enregistre = useRef(false)
   const contenuRef = useRef(null)
 
-  // Chargement : formation existante ou nouvelle ; ?bloc= ouvre directement un bloc
-  useEffect(() => {
-    let actif = true
-    const charger = id ? service.obtenirFormation(id) : Promise.resolve(copie(NOUVELLE))
-    charger.then((f) => {
-      if (!actif) return
-      f.values = f.values || {}; f.others = f.others || []
-      setForm(f); setInstantane(JSON.stringify(f))
-      const bloc = TILES.findIndex((t) => t.id === params.get('bloc'))
-      if (bloc >= 0) setAssistant(bloc)
-    }).catch(() => navigate('/formations', { replace: true }))
-    return () => { actif = false }
-  }, [id, params, navigate])
-
   const modifie = form !== null && JSON.stringify(form) !== instantane
-
-  // RG05 : confirmation si on quitte la page avec des modifications non enregistrées
-  const bloqueur = useBlocker(({ currentLocation, nextLocation }) => modifie && !enregistre.current && currentLocation.pathname !== nextLocation.pathname)
-  useEffect(() => {
-    if (!modifie) return
-    const avant = (e) => { e.preventDefault(); e.returnValue = '' }
-    window.addEventListener('beforeunload', avant)
-    return () => window.removeEventListener('beforeunload', avant)
-  }, [modifie])
+  const bloqueur = useProtectionModifications(modifie, enregistre)
 
   if (!form) return <div className="wrap"><p className="chargement">Chargement de la formation…</p></div>
 
@@ -111,7 +177,7 @@ function FormationForm() {
     try {
       const f = await service.enregistrerFormation(form, statut)
       enregistre.current = true
-      navigate(edit ? retour : '/formations')
+      void navigate(edit ? retour : '/formations')
       toast(message(f))
     } catch (e) {
       toast(e.message)
@@ -121,21 +187,18 @@ function FormationForm() {
   // RG02 : en brouillon, seul l'intitulé est obligatoire
   const brouillon = () => {
     if (!form.title.trim()) { setErreurBase(true); window.scrollTo({ top: 0, behavior: 'smooth' }); return }
-    persister('brouillon', (f) => `« ${f.title} » est enregistrée en brouillon.`)
+    void persister('brouillon', (f) => `« ${f.title} » est enregistrée en brouillon.`)
   }
   // RG13 à RG15 : validée si tout est complet, sinon pop-up puis « Incomplète selon Qualiopi »
-  const terminerValidation = () => {
-    if (miss.length) persister('incomplete', (f) => `« ${f.title} » est enregistrée comme incomplète : ${miss.length} bloc${miss.length > 1 ? 's' : ''} à compléter pour Qualiopi.`)
-    else persister('validee', (f) => (edit ? `« ${f.title} » a été modifiée et validée.` : `« ${f.title} » est validée : toutes les informations Qualiopi sont renseignées.`))
-  }
+  const terminerValidation = () => void persister(miss.length ? 'incomplete' : 'validee', (f) => messageValidation(f, miss.length, edit))
   const valider = () => {
     if (!baseOk()) { setErreurBase(true); window.scrollTo({ top: 0, behavior: 'smooth' }); return }
     if (miss.length) setDialogue({ type: 'valider' })
     else terminerValidation()
   }
-  const quitter = () => { if (modifie) setDialogue({ type: 'quitter' }); else navigate(retour) }
+  const quitter = () => { if (modifie) setDialogue({ type: 'quitter' }); else void navigate(retour) }
 
-  const tErr = erreurBase && !form.title.trim(), dErr = erreurBase && !(num(form.duree) > 0)
+  const tErr = erreurBase && !form.title.trim(), dErr = erreurBase && num(form.duree) <= 0
 
   return (
     <div className="wrap">
@@ -152,7 +215,7 @@ function FormationForm() {
 
       {erreurBase && (tErr || dErr) && <div className="banner err" role="alert"><Icone nom="info" taille={20} /><span><b>Impossible de valider.</b> Renseignez l'intitulé et une durée supérieure à 0.</span></div>}
       {edit && form.statut === 'incomplete' && miss.length > 0 && (
-        <div className="dw-alert" style={{ marginTop: 0 }}><Icone nom="info" taille={20} /><span><b>Formation incomplète :</b> {miss.length} bloc{miss.length > 1 ? 's manquent' : ' manque'} pour répondre aux exigences de l’audit Qualiopi. Complétez-{miss.length > 1 ? 'les' : 'le'} puis validez.</span></div>
+        <div className="dw-alert" style={{ marginTop: 0 }}><Icone nom="info" taille={20} /><span><b>Formation incomplète :</b> {texteBlocsManquants(miss.length)}</span></div>
       )}
 
       <section className="card sec" aria-labelledby="h-base">
@@ -191,7 +254,7 @@ function FormationForm() {
           <div className="prog" aria-label={`${doneN} blocs complétés sur ${TILES.length}`}><div className="prog-t"><b>{doneN}</b> / {TILES.length} blocs complétés</div><div className="prog-bar"><i style={{ width: `${pct}%` }}></i></div></div>
         </div>
         {signaler && miss.length > 0 && !(edit && form.statut === 'incomplete') && (
-          <div className="banner warn" role="status"><b>{miss.length} champ{miss.length > 1 ? 's restent' : ' reste'} à remplir.</b> {miss.length > 1 ? 'Ils sont signalés' : 'Il est signalé'} avec un cadre en pointillés.</div>
+          <output className="banner warn">{texteChampsARemplir(miss.length)}</output>
         )}
         {/* RG07 : les blocs en 3 parties (le programme a son propre bouton) */}
         {SECTIONS.map((nom, si) => {
@@ -226,7 +289,7 @@ function FormationForm() {
         {form.others.length > 0 && (
           <div className="others">
             {form.others.map((o, i) => (
-              <div className="other" key={i}>
+              <div className="other" key={`${o.titre}-${o.contenu}`}>
                 <span className="ti"><Icone nom="doc" taille={20} /></span><div><b>{o.titre}</b><span>{o.contenu}</span></div>
                 <button type="button" className="btn btn-ghost btn-sm" aria-label={`Retirer ${o.titre}`} onClick={() => maj({ others: form.others.filter((_, j) => j !== i) })}><Icone nom="x" taille={16} /></button>
               </div>
@@ -253,7 +316,7 @@ function FormationForm() {
       {/* RG14 : liste des blocs manquants, « Compléter » ou « Valider quand même » */}
       {dialogue?.type === 'valider' && (
         <Modal onFermer={() => setDialogue(null)} classeFond="ov-valid">
-          <div className="dialog dlg-warn" role="dialog" aria-modal="true" aria-labelledby="dv">
+          <dialog open className="dialog dlg-warn" aria-modal="true" aria-labelledby="dv">
             <div className="dw-head"><span className="dw-ic"><Icone nom="alert" taille={24} /></span><div><h2 id="dv">Votre formation n’est pas complète</h2><p>{miss.length} bloc{miss.length > 1 ? 's ne sont pas remplis' : ' n’est pas rempli'}.</p></div></div>
             <div className="dw-alert" role="alert"><Icone nom="info" taille={20} /><span><b>Attention :</b> si vous validez maintenant, cette formation ne contiendra pas toutes les informations demandées lors de l’audit Qualiopi. Elle sera enregistrée avec le statut <b>« Incomplète »</b>.</span></div>
             <p className="dw-lead">Blocs à compléter — cliquez sur un bloc pour le remplir :</p>
@@ -268,47 +331,23 @@ function FormationForm() {
               <button type="button" className="btn btn-line" onClick={() => { setDialogue(null); terminerValidation() }}>Valider quand même</button>
               <button type="button" className="btn btn-primary" autoFocus onClick={() => { setDialogue(null); setSignaler(true); contenuRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }) }}>Compléter la formation</button>
             </div>
-          </div>
+          </dialog>
         </Modal>
       )}
 
       {/* RG22 : programme incomplet en quittant l'étape */}
-      {dialogue?.type === 'programme' && (() => {
-        const seqs = sequencesIncompletes(form.values), nf = seqs.reduce((a, x) => a + x.miss.length, 0)
-        const completer = (i) => {
-          setDialogue(null); setProgErr(true)
-          setTimeout(() => { const s = document.getElementById(`seq-${i ?? seqs[0].i}`); if (s) { s.scrollIntoView?.({ block: 'center' }); s.querySelector('.inp.err')?.focus({ preventScroll: true }) } }, 50)
-        }
-        // Les séquences incomplètes ne sont pas gardées
-        const quitterSansProgramme = () => { majValeur('modules', (form.values.modules || []).filter((m) => MOD_REQ.every((k) => filled(m[k])))); setDialogue(null); setProgErr(false); setAssistant(null) }
-        return (
-          <Modal onFermer={() => completer()}>
-            <div className="dialog dlg-warn" role="dialog" aria-modal="true" aria-labelledby="pg">
-              <div className="dw-head"><span className="dw-ic"><Icone nom="alert" taille={24} /></span><div><h2 id="pg">Le programme n’est pas complet</h2><p>{nf} champ{nf > 1 ? 's' : ''} obligatoire{nf > 1 ? 's' : ''} à remplir dans {seqs.length} séquence{seqs.length > 1 ? 's' : ''}.</p></div></div>
-              <div className="dw-alert" role="alert"><Icone nom="info" taille={20} /><span>Pour créer le programme, tous les champs marqués <b>*</b> doivent être remplis dans chaque séquence.</span></div>
-              <p className="dw-lead">Champs manquants — cliquez sur une séquence pour la compléter :</p>
-              <ul className="misslist one">
-                {seqs.map((x) => (
-                  <li key={x.i}><button type="button" className="mi" onClick={() => completer(x.i)}>
-                    <span className="mi-ic"><Icone nom="programme" taille={18} /></span><span className="mi-t">Séquence {x.i + 1}{x.titre ? ` — ${x.titre}` : ''}<small>{x.miss.join(' · ')}</small></span><span className="mi-go">Compléter <Icone nom="arrow" taille={14} epaisseur={2.4} /></span>
-                  </button></li>
-                ))}
-              </ul>
-              <div className="foot">
-                <button type="button" className="btn btn-line" onClick={quitterSansProgramme}>Quitter sans enregistrer le programme</button>
-                <button type="button" className="btn btn-primary" autoFocus onClick={() => completer()}>Compléter le programme</button>
-              </div>
-            </div>
-          </Modal>
-        )
-      })()}
+      {dialogue?.type === 'programme' && (
+        <ProgrammeIncompletDialog form={form}
+          onCompleter={() => { setDialogue(null); setProgErr(true) }}
+          onQuitterSansProgramme={() => { majValeur('modules', (form.values.modules || []).filter((m) => MOD_REQ.every((k) => filled(m[k])))); setDialogue(null); setProgErr(false); setAssistant(null) }} />
+      )}
 
       {/* RG05 : quitter avec des modifications non enregistrées */}
       {(dialogue?.type === 'quitter' || bloqueur.state === 'blocked') && (
         <ConfirmDialog titre="Quitter sans sauvegarder ?" texte="Vos modifications seront perdues. Pour les garder, enregistrez la formation en brouillon."
           action="Quitter sans sauvegarder" danger icone="x" fondIcone="var(--danger-soft)" couleurIcone="var(--danger)"
           onAnnuler={() => { setDialogue(null); if (bloqueur.state === 'blocked') bloqueur.reset() }}
-          onOk={() => { setDialogue(null); enregistre.current = true; if (bloqueur.state === 'blocked') bloqueur.proceed(); else navigate(retour) }} />
+          onOk={() => { setDialogue(null); enregistre.current = true; if (bloqueur.state === 'blocked') bloqueur.proceed(); else void navigate(retour) }} />
       )}
     </div>
   )

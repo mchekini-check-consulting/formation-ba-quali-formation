@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
                 ('duree_heures', models.DecimalField(blank=True, decimal_places=2, max_digits=7, null=True)),
                 ('modalite', models.CharField(choices=[('PRESENTIEL', 'Présentiel'), ('DISTANCIEL', 'Distanciel'), ('MIXTE', 'Mixte')], default='PRESENTIEL', max_length=10)),
                 ('statut', models.CharField(choices=[('BROUILLON', 'Brouillon'), ('INCOMPLETE', 'Incomplète selon Qualiopi'), ('VALIDEE', 'Validée')], default='BROUILLON', max_length=10)),
-                ('publication', models.CharField(blank=True, choices=[('A_PUBLIER', 'À publier'), ('PUBLIEE', 'Publiée')], max_length=10, null=True)),
+                ('publication', models.CharField(blank=True, choices=[('A_PUBLIER', 'À publier'), ('PUBLIEE', 'Publiée')], default='', max_length=10)),
                 ('organisme', models.CharField(default='Cap Compétences', max_length=255)),
                 ('preparee_par', models.CharField(default='Camille Laurent', max_length=255)),
                 ('valeurs', models.JSONField(blank=True, default=dict)),

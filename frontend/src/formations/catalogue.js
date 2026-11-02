@@ -67,7 +67,7 @@ export const SEQ_MODES = ['Présentiel', 'Distanciel synchrone (classe virtuelle
 export const SEQ_EVAL = ['Quiz', 'Exercice', 'Cas pratique', 'Mise en situation', 'Pas d’évaluation pour cette séquence']
 
 // RG19 : la liste des objectifs saisis dans le bloc Objectifs (un par ligne ou séparés par « ; »)
-export const objList = (v) => String(v.objectifs || '').split(/\n|;/).map((x) => x.trim().replace(/\.$/, '')).filter(Boolean).map((x) => x[0].toUpperCase() + x.slice(1))
+export const objList = (v) => String(v.objectifs || '').split(/[\n;]/).map((x) => x.trim().replace(/\.$/, '')).filter(Boolean).map((x) => x[0].toUpperCase() + x.slice(1))
 
 // RG20 : modalité proposée pour une nouvelle séquence
 export const modaliteSequence = (modaliteFormation) => modaliteFormation === 'Distanciel' ? SEQ_MODES[1] : SEQ_MODES[0]
@@ -91,10 +91,11 @@ export function tileDone(t, v, f) {
 export const missingTiles = (f) => TILES.filter((t) => !tileDone(t, f.values || {}, f))
 
 // RG16 / RG26 : la formation a un programme dès qu'une séquence a un titre
-export const hasProg = (f) => ((f.values || {}).modules || []).some((m) => String(m.seq || '').trim())
+export const hasProg = (f) => (f.values?.modules || []).some((m) => String(m.seq || '').trim())
 
 // État affiché d'une formation sur sa carte (« apublier » = validée)
-export const life = (f) => f.statut === 'brouillon' ? 'brouillon' : f.statut === 'validee' ? 'apublier' : 'incomplete'
+const ETAT_CARTE = { brouillon: 'brouillon', validee: 'apublier' }
+export const life = (f) => ETAT_CARTE[f.statut] || 'incomplete'
 // RG24 : seule une formation validée ou incomplète peut être publiée
 export const isPub = (f) => f.pub === 'publiee' && (f.statut === 'validee' || f.statut === 'incomplete')
 
@@ -111,6 +112,9 @@ export const today = () => new Date().toISOString().slice(0, 10)
 export const frDate = (iso) => { const [y, m, d] = String(iso || '').split('-'); return d ? `${d}/${m}/${y}` : '' }
 export const num = (x) => Number(String(x ?? '').replace(',', '.')) || 0
 export const fmt = (n) => String(Math.round(n * 100) / 100).replace('.', ',')
-export const one = (x) => Array.isArray(x) ? x.filter((y) => String(y).trim()) : (String(x ?? '').trim() ? [String(x)] : [])
+export function one(x) {
+  if (Array.isArray(x)) return x.filter((y) => String(y).trim())
+  return String(x ?? '').trim() ? [String(x)] : []
+}
 export const money = (f) => { const v = f.values || {}; return v.tarif ? `${v.tarif} € ${one(v.taxe)[0] || ''}`.trim() : '' }
 export const pluriel = (n, mot, motPluriel = `${mot}s`) => (n > 1 ? motPluriel : mot)
