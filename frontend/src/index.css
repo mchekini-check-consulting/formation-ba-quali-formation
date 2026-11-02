@@ -1,111 +1,159 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
-
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
-
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
+/* Charte Quali-formation (reprise de la maquette Formations) : Inter, vert #0F766E */
+:root{
+  --fond:#F5F7F8;           /* fond de page */
+  --carte:#FFFFFF;
+  --carte-2:#F1F4F5;        /* survol, fonds secondaires */
+  --bordure:#DDE3E6;
+  --bordure-forte:#A9B4B9;
+  --texte:#111827;
+  --texte-2:#1F2937;
+  --texte-3:#4B5563;
+  --vert:#0F766E;           /* couleur principale */
+  --vert-texte:#115E59;     /* texte vert sur fond clair */
+  --vert-doux:#E6F6F3;
+  --vert-bordure:#9ADFD3;
+  --sur-vert:#FFFFFF;       /* texte posé sur le vert */
+  --ok:#15803D; --ok-doux:#DCFCE7;
+  --alerte:#B45309; --alerte-doux:#FEF3C7;
+  --danger:#B91C1C; --danger-doux:#FEE2E2;
+  /* Couleurs métier du module Formations */
+  --partie-1:#0F766E; --partie-2:#B7791F; --partie-3:#BE4B6B;
+  --incomplete:#C8642E; --incomplete-fond:#FFF8F3; --incomplete-bordure:#E9A97F;
+  --prog-fond:#FDF8EF; --prog-bordure:#E6C48F; --prog-icone:#D08A2E;
+  --apublier-fond:#FDF1E3; --apublier-texte:#9A5B13;
+  --publiee-fond:#E3F6EE; --publiee-texte:#0B6B4F;
+  --rayon:16px;
+  --rayon-l:18px;
+  --ombre:0 1px 2px rgba(14,26,28,.04),0 4px 16px rgba(14,26,28,.04);
+  --ombre-forte:0 18px 50px rgba(14,26,28,.16);
+  --police:'Inter',ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;
 }
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --fond:#0C1416; --carte:#121D20; --carte-2:#172427; --bordure:#243337; --bordure-forte:#33464B;
+  --texte:#F3F6F7; --texte-2:#D9E2E4; --texte-3:#AEBCC0;
+  --vert:#2BB3A3; --vert-texte:#7FE0D3; --vert-doux:#123A36; --vert-bordure:#1F6F66; --sur-vert:#04211E;
+  --ok:#4ADE80; --ok-doux:#123522; --alerte:#FBBF24; --alerte-doux:#3A2A0C; --danger:#FCA5A5; --danger-doux:#3F1515;
+  --ombre:0 1px 2px rgba(0,0,0,.3); --ombre-forte:0 18px 50px rgba(0,0,0,.5);
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --fond:#0C1416; --carte:#121D20; --carte-2:#172427; --bordure:#243337; --bordure-forte:#33464B;
+  --texte:#F3F6F7; --texte-2:#D9E2E4; --texte-3:#AEBCC0;
+  --vert:#2BB3A3; --vert-texte:#7FE0D3; --vert-doux:#123A36; --vert-bordure:#1F6F66; --sur-vert:#04211E;
+  --ok:#4ADE80; --ok-doux:#123522; --alerte:#FBBF24; --alerte-doux:#3A2A0C; --danger:#FCA5A5; --danger-doux:#3F1515;
+  --ombre:0 1px 2px rgba(0,0,0,.3); --ombre-forte:0 18px 50px rgba(0,0,0,.5);
+  color-scheme:dark}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100%}
+body{font-family:var(--police);background:var(--fond);color:var(--texte);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--vert-bordure);outline-offset:2px}
+h1,h2,h3{text-wrap:balance}
+svg{flex-shrink:0}
 
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
-}
+/* ---------- Mise en page ---------- */
+.app{display:grid;grid-template-columns:280px 1fr;min-height:100vh}
 
-body {
-  margin: 0;
-}
+/* ---------- Barre latérale ---------- */
+.sidebar{background:var(--carte);border-right:1px solid var(--bordure);padding:22px 14px;display:flex;flex-direction:column;gap:20px;position:sticky;top:0;height:100vh;overflow-y:auto}
+.logo{display:flex;align-items:center;gap:10px;padding:0 8px;font-weight:700;font-size:17px}
+.logo-badge{width:34px;height:34px;border-radius:10px;background:var(--vert);color:var(--sur-vert);display:grid;place-items:center}
+.nav-titre{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--texte-3);padding:0 12px;margin-bottom:6px}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav a,.nav .nav-a{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;font-weight:500;font-size:14.5px;color:var(--texte-2);transition:background .15s}
+.nav a:hover{background:var(--carte-2)}
+.nav .nav-a{cursor:default}
+.nav a[aria-current="page"]{background:var(--vert-doux);color:var(--vert-texte);font-weight:700}
+.nav-bas{margin-top:auto;border-top:1px solid var(--bordure);padding-top:12px}
 
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
-  box-sizing: border-box;
-}
+/* ---------- Contenu ---------- */
+.contenu{padding:24px 56px 48px 40px;min-width:0;max-width:1296px;width:100%;margin:0 auto 0 max(0px, calc((100% - 1296px) / 3))}
+/* Presque centré : sur grand écran, 1/3 de la place libre à gauche et 2/3 à droite ; les pages remplissent la zone */
+.contenu .wrap{max-width:none;margin:0}
+.topbar{display:flex;align-items:center;gap:16px;margin-bottom:32px}
+.menu-btn{display:none;background:var(--carte);border:1px solid var(--bordure);border-radius:10px;padding:8px;color:var(--texte-2)}
+.recherche{flex:1;max-width:420px;display:flex;align-items:center;gap:10px;background:var(--carte);border:1px solid var(--bordure);border-radius:12px;padding:10px 14px;color:var(--texte-3)}
+.recherche input{border:none;outline:none;background:none;width:100%;color:var(--texte)}
+.topbar-droite{margin-left:auto;display:flex;align-items:center;gap:12px}
+.icone-btn{position:relative;width:42px;height:42px;border-radius:12px;background:var(--carte);border:1px solid var(--bordure);display:grid;place-items:center;color:var(--texte-2);cursor:pointer}
+.pastille{position:absolute;top:8px;right:9px;width:8px;height:8px;border-radius:50%;background:var(--vert);border:2px solid var(--carte)}
+.avatar{width:42px;height:42px;border-radius:50%;background:var(--vert-doux);color:var(--vert-texte);display:grid;place-items:center;font-weight:700}
 
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
-}
+.entete{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:28px}
+.entete h1{font-size:28px;font-weight:700;letter-spacing:-.02em}
+.entete p{color:var(--texte-3);margin-top:2px;font-size:15px}
 
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
-}
+/* Boutons : .btn, .btn-primary, .btn-line… viennent de styles/maquette.css */
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
-}
+/* ---------- KPI ---------- */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px}
+.kpi{background:var(--carte);border:1px solid var(--bordure);border-radius:var(--rayon-l);padding:20px;box-shadow:var(--ombre)}
+.kpi-label{color:var(--texte-3);font-size:14px;font-weight:600}
+.kpi-valeur{font-size:32px;font-weight:700;margin-top:6px;letter-spacing:-.02em}
+.kpi.mise-en-avant{background:var(--vert);border-color:var(--vert);color:var(--sur-vert)}
+.kpi.mise-en-avant .kpi-label{color:var(--sur-vert);opacity:.85}
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+/* ---------- Modules ---------- */
+.section-titre{font-size:17px;font-weight:700;margin-bottom:14px}
+.modules{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:32px}
+.module{display:flex;align-items:center;gap:14px;background:var(--carte);border:1px solid var(--bordure);border-radius:var(--rayon);padding:14px 16px;transition:border-color .15s,box-shadow .15s}
+.module:hover{border-color:var(--vert-bordure);box-shadow:0 4px 12px rgba(15,118,110,.08)}
+.module-icone{width:40px;height:40px;border-radius:12px;background:var(--vert-doux);color:var(--vert-texte);display:grid;place-items:center}
+.module h3{font-size:14.5px;font-weight:700}
+.module small{display:block;color:var(--texte-3);font-size:13px}
+.module .fleche{margin-left:auto;color:var(--bordure-forte)}
+.module:hover .fleche{color:var(--vert)}
+
+/* ---------- Cartes ---------- */
+.grille{display:grid;grid-template-columns:1.5fr 1fr;gap:16px}
+.carte{background:var(--carte);border:1px solid var(--bordure);border-radius:var(--rayon);padding:20px;box-shadow:var(--ombre);min-width:0}
+.carte-titre{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.carte-titre h2{font-size:16px;font-weight:700}
+.lien{color:var(--vert-texte);font-weight:600;font-size:13.5px}
+.lien:hover{text-decoration:underline}
+.ligne{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid var(--bordure);font-size:14.5px}
+.carte-titre + .ligne{border-top:none}
+.ligne small{display:block;color:var(--texte-3);font-size:13px}
+.tag{font-size:12.5px;font-weight:600;padding:3px 10px;border-radius:999px;white-space:nowrap}
+.tag-orange{background:var(--alerte-doux);color:var(--alerte)}
+.tag-vert{background:var(--ok-doux);color:var(--ok)}
+.puce{width:8px;height:8px;border-radius:50%;background:var(--vert);flex-shrink:0}
+.ligne.tache{justify-content:flex-start}
+
+.demo{font-size:12.5px;color:var(--texte-3);text-align:center;margin-top:28px}
+
+/* ---------- Chargement / erreur d'une page ---------- */
+.chargement{padding:48px 24px;text-align:center;color:var(--texte-3)}
+
+/* ---------- Responsive ---------- */
+@media (max-width:1200px){.kpis{grid-template-columns:repeat(2,1fr)}.modules{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:1000px){.app{grid-template-columns:256px 1fr}.grille{grid-template-columns:1fr}.contenu{padding:24px 36px}}
+@media (max-width:760px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:fixed;left:0;top:0;width:290px;z-index:20;transform:translateX(-100%);transition:transform .2s;box-shadow:var(--ombre-forte)}
+  .sidebar.ouverte{transform:none}
+  .menu-btn{display:grid;place-items:center}
+  .recherche{display:none}
+  .contenu{padding:16px}
 }
+@media (max-width:480px){.kpis,.modules{grid-template-columns:1fr}}
+
+/* Liens « Démo : charger des exemples · vider » (repris de la maquette) */
+.demo-note{text-align:center}
+.reset{font-size:13px;color:var(--texte-3);background:none;border:0;text-decoration:underline;padding:0}
+
+/* Icônes du menu : pastille du même vert que le logo (--vert) */
+.nav-ic{width:30px;height:30px;flex-shrink:0;border-radius:9px;display:grid;place-items:center;color:var(--vert);background:var(--vert-doux);transition:background .15s,color .15s}
+.nav a:hover .nav-ic{background:color-mix(in srgb,var(--vert) 20%,var(--carte))}
+.nav a[aria-current="page"] .nav-ic{background:var(--vert);color:var(--sur-vert)}
+.nav a:has(.nav-ic),.nav .nav-a:has(.nav-ic){padding:7px 10px}
+
+/* Pop-ups des blocs : toutes de la même taille ; un contenu plus long défile à l'intérieur (.wiz-body) */
+.wiz{height:min(720px,100%)}
+
+/* Pop-ups en <dialog open> (élément natif, accessible) : même rendu qu'un bloc ordinaire,
+   la mise en forme vient des classes .dialog, .wiz… et la position du fond .overlay */
+dialog{position:static;inset:auto;width:auto;height:auto;max-width:none;max-height:none;margin:0;padding:0;border:0;background:transparent;color:inherit}
+.dialog-form{display:contents}

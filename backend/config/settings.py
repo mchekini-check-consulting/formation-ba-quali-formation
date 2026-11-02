@@ -75,13 +75,20 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
+# API : pas encore d'authentification dans l'application (à ajouter avant l'ouverture aux utilisateurs).
+# Sans SessionAuthentication, une session admin ouverte n'impose pas de jeton CSRF aux appels du frontend.
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [],
+    'UNAUTHENTICATED_USER': None,
+}
+
 
 # Database
 # https://docs.djangoproject.com/en/6.1/ref/settings/#databases
 
 # Base PostgreSQL : DATABASE_URL, injectée par la plateforme (helm.yaml : database).
 # Sans DATABASE_URL (poste de dev, tests) : SQLite local, ou la base de compose.yaml
-# avec DATABASE_URL=postgresql://app:app@localhost:5432/backend
+# avec DATABASE_URL=postgresql://app:app@localhost:5432/quali_formation
 DATABASES = {
     'default': dj_database_url.config(
         default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
@@ -113,9 +120,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.1/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'fr-fr'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Paris'
 
 USE_I18N = True
 
