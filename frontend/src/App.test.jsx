@@ -6,7 +6,7 @@ import { routes } from './App'
 
 afterEach(cleanup)
 
-const afficher = (adresse = '/') => render(<RouterProvider router={createMemoryRouter(routes, { initialEntries: [adresse] })} />)
+const afficher = (adresse = '/tableau-de-bord') => render(<RouterProvider router={createMemoryRouter(routes, { initialEntries: [adresse] })} />)
 
 describe('App', () => {
   it('affiche le titre', () => {
@@ -35,6 +35,25 @@ describe('App', () => {
     const menu = screen.getByRole('navigation', { name: 'Menu principal' })
     fireEvent.click(Array.from(menu.querySelectorAll('a')).find((a) => a.textContent === 'Formations'))
     expect((await screen.findByRole('heading', { level: 1 })).textContent).toBe('Formations')
+  })
+})
+
+describe('Landing page', () => {
+  it("est la première page du site (CA1)", () => {
+    afficher('/')
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toContain('Simplifiez la gestion de vos')
+    expect(screen.queryByRole('navigation', { name: 'Menu principal' })).toBeNull()
+  })
+
+  it('une adresse inconnue ramène à la landing page', () => {
+    afficher('/page-inconnue')
+    expect(screen.getByRole('navigation', { name: 'Navigation principale' })).toBeTruthy()
+  })
+
+  it("« Se connecter » ouvre l'application", async () => {
+    afficher('/')
+    fireEvent.click(screen.getByRole('link', { name: 'Se connecter' }))
+    expect((await screen.findByRole('heading', { level: 1 })).textContent).toBe('Bonjour Nassiba')
   })
 })
 
