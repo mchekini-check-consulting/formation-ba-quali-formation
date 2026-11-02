@@ -38,7 +38,7 @@ function Layout() {
           <div className="logo"><div className="logo-badge"><Icone nom="qualiopi" taille={18} epaisseur={2.2} /></div>Quali-formation</div>
 
           <nav className="nav" aria-label="Menu principal">
-            <NavLink to="/" end onClick={fermerMenu}><IconeMenu nom="tableau" />Tableau de bord</NavLink>
+            <NavLink to="/tableau-de-bord" end onClick={fermerMenu}><IconeMenu nom="tableau" />Tableau de bord</NavLink>
             <NavLink to="/formations" onClick={fermerMenu}><IconeMenu nom="formations" />Formations</NavLink>
             {/* Fonctionnalités à venir (pas encore de page) */}
             {MENU.map((titre) => FONCTIONNALITES.find((f) => f.titre === titre)).map((f) => (

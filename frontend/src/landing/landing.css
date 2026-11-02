@@ -1,0 +1,185 @@
+/* Landing page (SCRUM-14) : reprise de la maquette « Landing page Quali-formation — desktop ».
+   Toutes les classes commencent par « lp- » pour ne pas se mélanger au style de l'application. */
+.lp{
+  --lp-accent:#0F766E;
+  font-family:'Plus Jakarta Sans',system-ui,sans-serif;
+  color:#1E293B; background:#FFFFFF; line-height:1.55; width:100%;
+  color-scheme:light;
+}
+.lp a{color:#115E59;text-decoration:none}
+.lp h1,.lp h2,.lp h3,.lp p,.lp figure,.lp blockquote{margin:0}
+.lp-conteneur{max-width:1200px;margin:0 auto;padding:96px 24px;display:flex;flex-direction:column;gap:52px}
+.lp-centre{align-items:center;gap:40px}
+.lp-etroit{max-width:820px;gap:32px}
+.lp-fond-blanc{background:#FFFFFF}
+.lp-fond-gris{background:#F8FAFC}
+.lp-fond-vert{background:#F3FBF9}
+.lp-section-etapes .lp-conteneur{padding:88px 24px;gap:48px}
+
+/* ---------- Boutons ---------- */
+.lp .lp-btn{display:inline-block;padding:11px 18px;border-radius:10px;font-weight:600;font-size:15px;text-align:center}
+.lp .lp-btn-contour{border:1px solid #CBD5E1;color:#1E293B;transition:background .2s ease}
+.lp .lp-btn-contour:hover{background:#F0FDFA}
+.lp .lp-btn-plein{background:var(--lp-accent);color:#FFFFFF;transition:transform .2s ease,box-shadow .2s ease}
+.lp .lp-btn-plein:hover,.lp .lp-btn-blanc:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(15,118,110,.35)}
+.lp .lp-btn-grand{padding:17px 30px;border-radius:12px;font-size:17px;font-weight:700}
+.lp .lp-btn-contour.lp-btn-grand{font-weight:600}
+.lp .lp-btn-blanc{position:relative;padding:17px 32px;background:#FFFFFF;color:#115E59;font-weight:800;transition:transform .2s ease,box-shadow .2s ease}
+.lp a:focus-visible,.lp button:focus-visible,.lp summary:focus-visible{outline:2px solid var(--lp-accent);outline-offset:3px}
+
+/* ---------- En-tête ---------- */
+.lp-entete{background:rgba(255,255,255,.92);border-bottom:1px solid #EEF2F7}
+.lp-entete-contenu{max-width:1200px;margin:0 auto;padding:16px 24px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px}
+.lp .lp-logo{display:flex;align-items:center;gap:10px;color:#1E293B}
+.lp-logo-badge{width:38px;height:38px;border-radius:11px;background:var(--lp-accent);display:flex;align-items:center;justify-content:center}
+.lp-logo-nom{font-weight:800;font-size:20px;letter-spacing:-.02em;color:#0F172A}
+.lp-menu{display:flex;flex-wrap:wrap;gap:28px;font-size:15px;font-weight:500}
+.lp .lp-menu-lien,.lp .lp-pied-lien{color:#475569}
+.lp .lp-menu-lien:hover,.lp .lp-pied-lien:hover{color:#0F766E}
+.lp-entete-actions{display:flex;flex-wrap:wrap;gap:10px}
+
+/* ---------- Accroche ---------- */
+.lp-accroche{position:relative;overflow:hidden;background:#F3FBF9}
+.lp-bulle{position:absolute;border-radius:50%;opacity:.8}
+.lp-bulle-verte{width:380px;height:380px;background:#CCFBF1;top:-120px;left:-100px}
+.lp-bulle-jaune{width:300px;height:300px;background:#FEF3C7;bottom:-120px;right:-60px}
+.lp-accroche-contenu{position:relative;max-width:960px;margin:0 auto;padding:96px 24px 88px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:26px}
+.lp-badge-essai{display:inline-flex;align-items:center;gap:10px;padding:7px 14px;border-radius:999px;background:#FFFFFF;border:1px solid #99F6E4;font-size:14px;font-weight:600;color:#115E59}
+.lp-point{width:8px;height:8px;border-radius:50%;background:#10B981}
+.lp-accroche h1{font-size:58px;line-height:1.12;font-weight:800;letter-spacing:-.035em;color:#0F172A}
+.lp-mot-zone{display:inline-block;min-height:1.15em;color:var(--lp-accent)}
+.lp-mot{display:inline-block}
+.lp-accroche-texte{font-size:20px;color:#475569;max-width:680px}
+.lp-accroche-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:12px}
+.lp-atouts{display:flex;flex-wrap:wrap;justify-content:center;gap:22px;font-size:14px;color:#475569}
+.lp-atout{display:flex;align-items:center;gap:6px}
+
+/* ---------- Titres de section ---------- */
+.lp-titre-section{max-width:720px;margin:0 auto;text-align:center;display:flex;flex-direction:column;gap:12px}
+.lp-fond-vert .lp-titre-section{max-width:760px}
+.lp-surtitre{font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#0F766E}
+.lp h2{font-size:40px;line-height:1.15;font-weight:800;letter-spacing:-.025em;color:#0F172A}
+.lp-titre-section p{font-size:18px;color:#475569}
+
+/* ---------- Grilles et cartes ---------- */
+.lp-grille{display:grid;gap:20px;width:100%}
+.lp-grille-250{grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.lp-grille-260{grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px}
+.lp-grille-240{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+.lp-grille-230{grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}
+.lp-carte{background:#FFFFFF;border:1px solid #E2E8F0;border-radius:18px;padding:26px;display:flex;flex-direction:column;gap:12px;
+  transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease}
+.lp-carte:hover{transform:translateY(-6px);box-shadow:0 18px 40px rgba(15,118,110,.12);border-color:#99F6E4}
+.lp-carte-icone{width:48px;height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center}
+.lp-carte h3{font-size:18px;font-weight:700;color:#0F172A}
+.lp-carte p{color:#475569;font-size:15px}
+.lp-carte-etape{padding:30px;gap:14px}
+.lp-carte-etape h3{font-size:19px;color:#1E293B}
+.lp-numero{width:46px;height:46px;border-radius:50%;background:var(--lp-accent);color:#FFFFFF;font-weight:800;font-size:19px;display:flex;align-items:center;justify-content:center}
+
+/* ---------- Confiance et témoignages ---------- */
+.lp-garantie{padding:24px;border-radius:16px;display:flex;flex-direction:column;gap:8px}
+.lp-garantie-titre{font-weight:700;font-size:17px}
+.lp-garantie-texte{color:#475569;font-size:15px}
+.lp-carrousel{max-width:820px;width:100%;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:24px}
+.lp-carrousel-ligne{display:flex;align-items:center;gap:16px;width:100%}
+.lp-carrousel-cadre{flex:1;min-width:0}
+.lp-fleche{flex:0 0 auto;width:48px;height:48px;border-radius:50%;border:1px solid #CBD5E1;background:#FFFFFF;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#334155}
+.lp-temoignage{padding:36px;border-radius:22px;background:#F3FBF9;border:1px solid #CCFBF1;display:flex;flex-direction:column;gap:22px}
+.lp-etoiles{color:#F59E0B;font-size:20px;letter-spacing:3px}
+.lp-temoignage blockquote{font-size:20px;line-height:1.5;color:#1E293B;font-weight:500}
+.lp-temoignage figcaption{display:flex;align-items:center;gap:14px}
+.lp-initiales{width:56px;height:56px;border-radius:50%;color:#FFFFFF;font-weight:800;font-size:19px;display:flex;align-items:center;justify-content:center;border:3px solid #FFFFFF;box-shadow:0 4px 12px rgba(15,23,42,.12)}
+.lp-auteur{display:flex;flex-direction:column}
+.lp-auteur strong{font-weight:700;color:#0F172A}
+.lp-auteur span{font-size:14px;color:#475569}
+.lp-points{display:flex;gap:6px}
+.lp-point-btn{width:28px;height:28px;border:0;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.lp-point-actif{width:26px;height:8px;border-radius:999px;background:var(--lp-accent)}
+.lp-point-inactif{width:8px;height:8px;border-radius:999px;background:#CBD5E1}
+.lp-note{font-size:12px;color:#64748B}
+
+/* ---------- Tarifs ---------- */
+.lp-periode{display:flex;align-items:center;gap:4px;padding:5px;border-radius:999px;background:#FFFFFF;border:1px solid #CCFBF1;box-shadow:0 4px 14px rgba(15,23,42,.06)}
+.lp-periode button{padding:10px 22px;border-radius:999px;border:0;background:transparent;color:#334155;font-weight:700;font-size:15px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:8px}
+.lp-periode button.lp-periode-active{background:var(--lp-accent);color:#FFFFFF}
+.lp-mois-offert{padding:2px 8px;border-radius:999px;background:#FEF3C7;color:#92400E;font-size:12px}
+.lp-formules{align-items:stretch}
+.lp-formule{position:relative;border-width:2px;border-radius:22px;padding:30px 26px;gap:18px}
+.lp-formule-recommandee{border-color:var(--lp-accent);box-shadow:0 20px 50px rgba(15,118,110,.18)}
+.lp-etiquette{position:absolute;top:-14px;left:50%;transform:translateX(-50%);padding:5px 14px;border-radius:999px;background:var(--lp-accent);color:#FFFFFF;font-size:12px;font-weight:700;white-space:nowrap}
+.lp-formule-entete,.lp-formule-prix-bloc{display:flex;flex-direction:column;gap:4px}
+.lp-formule-nom{font-weight:800;font-size:20px;color:#0F172A}
+.lp-formule-tranche{font-size:14px;color:#475569}
+.lp-formule-prix-ligne{display:flex;align-items:baseline;gap:6px}
+.lp-formule-prix{font-size:46px;font-weight:800;letter-spacing:-.03em;color:#0F172A}
+.lp-formule-unite{font-size:15px;color:#475569}
+.lp-formule-detail{font-size:14px;color:#0F766E;font-weight:600;min-height:21px}
+.lp .lp-btn-formule{padding:14px;border-radius:12px;background:#FFFFFF;color:#115E59;border:1px solid var(--lp-accent);font-weight:700;transition:transform .2s ease,box-shadow .2s ease}
+.lp .lp-btn-formule:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(15,118,110,.35)}
+.lp .lp-btn-formule.lp-btn-plein{background:var(--lp-accent);color:#FFFFFF}
+.lp-formule-inclus{display:flex;flex-direction:column;gap:10px;font-size:14px;color:#334155;border-top:1px solid #E2E8F0;padding-top:18px}
+.lp-formule-inclus span{display:flex;gap:8px;align-items:center}
+.lp-devis{width:100%;box-sizing:border-box;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;padding:24px 30px;border-radius:18px;background:#FFFFFF;border:1px dashed #5EEAD4}
+.lp-devis-texte{display:flex;flex-direction:column;gap:2px}
+.lp-devis-texte strong{font-weight:800;font-size:18px;color:#0F172A}
+.lp-devis-texte span{color:#475569;font-size:15px}
+.lp .lp-btn-devis{padding:13px 22px;border-radius:12px;border-color:var(--lp-accent);color:#115E59;font-weight:700}
+.lp-avantage{display:flex;gap:14px;align-items:center;font-size:15px;color:#334155}
+.lp-avantage strong{color:#0F172A}
+.lp-avantage-icone{flex:0 0 48px;height:48px;border-radius:14px;background:#CCFBF1;display:flex;align-items:center;justify-content:center}
+.lp-euro{font-size:22px;font-weight:800;color:#115E59}
+
+/* ---------- FAQ ---------- */
+.lp-faq-titre{text-align:center}
+.lp-faq{display:flex;flex-direction:column;gap:12px}
+.lp-faq details{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:14px;padding:20px 24px}
+.lp-faq summary{cursor:pointer;list-style:none;font-weight:700;font-size:17px;color:#0F172A}
+.lp-faq summary::-webkit-details-marker{display:none}
+.lp-faq p{margin:12px 0 0;color:#475569}
+
+/* ---------- Appel final ---------- */
+.lp-appel-conteneur{padding:0 24px 96px}
+.lp-appel{position:relative;overflow:hidden;background:var(--lp-accent);border-radius:28px;padding:64px 40px;display:flex;flex-direction:column;align-items:center;gap:20px;text-align:center;color:#FFFFFF}
+.lp-appel h2{position:relative;color:#FFFFFF}
+.lp-appel p{position:relative;font-size:18px;color:#CCFBF1;max-width:560px}
+.lp-appel-bulle{position:absolute;border-radius:50%;background:rgba(255,255,255,.1)}
+.lp-appel-bulle-1{width:220px;height:220px;top:-80px;right:-40px}
+.lp-appel-bulle-2{width:160px;height:160px;bottom:-60px;left:40px}
+
+/* ---------- Pied de page ---------- */
+.lp-pied{background:#F8FAFC;border-top:1px solid #E2E8F0;color:#475569}
+.lp-pied-contenu{padding:56px 24px 32px;gap:40px}
+.lp-pied-colonnes{display:flex;flex-wrap:wrap;justify-content:space-between;gap:40px}
+.lp-pied-marque{flex:1 1 260px;display:flex;flex-direction:column;gap:12px;max-width:320px;font-size:14px}
+.lp-pied-colonne{display:flex;flex-direction:column;gap:10px;font-size:14px}
+.lp-pied-titre{font-weight:700;color:#0F172A}
+.lp-copyright{border-top:1px solid #E2E8F0;padding-top:20px;font-size:13px;color:#64748B}
+
+/* ---------- Animations ---------- */
+.lp-apparait{animation:lp-monte .8s ease both}
+.lp-d1{animation-delay:.1s}.lp-d2{animation-delay:.25s}.lp-d3{animation-delay:.4s}.lp-d4{animation-delay:.55s}
+.lp-flotte{animation:lp-flotte 5s ease-in-out infinite}
+.lp-f2{animation-delay:-1.2s}.lp-f3{animation-delay:-2.4s}
+.lp-glisse{animation:lp-glisse .6s ease both}
+.lp-pulse{animation:lp-pulse 2.4s ease-in-out infinite}
+.lp-entree-mot{animation:lp-mot .55s cubic-bezier(.2,.7,.2,1) both}
+@keyframes lp-mot{from{opacity:0;transform:translateY(22px);filter:blur(4px)}to{opacity:1;transform:none;filter:none}}
+@keyframes lp-monte{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+@keyframes lp-glisse{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:none}}
+@keyframes lp-flotte{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+@keyframes lp-pulse{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,.45)}50%{box-shadow:0 0 0 8px rgba(16,185,129,0)}}
+@media (prefers-reduced-motion:reduce){.lp-entree-mot,.lp-apparait,.lp-flotte,.lp-glisse,.lp-pulse{animation:none}}
+
+/* ---------- Téléphone ---------- */
+@media (max-width:760px){
+  .lp-conteneur{padding:64px 20px;gap:36px}
+  .lp-accroche-contenu{padding:64px 20px 56px}
+  .lp-accroche h1{font-size:36px}
+  .lp h2{font-size:30px}
+  .lp-accroche-texte{font-size:17px}
+  .lp-menu{gap:18px}
+  .lp-temoignage{padding:24px}
+  .lp-temoignage blockquote{font-size:17px}
+  .lp-appel{padding:48px 24px}
+}
