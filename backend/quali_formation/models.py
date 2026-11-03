@@ -117,7 +117,7 @@ class Session(models.Model):
     """Une session de la formation (RG38, SCRUM-25)."""
 
     class Modalite(models.TextChoices):
-        PRESENTIEL = 'PRESENTIEL', 'Présentiel'
+        PRESENTIEL = Formation.Modalite.PRESENTIEL.value, Formation.Modalite.PRESENTIEL.label
         CLASSE_VIRTUELLE = 'CLASSE_VIRTUELLE', 'Classe virtuelle'
 
     class Statut(models.TextChoices):

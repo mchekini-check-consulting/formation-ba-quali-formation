@@ -1,6 +1,7 @@
 // Sessions et planning (SCRUM-25) : appels à l'API Django (/sessions/, /formateurs/, /apprenants/, /formations/).
 // Adresse du backend : apiBase() (src/api.js), passerelle de l'environnement ou /api en local.
 import { apiBase } from '../api'
+import { PRESENTIEL } from './regles'
 
 // Erreur renvoyée à l'écran : `code` (règle métier du backend) et `champs` (champs refusés)
 export class ErreurSession extends Error {
@@ -35,7 +36,7 @@ export async function listerFormations() {
 
 // s : valeurs du formulaire (chaînes), formateurs et apprenants : identifiants cochés
 export function creerSession(s, formateurs, apprenants) {
-  const presentiel = s.modalite === 'PRESENTIEL'
+  const presentiel = s.modalite === PRESENTIEL
   return appel('/sessions/', {
     formation: Number(s.formation), date_debut: s.debut, date_fin: s.fin, heure_debut: s.heureDebut, heure_fin: s.heureFin,
     duree_heures: s.duree.replaceAll(',', '.'), modalite: s.modalite,

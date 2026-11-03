@@ -4,16 +4,12 @@ import Icone from '../components/Icone'
 import {
   creerSession, dateFr, heureFr, initiales, listerApprenants, listerFormateurs, listerFormations,
 } from '../sessions/serviceApi'
-import { MSG_APPRENANT, MSG_FORMATEUR, verifierInformations } from '../sessions/regles'
+import { CLASSE_VIRTUELLE, erreurServeur, MSG_APPRENANT, MSG_FORMATEUR, PRESENTIEL, verifierInformations } from '../sessions/regles'
 import '../sessions/sessions.css'
 
 // Formulaire « Nouvelle session » (SCRUM-25), en 3 étapes : informations, formateur(s), apprenant(s).
 const ETAPES = ['Informations', 'Formateur(s)', 'Apprenant(s)']
-const VIDE = { formation: '', debut: '', fin: '', heureDebut: '09:00', heureFin: '17:00', duree: '', places: '10', modalite: 'PRESENTIEL', lieu: '', lien: '' }
-// Champs de l'API -> champs du formulaire (erreurs renvoyées par le backend)
-const CHAMPS_API = { formation: 'formation', date_debut: 'debut', date_fin: 'fin', heure_debut: 'heureDebut', heure_fin: 'heureFin',
-  duree_heures: 'duree', nombre_places: 'places', modalite: 'modalite', lieu: 'lieu', lien_classe_virtuelle: 'lien' }
-
+const VIDE = { formation: '', debut: '', fin: '', heureDebut: '09:00', heureFin: '17:00', duree: '', places: '10', modalite: PRESENTIEL, lieu: '', lien: '' }
 function Champ({ id, label, erreur, aide, children }) {
   return (
     <div className="field">
@@ -42,6 +38,66 @@ function ListePersonnes({ titre, personnes, choisis, onBasculer, detail }) {
     </ul>
   )
 }
+
+// Bandeau des 3 étapes : étape en cours, étapes faites (coche)
+function Etapes({ etape }) {
+  return (
+    <ol className="ns-etapes" aria-label="Étapes">
+      {ETAPES.map((nom, i) => {
+        const n = i + 1
+        const faite = n < etape
+        let etat = faite ? 'faite' : ''
+        if (n === etape) etat = 'active'
+        return (
+          <li key={nom} className={etat} aria-current={n === etape ? 'step' : undefined}>
+            <span className="ns-num">{faite ? <Icone nom="check" taille={14} epaisseur={2.6} /> : n}</span>
+            <span><small>Étape {n}</small><b>{nom}</b></span>
+          </li>
+        )
+      })}
+    </ol>
+  )
+}
+
+// Étape 1 : informations de la session
+function EtapeInformations({ s, erreurs, saisie, formations, changer }) {
+  const presentiel = s.modalite === PRESENTIEL
+  return (
+    <>
+      <h2>Informations de la session</h2>
+      <p className="sub">Les champs marqués <span className="req">*</span> sont obligatoires.</p>
+      <div className="ns-grille">
+        <div className="ns-plein">
+          <Champ id="ns-formation" label="Formation" erreur={erreurs.formation}>
+            <select {...saisie('formation')}>
+              <option value="">Choisir une formation</option>
+              {formations.map((f) => <option key={f.id} value={f.id}>{f.intitule}</option>)}
+            </select>
+          </Champ>
+        </div>
+        <Champ id="ns-debut" label="Date de début" erreur={erreurs.debut}><input type="date" {...saisie('debut')} /></Champ>
+        <Champ id="ns-fin" label="Date de fin" erreur={erreurs.fin}><input type="date" {...saisie('fin')} /></Champ>
+        <Champ id="ns-heureDebut" label="Heure de début" erreur={erreurs.heureDebut}><input type="time" {...saisie('heureDebut')} /></Champ>
+        <Champ id="ns-heureFin" label="Heure de fin" erreur={erreurs.heureFin}><input type="time" {...saisie('heureFin')} /></Champ>
+        <Champ id="ns-duree" label="Durée (heures)" erreur={erreurs.duree} aide="Reprise automatiquement de la formation choisie."><input inputMode="decimal" {...saisie('duree')} /></Champ>
+        <Champ id="ns-places" label="Nombre de places" erreur={erreurs.places}><input inputMode="numeric" {...saisie('places')} /></Champ>
+      </div>
+      <fieldset className="ns-modalite">
+        <legend className="lbl">Modalité <span className="req" aria-hidden="true">*</span></legend>
+        <div className="radios">
+          <label className="radio"><input type="radio" name="modalite" checked={presentiel} onChange={() => changer('modalite', PRESENTIEL)} />Présentiel</label>
+          <label className="radio"><input type="radio" name="modalite" checked={!presentiel} onChange={() => changer('modalite', CLASSE_VIRTUELLE)} />Classe virtuelle</label>
+        </div>
+      </fieldset>
+      {presentiel
+        ? <Champ id="ns-lieu" label="Lieu" erreur={erreurs.lieu}><input placeholder="Adresse ou salle" {...saisie('lieu')} /></Champ>
+        : <Champ id="ns-lien" label="Lien de la classe virtuelle" erreur={erreurs.lien}><input type="url" placeholder="https://…" {...saisie('lien')} /></Champ>}
+    </>
+  )
+}
+
+// Libellé « N apprenant(s) sélectionné(s) »
+const compteur = (n) => (n > 1 ? `${n} apprenants sélectionnés` : `${n} apprenant sélectionné`)
 
 function NouvelleSession() {
   const navigate = useNavigate()
@@ -97,14 +153,12 @@ function NouvelleSession() {
       const message = `La session « ${session.formation_intitule} » du ${dateFr(session.date_debut)} a été créée avec le statut « Prévue ».`
       void navigate('/sessions', { state: { message, sessionId: session.id } })
     } catch (e) {
+      // Refus du serveur : retour à l'étape concernée (champs de l'étape 1 signalés)
+      const refus = erreurServeur(e)
       setEnvoi(false)
-      if (e.code === 'FORMATEUR_REQUIS') { setEtape(2); setErreurEtape(e.message); return }
-      if (e.code === 'APPRENANT_REQUIS') { setErreurEtape(e.message); return }
-      // Donnée de l'étape 1 refusée par le serveur : retour à l'étape 1, champs signalés
-      const champs = Object.fromEntries(Object.entries(e.champs).filter(([k]) => CHAMPS_API[k]).map(([k, v]) => [CHAMPS_API[k], [].concat(v)[0]]))
-      if (e.code === 'DATES_INVALIDES') champs.fin = e.message
-      if (Object.keys(champs).length) { setErreurs(champs); setEtape(1); return }
-      setErreurEtape(e.message)
+      setEtape(refus.etape)
+      setErreurEtape(refus.message || null)
+      if (refus.champs) setErreurs(refus.champs)
     }
   }
 
@@ -118,61 +172,15 @@ function NouvelleSession() {
     return <div className="wrap">{entete}<p className="chargement" role={erreurChargement ? 'alert' : undefined}>{erreurChargement || 'Chargement…'}</p></div>
   }
 
-  const presentiel = s.modalite === 'PRESENTIEL'
   const resume = `Du ${dateFr(s.debut)} au ${dateFr(s.fin)} · ${heureFr(s.heureDebut)} – ${heureFr(s.heureFin)}`
-  const nbApprenants = apprenants.length
 
   return (
     <div className="wrap">
       {entete}
-      <ol className="ns-etapes" aria-label="Étapes">
-        {ETAPES.map((nom, i) => {
-          const n = i + 1
-          let etat = ''
-          if (n === etape) etat = 'active'
-          else if (n < etape) etat = 'faite'
-          return (
-            <li key={nom} className={etat} aria-current={n === etape ? 'step' : undefined}>
-              <span className="ns-num">{n < etape ? <Icone nom="check" taille={14} epaisseur={2.6} /> : n}</span>
-              <span><small>Étape {n}</small><b>{nom}</b></span>
-            </li>
-          )
-        })}
-      </ol>
+      <Etapes etape={etape} />
 
       <section className="card ns-carte">
-        {etape === 1 && (
-          <>
-            <h2>Informations de la session</h2>
-            <p className="sub">Les champs marqués <span className="req">*</span> sont obligatoires.</p>
-            <div className="ns-grille">
-              <div className="ns-plein">
-                <Champ id="ns-formation" label="Formation" erreur={erreurs.formation}>
-                  <select {...saisie('formation')}>
-                    <option value="">Choisir une formation</option>
-                    {listes.formations.map((f) => <option key={f.id} value={f.id}>{f.intitule}</option>)}
-                  </select>
-                </Champ>
-              </div>
-              <Champ id="ns-debut" label="Date de début" erreur={erreurs.debut}><input type="date" {...saisie('debut')} /></Champ>
-              <Champ id="ns-fin" label="Date de fin" erreur={erreurs.fin}><input type="date" {...saisie('fin')} /></Champ>
-              <Champ id="ns-heureDebut" label="Heure de début" erreur={erreurs.heureDebut}><input type="time" {...saisie('heureDebut')} /></Champ>
-              <Champ id="ns-heureFin" label="Heure de fin" erreur={erreurs.heureFin}><input type="time" {...saisie('heureFin')} /></Champ>
-              <Champ id="ns-duree" label="Durée (heures)" erreur={erreurs.duree} aide="Reprise automatiquement de la formation choisie."><input inputMode="decimal" {...saisie('duree')} /></Champ>
-              <Champ id="ns-places" label="Nombre de places" erreur={erreurs.places}><input inputMode="numeric" {...saisie('places')} /></Champ>
-            </div>
-            <fieldset className="ns-modalite">
-              <legend className="lbl">Modalité <span className="req" aria-hidden="true">*</span></legend>
-              <div className="radios">
-                <label className="radio"><input type="radio" name="modalite" checked={presentiel} onChange={() => changer('modalite', 'PRESENTIEL')} />Présentiel</label>
-                <label className="radio"><input type="radio" name="modalite" checked={!presentiel} onChange={() => changer('modalite', 'CLASSE_VIRTUELLE')} />Classe virtuelle</label>
-              </div>
-            </fieldset>
-            {presentiel
-              ? <Champ id="ns-lieu" label="Lieu" erreur={erreurs.lieu}><input placeholder="Adresse ou salle" {...saisie('lieu')} /></Champ>
-              : <Champ id="ns-lien" label="Lien de la classe virtuelle" erreur={erreurs.lien}><input type="url" placeholder="https://…" {...saisie('lien')} /></Champ>}
-          </>
-        )}
+        {etape === 1 && <EtapeInformations s={s} erreurs={erreurs} saisie={saisie} formations={listes.formations} changer={changer} />}
 
         {etape === 2 && (
           <>
@@ -186,7 +194,7 @@ function NouvelleSession() {
           <>
             <div className="ns-titre3">
               <div><h2>Apprenant(s) <span className="req">*</span></h2><p className="sub">Au moins un apprenant est nécessaire pour créer la session.</p></div>
-              <span className="ns-compteur">{nbApprenants} apprenant{nbApprenants > 1 ? 's' : ''} sélectionné{nbApprenants > 1 ? 's' : ''}</span>
+              <span className="ns-compteur">{compteur(apprenants.length)}</span>
             </div>
             <ListePersonnes titre="Apprenants" personnes={listes.apprenants} choisis={apprenants} onBasculer={basculer(apprenants, setApprenants)} detail={(p) => p.email} />
           </>
