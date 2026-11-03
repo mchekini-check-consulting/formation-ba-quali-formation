@@ -103,6 +103,15 @@ class ApprenantSerializer(serializers.ModelSerializer):
         fields = ('id', 'prenom', 'nom', 'email')
 
 
+class ApprenantCreationSerializer(serializers.Serializer):
+    """Écriture (SCRUM-27) : prénom, nom et e-mail obligatoires, e-mail au format valide."""
+
+    prenom = serializers.CharField(max_length=100, error_messages={'blank': 'Indiquez le prénom.', 'required': 'Indiquez le prénom.'})
+    nom = serializers.CharField(max_length=100, error_messages={'blank': 'Indiquez le nom.', 'required': 'Indiquez le nom.'})
+    email = serializers.EmailField(max_length=255, error_messages={
+        'blank': "Indiquez l'e-mail.", 'required': "Indiquez l'e-mail.", 'invalid': "Format d'e-mail invalide"})
+
+
 class SessionPlanningSerializer(serializers.ModelSerializer):
     """Lecture : une session de la page Sessions et planning."""
 

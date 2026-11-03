@@ -33,3 +33,23 @@ export function erreurServeur(e) {
   if (Object.keys(champs).length) return { etape: 1, champs }
   return { etape: 3, message: e.message }
 }
+
+// Panneau « Nouvel apprenant » (SCRUM-27) : prénom, nom et e-mail obligatoires, e-mail au format valide
+export const MSG_EMAIL = "Format d'e-mail invalide"
+const MESSAGES_APPRENANT = { prenom: 'Indiquez le prénom.', nom: 'Indiquez le nom.', email: "Indiquez l'e-mail." }
+// Format attendu : texte@domaine.extension, sans espace
+export function emailValide(email) {
+  const parties = email.split('@')
+  if (parties.length !== 2 || /\s/.test(email)) return false
+  const [utilisateur, domaine] = parties
+  const point = domaine.lastIndexOf('.')
+  return utilisateur.length > 0 && point > 0 && point < domaine.length - 1
+}
+export function verifierApprenant(a) {
+  const erreurs = {}
+  for (const [k, message] of Object.entries(MESSAGES_APPRENANT)) {
+    if (!a[k].trim()) erreurs[k] = message
+  }
+  if (!erreurs.email && !emailValide(a.email.trim())) erreurs.email = MSG_EMAIL
+  return erreurs
+}

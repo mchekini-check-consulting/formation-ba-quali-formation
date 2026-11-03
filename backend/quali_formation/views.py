@@ -5,6 +5,7 @@ from rest_framework.response import Response
 
 from quali_formation.models import Formation
 from quali_formation.serializers import (
+    ApprenantCreationSerializer,
     ApprenantSerializer,
     FormateurSerializer,
     FormationEcritureSerializer,
@@ -140,6 +141,12 @@ def formateurs(request):
     return Response(FormateurSerializer(session_service.lister_formateurs(), many=True).data)
 
 
-@api_view(["GET"])
+@api_view(["GET", "POST"])
 def apprenants(request):
+    """GET : tous les apprenants. POST : création (SCRUM-27) ; 201, ou 400 si un champ manque ou si l'e-mail est invalide."""
+    if request.method == 'POST':
+        entree = ApprenantCreationSerializer(data=request.data)
+        entree.is_valid(raise_exception=True)
+        apprenant = session_service.creer_apprenant(**entree.validated_data)
+        return Response(ApprenantSerializer(apprenant).data, status=status.HTTP_201_CREATED)
     return Response(ApprenantSerializer(session_service.lister_apprenants(), many=True).data)

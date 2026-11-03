@@ -97,3 +97,30 @@ class SessionsPlanningTests(TestCase):
 
     def test_refuse_un_formateur_inconnu(self):
         self.assertEqual(self.poster(formateurs=[999999]).status_code, 400)
+
+
+class CreationApprenantTests(TestCase):
+    """SCRUM-27 : POST /apprenants/."""
+
+    def poster(self, **corps):
+        return self.client.post('/apprenants/', corps, content_type='application/json')
+
+    def test_cree_un_apprenant_nettoye(self):
+        reponse = self.poster(prenom=' Lucas ', nom=' Girard ', email='lucas.girard@acme.fr')
+        self.assertEqual(reponse.status_code, 201)
+        self.assertEqual(reponse.json()['prenom'], 'Lucas')
+        apprenant = Apprenant.objects.get(pk=reponse.json()['id'])
+        self.assertEqual((apprenant.nom, apprenant.email), ('Girard', 'lucas.girard@acme.fr'))
+        # Il est proposé à l'étape 3 de « Nouvelle session »
+        self.assertIn('lucas.girard@acme.fr', [a['email'] for a in self.client.get('/apprenants/').json()])
+
+    def test_refuse_les_champs_obligatoires_vides(self):
+        reponse = self.poster(prenom=' ', nom='')
+        self.assertEqual(reponse.status_code, 400)
+        self.assertEqual(reponse.json(), {'prenom': ['Indiquez le prénom.'], 'nom': ['Indiquez le nom.'], 'email': ["Indiquez l'e-mail."]})
+        self.assertEqual(Apprenant.objects.count(), 8)
+
+    def test_refuse_un_email_invalide(self):
+        reponse = self.poster(prenom='Lucas', nom='Girard', email='lucas.girard')
+        self.assertEqual(reponse.status_code, 400)
+        self.assertEqual(reponse.json(), {'email': ["Format d'e-mail invalide"]})
