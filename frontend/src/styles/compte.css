@@ -1,0 +1,80 @@
+/* Page « Créer un compte » (maquette docs/maquette-créer-compte.PNG), charte verte #0F766E */
+.cpt{min-height:100vh;display:flex;flex-direction:column;background:var(--carte);color:var(--texte);font-family:var(--police)}
+
+.cpt-entete{display:flex;align-items:center;justify-content:space-between;gap:16px;height:80px;padding:0 120px;border-bottom:1px solid var(--bordure)}
+.cpt-entete .logo{padding:0;font-size:20px;letter-spacing:-.01em;color:inherit;text-decoration:none}
+.cpt-entete .logo-badge{width:38px;height:38px}
+.cpt-connexion{display:flex;align-items:center;gap:12px;font-size:15px;color:var(--texte-3)}
+.cpt-connexion .btn{height:46px;padding:0 18px;border:1px solid var(--bordure);background:var(--carte);font-size:15px;font-weight:600;border-radius:10px;display:inline-flex;align-items:center;text-decoration:none;color:var(--texte)}
+
+.cpt-corps{flex:1;display:grid;grid-template-columns:400px 1fr}
+
+/* Panneau gauche vert clair, avec ses deux cercles décoratifs */
+.cpt-panneau{position:relative;overflow:hidden;padding:148px 56px 64px;background:color-mix(in srgb,var(--vert-doux) 55%,var(--carte))}
+.cpt-panneau::before,.cpt-panneau::after{content:"";position:absolute;border-radius:50%;z-index:0}
+.cpt-panneau::before{width:340px;height:340px;left:-110px;top:-210px;background:color-mix(in srgb,var(--vert-bordure) 40%,var(--carte))}
+.cpt-panneau::after{width:300px;height:300px;right:-110px;bottom:-130px;background:color-mix(in srgb,var(--alerte-doux) 80%,var(--carte))}
+.cpt-panneau>*{position:relative;z-index:1}
+.cpt-badge{display:inline-flex;align-items:center;gap:10px;padding:9px 22px 9px 12px;border:1px solid var(--vert-bordure);border-radius:999px;background:var(--carte);color:var(--vert-texte);font-size:14px;font-weight:500;line-height:1.5}
+.cpt-point{flex:none;width:8px;height:8px;border-radius:50%;background:#10B981}
+.cpt-panneau h2{margin:26px 0 0;font-size:40px;line-height:1.16;font-weight:700;letter-spacing:-.03em}
+.cpt-panneau p{margin:34px 0 0;font-size:18px;line-height:1.55;color:var(--texte-2)}
+.cpt-avantages{list-style:none;margin:32px 0 0;padding:0;display:grid;gap:16px;font-size:16px;color:var(--texte-2)}
+.cpt-avantages li{display:flex;align-items:center;gap:12px}
+.cpt-avantages svg{color:#10B981}
+
+/* Formulaire à droite */
+.cpt-zone{display:flex;justify-content:center;padding:96px 24px 64px}
+.cpt-form{width:100%;max-width:460px}
+.cpt-form h1{margin:0;font-size:30px;font-weight:700;letter-spacing:-.025em}
+.cpt-sous-titre{margin:6px 0 0;font-size:16px;color:var(--texte-3)}
+.cpt-bloc{margin-top:22px}
+.cpt-sous-titre+.cpt-bloc{margin-top:26px}
+.cpt-label{display:block;margin:0 0 6px;font-size:15px;font-weight:600}
+.cpt-form input:not([type=checkbox]){width:100%;height:50px;padding:0 14px;border:1px solid var(--bordure);border-radius:10px;background:var(--carte);color:var(--texte);font:inherit;font-size:16px;box-sizing:border-box}
+.cpt-form input::placeholder{color:var(--texte-3)}
+.cpt-form input:focus{outline:none;border-color:var(--vert);box-shadow:0 0 0 3px var(--vert-doux)}
+.cpt-form input[aria-invalid=true]{border-color:var(--danger)}
+
+.cpt-mdp{position:relative}
+.cpt-mdp input:not([type=checkbox]){padding-right:50px}
+.cpt-oeil{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:0;border-radius:8px;background:none;color:var(--texte-2);display:grid;place-items:center;cursor:pointer}
+.cpt-oeil:hover{background:var(--vert-doux);color:var(--vert)}
+
+/* Les 5 indicateurs du mot de passe, cochés en direct */
+.cpt-regles{list-style:none;margin:10px 0 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:6px 20px;font-size:14px;color:var(--texte-2)}
+.cpt-regles li{display:flex;align-items:center;gap:8px}
+.cpt-pastille{flex:none;width:18px;height:18px;border-radius:50%;background:var(--bordure);color:var(--sur-vert);display:grid;place-items:center;transition:background .15s}
+.cpt-regles li.ok{color:var(--vert-texte)}
+.cpt-regles li.ok .cpt-pastille{background:var(--vert)}
+
+.cpt-cgu{display:flex;align-items:flex-start;gap:12px;font-size:15px;color:var(--texte-2);cursor:pointer}
+.cpt-cgu input{flex:none;width:20px;height:20px;margin:0;accent-color:var(--vert);cursor:pointer}
+.cpt-cgu input[aria-invalid=true]{outline:2px solid var(--danger);outline-offset:1px}
+.cpt-cgu a{color:var(--vert-texte);text-decoration:underline;text-underline-offset:2px}
+
+.cpt-erreur{margin:8px 0 0;font-size:14px;color:var(--danger)}
+.cpt-erreur-generale{margin-top:20px;padding:10px 12px;border-radius:10px;background:var(--danger-doux)}
+
+.cpt-bouton{width:100%;height:54px;margin-top:40px;border:0;border-radius:10px;background:var(--vert);color:var(--sur-vert);font:inherit;font-size:18px;font-weight:600;cursor:pointer}
+.cpt-bouton:hover{filter:brightness(1.08)}
+.cpt-bouton:disabled{opacity:.6;cursor:not-allowed}
+.cpt-bouton[aria-busy=true]{cursor:progress}
+/* Bandeau du tableau de bord après la création du compte */
+.cpt-bienvenue{display:block;margin-top:16px;padding:12px 16px;border:1px solid var(--vert-bordure);border-radius:12px;background:var(--vert-doux);color:var(--vert-texte);font-size:15px;font-weight:500}
+
+.cpt-rgpd{margin:22px 0 0;text-align:center;font-size:14px;color:var(--texte-3)}
+
+/* Tablette et téléphone : le panneau passe au-dessus du formulaire */
+@media (max-width:960px){
+  .cpt-entete{padding:0 24px}
+  .cpt-corps{grid-template-columns:1fr}
+  .cpt-panneau{padding:56px 24px 48px}
+  .cpt-panneau h2{font-size:32px}
+  .cpt-zone{padding:48px 16px}
+}
+@media (max-width:520px){
+  .cpt-entete{height:68px;padding:0 16px}
+  .cpt-connexion>span{display:none}
+  .cpt-regles{grid-template-columns:1fr}
+}

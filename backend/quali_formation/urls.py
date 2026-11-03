@@ -5,6 +5,8 @@ from quali_formation import views
 # Routes de l'API, montées sous /api/ dans config/urls.py
 urlpatterns = [
     path('sante/', views.sante),
+    # Créer un compte (SCRUM-15) : POST /auth/register
+    path('auth/register', views.inscription),
     path('formations/', views.formations),
     path('formations/<int:pk>/', views.formation),
     path('formations/<int:pk>/publier/', views.publier),

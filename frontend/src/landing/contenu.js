@@ -4,11 +4,11 @@
 export const EMAIL_CONTACT = 'contact@quali-formation.fr'
 
 // Destination des boutons « Se connecter » et « Essai gratuit ».
-// Provisoire : les écrans de connexion et de création de compte font l'objet d'autres US ;
-// en attendant, ces boutons mènent à l'application.
+// Provisoire pour « Se connecter » : l'écran de connexion fait l'objet d'une autre US ;
+// en attendant, ce bouton mène à l'application. Création de compte : SCRUM-15.
 export const LIENS = {
   connexion: '/tableau-de-bord',
-  inscription: '/tableau-de-bord',
+  inscription: '/creer-un-compte',
 }
 
 // Menu du haut : libellé -> section de la page (CA2)
