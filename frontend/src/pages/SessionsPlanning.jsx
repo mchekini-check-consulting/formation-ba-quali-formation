@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import Icone from '../components/Icone'
+import { MenuPartiesPrenantes, PanneauApprenant } from '../sessions/PartiesPrenantes'
 import { jour, listerSessions, MODALITES, moisCourt, periode, STATUTS } from '../sessions/serviceApi'
 import '../sessions/sessions.css'
 
 // Page Sessions et planning (SCRUM-25) : liste des sessions et bouton « Nouvelle session ».
+// « Parties prenantes » : création d'un apprenant dans un panneau latéral (SCRUM-27).
 // Après une création, le formulaire revient ici avec le message de confirmation (state.message).
 function SessionsPlanning() {
   const navigate = useNavigate()
@@ -13,6 +15,7 @@ function SessionsPlanning() {
   const [erreur, setErreur] = useState(null)
   const [message, setMessage] = useState(location.state?.message || null)
   const nouvelleId = location.state?.sessionId
+  const [panneau, setPanneau] = useState(false)
 
   useEffect(() => {
     listerSessions().then(setSessions).catch((e) => setErreur(e.message))
@@ -28,8 +31,15 @@ function SessionsPlanning() {
       )}
       <div className="page-head">
         <div><h1>Sessions et planning</h1><p className="sub">Retrouvez ici toutes vos sessions de formation et leur planning.</p></div>
-        <button type="button" className="btn btn-primary" onClick={() => navigate('/sessions/nouvelle')}><Icone nom="plus" taille={18} epaisseur={2.4} />Nouvelle session</button>
+        <div className="sp-actions">
+          <MenuPartiesPrenantes onNouvelApprenant={() => setPanneau(true)} />
+          <button type="button" className="btn btn-primary" onClick={() => navigate('/sessions/nouvelle')}><Icone nom="plus" taille={18} epaisseur={2.4} />Nouvelle session</button>
+        </div>
       </div>
+      {panneau && (
+        <PanneauApprenant onFermer={() => setPanneau(false)}
+          onCree={(a) => { setPanneau(false); setMessage(`L’apprenant « ${a.prenom} ${a.nom} » a été créé. Vous pouvez maintenant l’ajouter à une session.`) }} />
+      )}
 
       {sessions === null && <p className="chargement" role={erreur ? 'alert' : undefined}>{erreur || 'Chargement des sessions…'}</p>}
       {sessions?.length === 0 && <div className="card empty"><p className="sub">Aucune session programmée pour le moment.</p></div>}
