@@ -165,6 +165,10 @@ class SessionService:
     def lister_apprenants(self):
         return Apprenant.objects.all()
 
+    def creer_formateur(self, prenom, nom, email):
+        """Enregistre un formateur (SCRUM-26) ; il est ensuite proposé à l'étape 2 de « Nouvelle session »."""
+        return Formateur.objects.create(prenom=prenom, nom=nom, email=email)
+
     def creer_apprenant(self, prenom, nom, email):
         """Enregistre un apprenant (SCRUM-27) ; il est ensuite proposé à l'étape 3 de « Nouvelle session »."""
         return Apprenant.objects.create(prenom=prenom, nom=nom, email=email)

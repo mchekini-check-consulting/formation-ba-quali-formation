@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import Icone from '../components/Icone'
-import { MenuPartiesPrenantes, PanneauApprenant } from '../sessions/PartiesPrenantes'
+import { MenuPartiesPrenantes, PanneauPartiePrenante } from '../sessions/PartiesPrenantes'
+import { messageCreation } from '../sessions/typesPersonnes'
 import { jour, listerSessions, MODALITES, moisCourt, periode, STATUTS } from '../sessions/serviceApi'
 import '../sessions/sessions.css'
 
 // Page Sessions et planning (SCRUM-25) : liste des sessions et bouton « Nouvelle session ».
-// « Parties prenantes » : création d'un apprenant dans un panneau latéral (SCRUM-27).
+// « Parties prenantes » : création d'un formateur (SCRUM-26) ou d'un apprenant (SCRUM-27) dans un panneau latéral.
 // Après une création, le formulaire revient ici avec le message de confirmation (state.message).
 function SessionsPlanning() {
   const navigate = useNavigate()
@@ -15,7 +16,7 @@ function SessionsPlanning() {
   const [erreur, setErreur] = useState(null)
   const [message, setMessage] = useState(location.state?.message || null)
   const nouvelleId = location.state?.sessionId
-  const [panneau, setPanneau] = useState(false)
+  const [panneau, setPanneau] = useState(null) // 'formateur', 'apprenant' ou null
 
   useEffect(() => {
     listerSessions().then(setSessions).catch((e) => setErreur(e.message))
@@ -32,13 +33,13 @@ function SessionsPlanning() {
       <div className="page-head">
         <div><h1>Sessions et planning</h1><p className="sub">Retrouvez ici toutes vos sessions de formation et leur planning.</p></div>
         <div className="sp-actions">
-          <MenuPartiesPrenantes onNouvelApprenant={() => setPanneau(true)} />
+          <MenuPartiesPrenantes onChoisir={setPanneau} />
           <button type="button" className="btn btn-primary" onClick={() => navigate('/sessions/nouvelle')}><Icone nom="plus" taille={18} epaisseur={2.4} />Nouvelle session</button>
         </div>
       </div>
       {panneau && (
-        <PanneauApprenant onFermer={() => setPanneau(false)}
-          onCree={(a) => { setPanneau(false); setMessage(`L’apprenant « ${a.prenom} ${a.nom} » a été créé. Vous pouvez maintenant l’ajouter à une session.`) }} />
+        <PanneauPartiePrenante type={panneau} key={panneau} onFermer={() => setPanneau(null)}
+          onCree={(p) => { setMessage(messageCreation(panneau, p)); setPanneau(null) }} />
       )}
 
       {sessions === null && <p className="chargement" role={erreur ? 'alert' : undefined}>{erreur || 'Chargement des sessions…'}</p>}
