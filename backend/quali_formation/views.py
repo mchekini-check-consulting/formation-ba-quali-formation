@@ -3,7 +3,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from quali_formation.models import Formation
+from quali_formation.models import Formation, Utilisateur
 from quali_formation.serializers import (
     ApprenantSerializer,
     FormateurSerializer,
@@ -184,9 +184,18 @@ def inscription(request):
                      'date_creation': utilisateur.date_creation}, status=status.HTTP_201_CREATED)
 
 
+# Mémorisation de la connexion : session Django. Le navigateur garde un cookie de session (HttpOnly, illisible
+# par le JavaScript) qui ne contient qu'un numéro ; le compte connecté est retenu côté serveur (table django_session).
+SESSION_UTILISATEUR = 'utilisateur_id'
+
+
+def _compte(utilisateur):
+    return Response({'id': utilisateur.id, 'email': utilisateur.email})
+
+
 @api_view(["POST"])
 def connexion(request):
-    """POST /auth/login {email, mot_de_passe} : 200 connecté ({id, email}) ; 400 champ manquant ;
+    """POST /auth/login {email, mot_de_passe} : 200 connecté ({id, email}) et session ouverte ; 400 champ manquant ;
     401 IDENTIFIANTS_INVALIDES (« E-mail ou mot de passe incorrect », sans dire lequel)."""
     try:
         utilisateur = compte_service.connecter(request.data.get('email'), request.data.get('mot_de_passe'))
@@ -194,4 +203,16 @@ def connexion(request):
         return _formulaire_invalide(e)
     except ErreurMetier as e:
         return _erreur(e)
-    return Response({'id': utilisateur.id, 'email': utilisateur.email})
+    request.session.cycle_key()  # nouveau numéro de session à chaque connexion
+    request.session[SESSION_UTILISATEUR] = utilisateur.id
+    return _compte(utilisateur)
+
+
+@api_view(["GET"])
+def moi(request):
+    """GET /auth/moi : le compte connecté ({id, email}), ou 401 NON_CONNECTE."""
+    utilisateur = Utilisateur.objects.filter(pk=request.session.get(SESSION_UTILISATEUR)).first()
+    if utilisateur is None:
+        return Response({'code': 'NON_CONNECTE', 'detail': "Vous n'êtes pas connecté."},
+                        status=status.HTTP_401_UNAUTHORIZED)
+    return _compte(utilisateur)

@@ -19,10 +19,12 @@ export class ErreurInscription extends Error {
   }
 }
 
+// `credentials: 'include'` : le navigateur garde et renvoie le cookie de session du serveur (connexion mémorisée)
 async function envoyer(route, corps) {
   try {
     return await fetch(`${apiBase()}${route}`, {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(corps),
     })
@@ -57,4 +59,15 @@ export async function seConnecter({ email, motDePasse }) {
   // RG-CX-05 : un seul message, sans dire si c'est l'e-mail ou le mot de passe qui est faux
   if (reponse.status === 401) throw new ErreurInscription('IDENTIFIANTS_INVALIDES', { general: IDENTIFIANTS_INCORRECTS })
   throw refus(json, 'La connexion a échoué. Réessayez.')
+}
+
+// Connexion mémorisée : GET /auth/moi renvoie le compte connecté ({ id, email }), ou null si personne ne l'est
+// (ou si le serveur ne répond pas)
+export async function compteConnecte() {
+  try {
+    const reponse = await fetch(`${apiBase()}/auth/moi`, { credentials: 'include' })
+    return reponse.ok ? await reponse.json() : null
+  } catch {
+    return null
+  }
 }

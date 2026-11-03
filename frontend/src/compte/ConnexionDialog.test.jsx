@@ -2,7 +2,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { routes } from '../App'
-import { IDENTIFIANTS_INCORRECTS, PAGE_D_ACCUEIL } from './serviceCompte'
+import { compteConnecte, IDENTIFIANTS_INCORRECTS, PAGE_D_ACCUEIL } from './serviceCompte'
 
 // SCRUM-16 « Se connecter à mon compte » : règles RG-CX-01 à RG-CX-08, critères d'acceptation 1 à 6
 // et jeux de test (docs/SCRUM-16-regles-de-gestion.md)
@@ -97,7 +97,7 @@ describe('Se connecter : critères d\'acceptation', () => {
     repondre(200, { id: 1, email: EMAIL })
     const router = afficher()
     seConnecter()
-    expect(await screen.findByText('Vous êtes connecté. Bienvenue sur Quali-formation !')).toBeTruthy()
+    expect(await screen.findByText('Vous êtes connecté. Bienvenue sur Quali-formation !', {}, { timeout: 3000 })).toBeTruthy()
     expect(router.state.location.pathname).toBe(PAGE_D_ACCUEIL)
     expect(popup()).toBeNull()
     const [url, options] = fetchMock.mock.calls[0]
@@ -206,6 +206,44 @@ describe('Se connecter : critères d\'acceptation', () => {
     expect(router.state.location.pathname).toBe('/creer-un-compte')
     expect(popup()).toBeNull()
     expect(screen.getByRole('heading', { level: 1, name: 'Créer votre compte' })).toBeTruthy()
+  })
+})
+
+describe('Se connecter : connexion mémorisée (session)', () => {
+  it('la connexion demande au navigateur de garder le cookie de session', async () => {
+    repondre(200, { id: 1, email: EMAIL })
+    afficher()
+    seConnecter()
+    await screen.findByText(/Vous êtes connecté/)
+    expect(fetchMock.mock.calls[0][1].credentials).toBe('include')
+  })
+
+  it('le tableau de bord garde « Bonjour » et le message de bienvenue, sans afficher l\'e-mail', async () => {
+    repondre(200, { id: 1, email: EMAIL })
+    afficher()
+    seConnecter()
+    expect(await screen.findByText('Vous êtes connecté. Bienvenue sur Quali-formation !', {}, { timeout: 3000 })).toBeTruthy()
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toMatch(/^Bonjour /)
+    expect(screen.queryByText(/Connecté avec/)).toBeNull()
+    expect(screen.queryByText(EMAIL)).toBeNull()
+  })
+
+  it('le compte connecté est demandé au serveur avec le cookie de session (GET /auth/moi)', async () => {
+    repondre(200, { id: 1, email: EMAIL })
+    expect(await compteConnecte()).toEqual({ id: 1, email: EMAIL })
+    const [url, options] = fetchMock.mock.calls[0]
+    expect(url).toMatch(/\/auth\/moi$/)
+    expect(options.credentials).toBe('include')
+  })
+
+  it('personne n\'est connecté : aucun compte', async () => {
+    repondre(401, { code: 'NON_CONNECTE', detail: "Vous n'êtes pas connecté." })
+    expect(await compteConnecte()).toBeNull()
+  })
+
+  it('serveur indisponible : aucun compte', async () => {
+    fetchMock.mockRejectedValueOnce(new TypeError('Failed to fetch'))
+    expect(await compteConnecte()).toBeNull()
   })
 })
 

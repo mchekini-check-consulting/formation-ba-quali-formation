@@ -82,3 +82,52 @@ class SeConnecterTests(TestCase):
 
     def test_seul_post_est_accepte(self):
         self.assertEqual(self.client.get('/auth/login').status_code, 405)
+
+
+class MemorisationConnexionTests(TestCase):
+    """Connexion mémorisée : la session ouverte par /auth/login est reconnue par GET /auth/moi."""
+
+    def setUp(self):
+        self.compte = compte_service.creer_compte(EMAIL, MOT_DE_PASSE, MOT_DE_PASSE, True)
+
+    def connecter(self, mot_de_passe=MOT_DE_PASSE):
+        return self.client.post('/auth/login', {'email': EMAIL, 'mot_de_passe': mot_de_passe},
+                                content_type='application/json')
+
+    def assert_non_connecte(self):
+        r = self.client.get('/auth/moi')
+        self.assertEqual(r.status_code, 401)
+        self.assertEqual(r.json()['code'], 'NON_CONNECTE')
+
+    def test_sans_connexion_personne_n_est_connecte(self):
+        self.assert_non_connecte()
+
+    def test_apres_connexion_le_compte_est_reconnu(self):
+        self.connecter()
+        r = self.client.get('/auth/moi')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(r.json(), {'id': self.compte.id, 'email': EMAIL})
+
+    def test_cookie_de_session_illisible_par_le_javascript(self):
+        r = self.connecter()
+        cookie = r.cookies['sessionid']
+        self.assertTrue(cookie['httponly'])
+        self.assertNotIn(EMAIL, cookie.value)
+
+    def test_nouveau_numero_de_session_a_chaque_connexion(self):
+        self.connecter()
+        premier = self.client.cookies['sessionid'].value
+        self.connecter()
+        self.assertNotEqual(self.client.cookies['sessionid'].value, premier)
+
+    def test_identifiants_refuses_aucune_session_ouverte(self):
+        self.assertEqual(self.connecter('Faux#2026').status_code, 401)
+        self.assert_non_connecte()
+
+    def test_compte_supprime_n_est_plus_connecte(self):
+        self.connecter()
+        self.compte.delete()
+        self.assert_non_connecte()
+
+    def test_seul_get_est_accepte(self):
+        self.assertEqual(self.client.post('/auth/moi').status_code, 405)

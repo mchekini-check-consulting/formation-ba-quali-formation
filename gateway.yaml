@@ -26,6 +26,8 @@ gatewayConfig: |
             - https://frontend.{{ .project }}.{{ .env }}.{{ .domain }}
           accessControlAllowMethods: [GET, POST, PUT, PATCH, DELETE, OPTIONS]
           accessControlAllowHeaders: [Content-Type, Authorization]
+          # Cookie de session (connexion mémorisée, SCRUM-16) : le navigateur l'envoie à la passerelle
+          accessControlAllowCredentials: true
           accessControlMaxAge: 600
           addVaryHeader: true
     services:
