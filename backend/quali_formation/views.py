@@ -5,12 +5,12 @@ from rest_framework.response import Response
 
 from quali_formation.models import Formation
 from quali_formation.serializers import (
-    ApprenantCreationSerializer,
     ApprenantSerializer,
     FormateurSerializer,
     FormationEcritureSerializer,
     FormationSerializer,
     ItemSerializer,
+    PersonneCreationSerializer,
     SessionCreationSerializer,
     SessionPlanningSerializer,
     SessionSerializer,
@@ -136,17 +136,22 @@ def sessions_planning(request):
     return Response(SessionPlanningSerializer(session_service.lister_sessions(), many=True).data)
 
 
-@api_view(["GET"])
+def _personnes(request, lister, creer, serializer):
+    """GET : la liste. POST : création ; 201, ou 400 si un champ manque ou si l'e-mail est invalide."""
+    if request.method == 'POST':
+        entree = PersonneCreationSerializer(data=request.data)
+        entree.is_valid(raise_exception=True)
+        return Response(serializer(creer(**entree.validated_data)).data, status=status.HTTP_201_CREATED)
+    return Response(serializer(lister(), many=True).data)
+
+
+@api_view(["GET", "POST"])
 def formateurs(request):
-    return Response(FormateurSerializer(session_service.lister_formateurs(), many=True).data)
+    """Formateurs (création : SCRUM-26)."""
+    return _personnes(request, session_service.lister_formateurs, session_service.creer_formateur, FormateurSerializer)
 
 
 @api_view(["GET", "POST"])
 def apprenants(request):
-    """GET : tous les apprenants. POST : création (SCRUM-27) ; 201, ou 400 si un champ manque ou si l'e-mail est invalide."""
-    if request.method == 'POST':
-        entree = ApprenantCreationSerializer(data=request.data)
-        entree.is_valid(raise_exception=True)
-        apprenant = session_service.creer_apprenant(**entree.validated_data)
-        return Response(ApprenantSerializer(apprenant).data, status=status.HTTP_201_CREATED)
-    return Response(ApprenantSerializer(session_service.lister_apprenants(), many=True).data)
+    """Apprenants (création : SCRUM-27)."""
+    return _personnes(request, session_service.lister_apprenants, session_service.creer_apprenant, ApprenantSerializer)

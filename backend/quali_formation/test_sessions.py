@@ -124,3 +124,30 @@ class CreationApprenantTests(TestCase):
         reponse = self.poster(prenom='Lucas', nom='Girard', email='lucas.girard')
         self.assertEqual(reponse.status_code, 400)
         self.assertEqual(reponse.json(), {'email': ["Format d'e-mail invalide"]})
+
+
+class CreationFormateurTests(TestCase):
+    """SCRUM-26 : POST /formateurs/."""
+
+    def poster(self, **corps):
+        return self.client.post('/formateurs/', corps, content_type='application/json')
+
+    def test_cree_un_formateur_nettoye(self):
+        reponse = self.poster(prenom=' Camille ', nom=' Leroy ', email='camille.leroy@exemple.fr')
+        self.assertEqual(reponse.status_code, 201)
+        self.assertEqual(reponse.json(), {'id': reponse.json()['id'], 'prenom': 'Camille', 'nom': 'Leroy',
+                                          'email': 'camille.leroy@exemple.fr', 'specialites': ''})
+        # Il est proposé à l'étape 2 de « Nouvelle session »
+        self.assertIn('camille.leroy@exemple.fr', [f['email'] for f in self.client.get('/formateurs/').json()])
+
+    def test_refuse_les_champs_obligatoires_vides(self):
+        reponse = self.poster(prenom='', nom=' ', email='')
+        self.assertEqual(reponse.status_code, 400)
+        self.assertEqual(reponse.json(), {'prenom': ['Indiquez le prénom.'], 'nom': ['Indiquez le nom.'], 'email': ["Indiquez l'e-mail."]})
+        self.assertEqual(Formateur.objects.count(), 4)
+
+    def test_refuse_un_email_invalide(self):
+        reponse = self.poster(prenom='Camille', nom='Leroy', email='camille@leroy')
+        self.assertEqual(reponse.status_code, 400)
+        self.assertEqual(reponse.json(), {'email': ["Format d'e-mail invalide"]})
+        self.assertEqual(Formateur.objects.count(), 4)

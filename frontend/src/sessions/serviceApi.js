@@ -28,8 +28,10 @@ async function appel(chemin, corps) {
 export const listerSessions = () => appel('/sessions/')
 export const listerFormateurs = () => appel('/formateurs/')
 export const listerApprenants = () => appel('/apprenants/')
-// SCRUM-27 : POST /apprenants/ {prenom, nom, email}
-export const creerApprenant = (a) => appel('/apprenants/', { prenom: a.prenom.trim(), nom: a.nom.trim(), email: a.email.trim() })
+// POST {prenom, nom, email} : formateur (SCRUM-26) ou apprenant (SCRUM-27)
+const creerPersonne = (chemin) => (p) => appel(chemin, { prenom: p.prenom.trim(), nom: p.nom.trim(), email: p.email.trim() })
+export const creerFormateur = creerPersonne('/formateurs/')
+export const creerApprenant = creerPersonne('/apprenants/')
 
 // Formations proposées dans le formulaire : identifiant, intitulé et durée (reprise dans la session)
 export async function listerFormations() {

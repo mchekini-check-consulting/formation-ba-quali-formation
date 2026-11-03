@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import Icone from '../components/Icone'
 import { Modal } from '../components/Modal'
-import { verifierApprenant } from './regles'
-import { creerApprenant } from './serviceApi'
+import { verifierPersonne } from './regles'
+import { PARTIES_PRENANTES } from './typesPersonnes'
 
-// Bouton « Parties prenantes » de la page Sessions et planning et sa liste déroulante.
-// « Nouveau formateur » (SCRUM-26) n'est pas encore disponible : affiché grisé.
-export function MenuPartiesPrenantes({ onNouvelApprenant }) {
+// Bouton « Parties prenantes » et sa liste déroulante. onChoisir(type) : 'formateur' ou 'apprenant'.
+export function MenuPartiesPrenantes({ onChoisir }) {
   const [ouvert, setOuvert] = useState(false)
   const zone = useRef(null)
 
@@ -18,7 +17,7 @@ export function MenuPartiesPrenantes({ onNouvelApprenant }) {
     return () => document.removeEventListener('mousedown', fermer)
   }, [ouvert])
 
-  const choisir = () => { setOuvert(false); onNouvelApprenant() }
+  const choisir = (type) => { setOuvert(false); onChoisir(type) }
 
   return (
     <div className="pp" ref={zone}>
@@ -27,14 +26,12 @@ export function MenuPartiesPrenantes({ onNouvelApprenant }) {
       </button>
       {ouvert && (
         <div className="pp-menu" role="menu">
-          <button type="button" role="menuitem" disabled title="Bientôt disponible">
-            <span className="pp-ic formateur"><Icone nom="inscription" taille={18} /></span>
-            <span><b>Nouveau formateur</b><small>Créer la fiche d’un formateur</small></span>
-          </button>
-          <button type="button" role="menuitem" onClick={choisir}>
-            <span className="pp-ic"><Icone nom="diplome" taille={18} /></span>
-            <span><b>Nouvel apprenant</b><small>Créer la fiche d’un apprenant</small></span>
-          </button>
+          {Object.entries(PARTIES_PRENANTES).map(([type, t]) => (
+            <button type="button" role="menuitem" key={type} onClick={() => choisir(type)}>
+              <span className={`pp-ic ${t.classe}`}><Icone nom={t.icone} taille={18} /></span>
+              <span><b>{t.titre}</b><small>{t.aide}</small></span>
+            </button>
+          ))}
         </div>
       )}
     </div>
@@ -53,28 +50,29 @@ function Champ({ id, label, erreur, children }) {
   )
 }
 
-// Panneau latéral « Nouvel apprenant » (SCRUM-27). « Annuler », la croix, Échap ou un clic à côté le ferment.
-// onCree(apprenant) : appelé après l'enregistrement.
-export function PanneauApprenant({ onFermer, onCree }) {
-  const [a, setA] = useState(VIDE)
+// Panneau latéral « Nouveau formateur » (SCRUM-26) ou « Nouvel apprenant » (SCRUM-27).
+// « Annuler », la croix, Échap ou un clic à côté le ferment. onCree(personne) : appelé après l'enregistrement.
+export function PanneauPartiePrenante({ type, onFermer, onCree }) {
+  const t = PARTIES_PRENANTES[type]
+  const [p, setP] = useState(VIDE)
   const [erreurs, setErreurs] = useState({})
   const [envoi, setEnvoi] = useState(false)
   const [erreurServeur, setErreurServeur] = useState(null)
 
   const saisie = (k) => ({
-    id: `pa-${k}`, value: a[k], className: `inp${erreurs[k] ? ' err' : ''}`,
+    id: `pa-${k}`, value: p[k], className: `inp${erreurs[k] ? ' err' : ''}`,
     'aria-invalid': erreurs[k] ? true : undefined, 'aria-describedby': erreurs[k] ? `pa-${k}-err` : undefined,
-    onChange: (e) => { setA({ ...a, [k]: e.target.value }); if (erreurs[k]) setErreurs({ ...erreurs, [k]: undefined }) },
+    onChange: (e) => { setP({ ...p, [k]: e.target.value }); if (erreurs[k]) setErreurs({ ...erreurs, [k]: undefined }) },
   })
 
   const enregistrer = async () => {
-    const e = verifierApprenant(a)
+    const e = verifierPersonne(p)
     setErreurs(e)
     setErreurServeur(null)
     if (Object.keys(e).length) return
     setEnvoi(true)
     try {
-      onCree(await creerApprenant(a))
+      onCree(await t.creer(p))
     } catch (err) {
       setEnvoi(false)
       const champs = Object.fromEntries(Object.entries(err.champs || {}).filter(([k]) => k in VIDE).map(([k, v]) => [k, [].concat(v)[0]]))
@@ -90,13 +88,13 @@ export function PanneauApprenant({ onFermer, onCree }) {
         <div className="pa-tete">
           <div>
             <small>Parties prenantes</small>
-            <h2 id="pa-titre">Nouvel apprenant</h2>
+            <h2 id="pa-titre">{t.titre}</h2>
             <p className="sub">Les champs marqués <span className="req">*</span> sont obligatoires.</p>
           </div>
           <button type="button" className="pa-croix" aria-label="Fermer" onClick={onFermer}><Icone nom="x" taille={18} /></button>
         </div>
         <div className="pa-corps">
-          {aCorriger && <p className="pa-alerte" role="alert">Corrigez les champs indiqués pour enregistrer l’apprenant.</p>}
+          {aCorriger && <p className="pa-alerte" role="alert">Corrigez les champs indiqués pour enregistrer {t.le}.</p>}
           {erreurServeur && <p className="pa-alerte" role="alert">{erreurServeur}</p>}
           <div className="pa-ligne">
             <Champ id="pa-prenom" label="Prénom" erreur={erreurs.prenom}><input autoComplete="off" {...saisie('prenom')} /></Champ>

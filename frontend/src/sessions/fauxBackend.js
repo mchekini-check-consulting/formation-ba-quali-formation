@@ -22,17 +22,17 @@ export const SESSION_EXCEL = {
 export const repondre = (status, corps) => ({ ok: status < 400, status, json: async () => corps })
 
 // reponsePost(corps) : réponse du POST /sessions/ (par défaut 201 avec la session créée)
-// reponseApprenant(corps) : réponse du POST /apprenants/ (par défaut 201, ajouté à la liste)
-export function installerFauxBackend({ sessions = [SESSION_EXCEL], reponsePost, reponseApprenant } = {}) {
+// reponsePersonne(corps) : réponse du POST /formateurs/ ou /apprenants/ (par défaut 201, ajouté à la liste)
+export function installerFauxBackend({ sessions = [SESSION_EXCEL], reponsePost, reponsePersonne } = {}) {
   const liste = [...sessions]
-  const apprenants = [...APPRENANTS]
+  const personnes = { '/formateurs/': [...FORMATEURS], '/apprenants/': [...APPRENANTS] }
   const fetch = vi.fn(async (url, options) => {
     const chemin = url.replace(/^\/api/, '')
-    if (options?.method === 'POST' && chemin === '/apprenants/') {
+    if (options?.method === 'POST' && personnes[chemin]) {
       const corps = JSON.parse(options.body)
-      if (reponseApprenant) return reponseApprenant(corps)
-      const cree = { ...corps, id: 50 }
-      apprenants.push(cree)
+      if (reponsePersonne) return reponsePersonne(corps)
+      const cree = { ...corps, id: 50, specialites: '' }
+      personnes[chemin].push(cree)
       return repondre(201, cree)
     }
     if (options?.method === 'POST') {
@@ -43,7 +43,7 @@ export function installerFauxBackend({ sessions = [SESSION_EXCEL], reponsePost, 
       liste.push(creee)
       return repondre(201, creee)
     }
-    const donnees = { '/sessions/': liste, '/formateurs/': FORMATEURS, '/apprenants/': apprenants, '/formations/': FORMATIONS }[chemin]
+    const donnees = { '/sessions/': liste, ...personnes, '/formations/': FORMATIONS }[chemin]
     return donnees ? repondre(200, donnees) : repondre(404, {})
   })
   vi.stubGlobal('fetch', fetch)
