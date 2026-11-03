@@ -1,16 +1,14 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Icone from '../components/Icone'
+import ChampMotDePasse from '../compte/ChampMotDePasse'
 import { REGLES_MOT_DE_PASSE, verifier } from '../compte/regles'
-import { creerCompte } from '../compte/serviceCompte'
+import { creerCompte, PAGE_D_ACCUEIL } from '../compte/serviceCompte'
 import { LIENS } from '../landing/contenu'
 import '../styles/compte.css'
 
 const AVANTAGES = ['Utilisateurs illimités', 'Sans frais de mise en service', 'Sans engagement']
 const ERREUR_GENERALE = 'Le compte n’a pas pu être créé. Réessayez.'
-
-// Page d'accueil (SCRUM-19) pas encore développée : page provisoire = tableau de bord (RG-CC-09)
-export const PAGE_APRES_CREATION = '/tableau-de-bord'
 
 // Message d'erreur affiché sous un champ
 const Erreur = ({ id, message }) => (message ? <p className="cpt-erreur" id={id}>{message}</p> : null)
@@ -36,7 +34,6 @@ function CreerCompte() {
   const navigate = useNavigate()
   const [valeurs, setValeurs] = useState({ email: '', motDePasse: '', confirmation: '', cgu: false })
   const [erreurs, setErreurs] = useState({})
-  const [voirMotDePasse, setVoirMotDePasse] = useState(false)
   const [envoi, setEnvoi] = useState(false)
 
   // Une modification efface l'erreur du champ concerné
@@ -66,7 +63,7 @@ function CreerCompte() {
     setEnvoi(true)
     try {
       await creerCompte(valeurs)
-      await navigate(PAGE_APRES_CREATION, { state: { compteCree: true } })
+      await navigate(PAGE_D_ACCUEIL, { state: { compteCree: true } })
     } catch (err) {
       refuser(err.erreurs || { general: ERREUR_GENERALE })
       setEnvoi(false)
@@ -109,14 +106,8 @@ function CreerCompte() {
 
             <div className="cpt-bloc">
               <label className="cpt-label" htmlFor="cpt-mdp">Mot de passe</label>
-              <div className="cpt-mdp">
-                <input id="cpt-mdp" type={voirMotDePasse ? 'text' : 'password'} autoComplete="new-password" value={valeurs.motDePasse}
-                  onChange={(e) => changer('motDePasse', e.target.value)} {...aide('motDePasse')} />
-                <button type="button" className="cpt-oeil" onClick={() => setVoirMotDePasse((v) => !v)}
-                  aria-label={voirMotDePasse ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}>
-                  <Icone nom={voirMotDePasse ? 'oeilBarre' : 'oeil'} taille={19} />
-                </button>
-              </div>
+              <ChampMotDePasse id="cpt-mdp" autoComplete="new-password" value={valeurs.motDePasse}
+                onChange={(e) => changer('motDePasse', e.target.value)} {...aide('motDePasse')} />
               <ReglesMotDePasse motDePasse={valeurs.motDePasse} />
               <Erreur id="erreur-motDePasse" message={erreurs.motDePasse} />
             </div>

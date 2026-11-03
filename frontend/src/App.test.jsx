@@ -50,10 +50,10 @@ describe('Landing page', () => {
     expect(screen.getByRole('navigation', { name: 'Navigation principale' })).toBeTruthy()
   })
 
-  it("« Se connecter » ouvre l'application", async () => {
+  it('« Se connecter » ouvre le pop-up de connexion (SCRUM-16)', async () => {
     afficher('/')
     fireEvent.click(screen.getByRole('link', { name: 'Se connecter' }))
-    expect((await screen.findByRole('heading', { level: 1 })).textContent).toBe('Bonjour Nassiba')
+    expect(await screen.findByRole('dialog', { name: 'Se connecter' })).toBeTruthy()
   })
 })
 

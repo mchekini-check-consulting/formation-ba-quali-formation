@@ -1,6 +1,6 @@
 """Règles de gestion du module Formations (RG01 à RG38), indépendantes de l'API pour être testées seules."""
 
-from django.contrib.auth.hashers import make_password
+from django.contrib.auth.hashers import check_password, make_password
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.db import IntegrityError, transaction
@@ -273,7 +273,7 @@ def _erreurs_inscription(email, mot_de_passe, confirmation, cgu_acceptees):
 
 @loggable
 class CompteService:
-    """Création du compte d'un organisme de formation. Ni l'e-mail ni le mot de passe ne sont journalisés :
+    """Création du compte d'un organisme de formation (SCRUM-15) et connexion (SCRUM-16). Ni l'e-mail ni le mot de passe ne sont journalisés :
     @loggable ne trace que la méthode, et les messages d'erreur ne reprennent aucune donnée saisie."""
 
     def creer_compte(self, email, mot_de_passe, confirmation, cgu_acceptees):
@@ -292,6 +292,35 @@ class CompteService:
                                               cgu_acceptees_le=timezone.now())
         except IntegrityError:  # deux inscriptions simultanées avec la même adresse
             raise deja from None
+
+    def connecter(self, email, mot_de_passe):
+        """SCRUM-16 « Se connecter » : renvoie l'utilisateur dont l'e-mail (majuscules et espaces ignorés, comme
+        à la création) et le mot de passe (comparé au hash) correspondent."""
+        email = str(email or '').strip().lower()
+        mot_de_passe = str(mot_de_passe or '')
+        erreurs = []  # RG-CX-03 : champs obligatoires
+        if not email:
+            erreurs.append(_erreur_champ('email', 'EMAIL_REQUIS', "L'adresse e-mail est obligatoire."))
+        if not mot_de_passe:
+            erreurs.append(_erreur_champ('mot_de_passe', 'MOT_DE_PASSE_REQUIS', 'Le mot de passe est obligatoire.'))
+        if erreurs:
+            raise DonneesInvalides(erreurs)
+        utilisateur = Utilisateur.objects.filter(email=email).first()  # RG-CX-04
+        # Hash vérifié même pour un e-mail inconnu : même temps de réponse, on ne devine pas quels comptes existent
+        hash_attendu = utilisateur.mot_de_passe if utilisateur else _hash_factice()
+        if not check_password(mot_de_passe, hash_attendu) or utilisateur is None:
+            # RG-CX-05 : un seul message, sans dire si c'est l'e-mail ou le mot de passe qui est faux
+            raise ErreurMetier('IDENTIFIANTS_INVALIDES', 'E-mail ou mot de passe incorrect', 401)
+        return utilisateur
+
+
+_HASH_FACTICE = []
+
+
+def _hash_factice():
+    if not _HASH_FACTICE:
+        _HASH_FACTICE.append(make_password('compte-inexistant'))
+    return _HASH_FACTICE[0]
 
 
 compte_service = CompteService()

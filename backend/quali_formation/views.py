@@ -159,7 +159,14 @@ def apprenants(request):
     return _personnes(request, session_service.lister_apprenants, session_service.creer_apprenant, ApprenantSerializer)
 
 
-# ---- Créer un compte (SCRUM-15) ----
+# ---- Créer un compte (SCRUM-15) et se connecter (SCRUM-16) ----
+
+def _formulaire_invalide(e):
+    """400 : le premier champ en erreur (code, champ, detail) et la liste complète."""
+    premiere = e.erreurs[0]
+    return Response({'code': premiere['code'], 'champ': premiere['champ'], 'detail': premiere['message'],
+                     'erreurs': e.erreurs}, status=status.HTTP_400_BAD_REQUEST)
+
 
 @api_view(["POST"])
 def inscription(request):
@@ -170,10 +177,21 @@ def inscription(request):
         utilisateur = compte_service.creer_compte(d.get('email'), d.get('mot_de_passe'), d.get('confirmation'),
                                                   d.get('cgu_acceptees'))
     except DonneesInvalides as e:
-        premiere = e.erreurs[0]
-        return Response({'code': premiere['code'], 'champ': premiere['champ'], 'detail': premiere['message'],
-                         'erreurs': e.erreurs}, status=status.HTTP_400_BAD_REQUEST)
+        return _formulaire_invalide(e)
     except ErreurMetier as e:
         return Response({'code': e.code, 'champ': 'email', 'detail': e.message}, status=e.statut_http)
     return Response({'id': utilisateur.id, 'email': utilisateur.email,
                      'date_creation': utilisateur.date_creation}, status=status.HTTP_201_CREATED)
+
+
+@api_view(["POST"])
+def connexion(request):
+    """POST /auth/login {email, mot_de_passe} : 200 connecté ({id, email}) ; 400 champ manquant ;
+    401 IDENTIFIANTS_INVALIDES (« E-mail ou mot de passe incorrect », sans dire lequel)."""
+    try:
+        utilisateur = compte_service.connecter(request.data.get('email'), request.data.get('mot_de_passe'))
+    except DonneesInvalides as e:
+        return _formulaire_invalide(e)
+    except ErreurMetier as e:
+        return _erreur(e)
+    return Response({'id': utilisateur.id, 'email': utilisateur.email})

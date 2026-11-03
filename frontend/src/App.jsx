@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom'
 import Layout from './components/Layout'
+import ConnexionDialog from './compte/ConnexionDialog'
 import CreerCompte from './pages/CreerCompte'
 import TableauDeBord from './pages/TableauDeBord'
 import FormationDetail from './pages/FormationDetail'
@@ -16,6 +17,8 @@ export const routes = [
   { path: '/', element: <LandingPage /> },
   // Créer un compte (SCRUM-15) : page plein écran, sans barre latérale
   { path: '/creer-un-compte', element: <CreerCompte /> },
+  // Se connecter (SCRUM-16) : pop-up par-dessus la landing page
+  { path: '/se-connecter', element: <><LandingPage /><ConnexionDialog /></> },
   {
     element: <Layout />,
     children: [

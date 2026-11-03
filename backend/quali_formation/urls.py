@@ -7,6 +7,8 @@ urlpatterns = [
     path('sante/', views.sante),
     # Créer un compte (SCRUM-15) : POST /auth/register
     path('auth/register', views.inscription),
+    # Se connecter (SCRUM-16) : POST /auth/login
+    path('auth/login', views.connexion),
     path('formations/', views.formations),
     path('formations/<int:pk>/', views.formation),
     path('formations/<int:pk>/publier/', views.publier),
