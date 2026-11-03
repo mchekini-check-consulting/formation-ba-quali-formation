@@ -13,7 +13,7 @@ applications:
     # remplace tout jusqu'à la fin de la ligne.
     tag:
       dev: 6f5877d
-      qualif: c2b1f69
+      qualif: 6f5877d
       preprod: ""
       prod: ""
     containerPort: 8000
@@ -65,7 +65,7 @@ applications:
     # remplace tout jusqu'à la fin de la ligne.
     tag:
       dev: 6f5877d
-      qualif: c2b1f69
+      qualif: 6f5877d
       preprod: ""
       prod: ""
     containerPort: 8080
