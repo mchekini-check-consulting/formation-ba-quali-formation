@@ -38,7 +38,7 @@ export function creerSession(s, formateurs, apprenants) {
   const presentiel = s.modalite === 'PRESENTIEL'
   return appel('/sessions/', {
     formation: Number(s.formation), date_debut: s.debut, date_fin: s.fin, heure_debut: s.heureDebut, heure_fin: s.heureFin,
-    duree_heures: s.duree.replace(',', '.'), modalite: s.modalite,
+    duree_heures: s.duree.replaceAll(',', '.'), modalite: s.modalite,
     lieu: presentiel ? s.lieu.trim() : '', lien_classe_virtuelle: presentiel ? '' : s.lien.trim(),
     nombre_places: Number(s.places), formateurs, apprenants,
   })

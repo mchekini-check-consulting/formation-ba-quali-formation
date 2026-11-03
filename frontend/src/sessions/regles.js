@@ -11,7 +11,7 @@ export function verifierInformations(s) {
   for (const k of ['formation', 'debut', 'fin', 'heureDebut', 'heureFin', 'duree', 'places', 'modalite', lieuOuLien]) {
     if (!String(s[k]).trim()) erreurs[k] = OBLIGATOIRE
   }
-  if (!erreurs.duree && !(Number(s.duree.replace(',', '.')) > 0)) erreurs.duree = 'Indiquez une durée supérieure à 0.'
+  if (!erreurs.duree && !(Number(s.duree.replaceAll(',', '.')) > 0)) erreurs.duree = 'Indiquez une durée supérieure à 0.'
   if (!erreurs.places && !/^[1-9]\d*$/.test(s.places.trim())) erreurs.places = 'Indiquez un nombre entier supérieur à 0.'
   if (!erreurs.debut && !erreurs.fin && s.fin < s.debut) erreurs.fin = MSG_DATES
   return erreurs

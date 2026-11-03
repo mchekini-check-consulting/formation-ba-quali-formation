@@ -128,7 +128,9 @@ function NouvelleSession() {
       <ol className="ns-etapes" aria-label="Étapes">
         {ETAPES.map((nom, i) => {
           const n = i + 1
-          const etat = n === etape ? 'active' : n < etape ? 'faite' : ''
+          let etat = ''
+          if (n === etape) etat = 'active'
+          else if (n < etape) etat = 'faite'
           return (
             <li key={nom} className={etat} aria-current={n === etape ? 'step' : undefined}>
               <span className="ns-num">{n < etape ? <Icone nom="check" taille={14} epaisseur={2.6} /> : n}</span>
