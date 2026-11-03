@@ -5,12 +5,21 @@ from rest_framework.response import Response
 
 from quali_formation.models import Formation
 from quali_formation.serializers import (
+    ApprenantSerializer,
+    FormateurSerializer,
     FormationEcritureSerializer,
     FormationSerializer,
     ItemSerializer,
+    SessionCreationSerializer,
+    SessionPlanningSerializer,
     SessionSerializer,
 )
-from quali_formation.services import ErreurMetier, formation_service, item_service
+from quali_formation.services import (
+    ErreurMetier,
+    formation_service,
+    item_service,
+    session_service,
+)
 
 
 @api_view(["GET"])
@@ -106,3 +115,31 @@ def sessions(request, pk):
     except ErreurMetier as e:
         return _erreur(e)
     return Response(FormationSerializer(_formations().get(pk=pk)).data, status=status.HTTP_201_CREATED)
+
+
+# ---- Sessions et planning (SCRUM-25) ----
+
+@api_view(["GET", "POST"])
+def sessions_planning(request):
+    """GET : toutes les sessions, par date de début. POST : création d'une session « Prévue »
+    (201 ; 400 si une donnée est invalide, sans formateur ou sans apprenant)."""
+    if request.method == 'POST':
+        entree = SessionCreationSerializer(data=request.data)
+        entree.is_valid(raise_exception=True)
+        try:
+            session = session_service.creer_session(**entree.validated_data)
+        except ErreurMetier as e:
+            return _erreur(e)
+        session = session_service.lister_sessions().get(pk=session.pk)
+        return Response(SessionPlanningSerializer(session).data, status=status.HTTP_201_CREATED)
+    return Response(SessionPlanningSerializer(session_service.lister_sessions(), many=True).data)
+
+
+@api_view(["GET"])
+def formateurs(request):
+    return Response(FormateurSerializer(session_service.lister_formateurs(), many=True).data)
+
+
+@api_view(["GET"])
+def apprenants(request):
+    return Response(ApprenantSerializer(session_service.lister_apprenants(), many=True).data)

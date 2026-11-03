@@ -82,14 +82,61 @@ class Sequence(models.Model):
         return self.titre
 
 
+class Formateur(models.Model):
+    """Un formateur, que l'on peut rattacher aux sessions (SCRUM-25 ; création : SCRUM-26)."""
+
+    prenom = models.CharField(max_length=100)
+    nom = models.CharField(max_length=100)
+    email = models.EmailField(max_length=255)
+    specialites = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        db_table = 'formateur'
+        ordering = ('nom', 'prenom', 'id')
+
+    def __str__(self):
+        return f'{self.prenom} {self.nom}'
+
+
+class Apprenant(models.Model):
+    """Un apprenant, que l'on peut inscrire aux sessions (SCRUM-25 ; création : SCRUM-27)."""
+
+    prenom = models.CharField(max_length=100)
+    nom = models.CharField(max_length=100)
+    email = models.EmailField(max_length=255)
+
+    class Meta:
+        db_table = 'apprenant'
+        ordering = ('nom', 'prenom', 'id')
+
+    def __str__(self):
+        return f'{self.prenom} {self.nom}'
+
+
 class Session(models.Model):
-    """Une session de la formation (RG38)."""
+    """Une session de la formation (RG38, SCRUM-25)."""
+
+    class Modalite(models.TextChoices):
+        PRESENTIEL = 'PRESENTIEL', 'Présentiel'
+        CLASSE_VIRTUELLE = 'CLASSE_VIRTUELLE', 'Classe virtuelle'
+
+    class Statut(models.TextChoices):
+        PREVUE = 'PREVUE', 'Prévue'
 
     formation = models.ForeignKey(Formation, on_delete=models.CASCADE, related_name='sessions')
     date_debut = models.DateField()
     date_fin = models.DateField()
+    # Champs ajoutés par SCRUM-25 : facultatifs pour les sessions déjà enregistrées
+    heure_debut = models.TimeField(null=True, blank=True)
+    heure_fin = models.TimeField(null=True, blank=True)
+    duree_heures = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True)
+    modalite = models.CharField(max_length=20, choices=Modalite.choices, default=Modalite.PRESENTIEL)
     lieu = models.CharField(max_length=255, blank=True)
+    lien_classe_virtuelle = models.CharField(max_length=500, blank=True)
     nombre_places = models.PositiveIntegerField(null=True, blank=True)
+    statut = models.CharField(max_length=10, choices=Statut.choices, default=Statut.PREVUE)
+    formateurs = models.ManyToManyField(Formateur, related_name='sessions', blank=True)
+    apprenants = models.ManyToManyField(Apprenant, related_name='sessions', blank=True)
 
     class Meta:
         ordering = ('date_debut', 'id')
