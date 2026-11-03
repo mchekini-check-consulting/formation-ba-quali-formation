@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom'
 import Layout from './components/Layout'
+import CreerCompte from './pages/CreerCompte'
 import TableauDeBord from './pages/TableauDeBord'
 import FormationDetail from './pages/FormationDetail'
 import FormationForm from './pages/FormationForm'
@@ -13,6 +14,8 @@ import LandingPage from './landing/LandingPage'
 export const routes = [
   // Landing page (SCRUM-14) : première page du site pour un visiteur non connecté
   { path: '/', element: <LandingPage /> },
+  // Créer un compte (SCRUM-15) : page plein écran, sans barre latérale
+  { path: '/creer-un-compte', element: <CreerCompte /> },
   {
     element: <Layout />,
     children: [

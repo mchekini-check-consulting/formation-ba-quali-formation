@@ -16,7 +16,9 @@ from quali_formation.serializers import (
     SessionSerializer,
 )
 from quali_formation.services import (
+    DonneesInvalides,
     ErreurMetier,
+    compte_service,
     formation_service,
     item_service,
     session_service,
@@ -155,3 +157,23 @@ def formateurs(request):
 def apprenants(request):
     """Apprenants (création : SCRUM-27)."""
     return _personnes(request, session_service.lister_apprenants, session_service.creer_apprenant, ApprenantSerializer)
+
+
+# ---- Créer un compte (SCRUM-15) ----
+
+@api_view(["POST"])
+def inscription(request):
+    """POST /auth/register {email, mot_de_passe, confirmation, cgu_acceptees} : création du compte.
+    201 compte créé (sans le mot de passe) ; 400 donnée invalide (champ + code) ; 409 EMAIL_DEJA_UTILISE."""
+    d = request.data
+    try:
+        utilisateur = compte_service.creer_compte(d.get('email'), d.get('mot_de_passe'), d.get('confirmation'),
+                                                  d.get('cgu_acceptees'))
+    except DonneesInvalides as e:
+        premiere = e.erreurs[0]
+        return Response({'code': premiere['code'], 'champ': premiere['champ'], 'detail': premiere['message'],
+                         'erreurs': e.erreurs}, status=status.HTTP_400_BAD_REQUEST)
+    except ErreurMetier as e:
+        return Response({'code': e.code, 'champ': 'email', 'detail': e.message}, status=e.statut_http)
+    return Response({'id': utilisateur.id, 'email': utilisateur.email,
+                     'date_creation': utilisateur.date_creation}, status=status.HTTP_201_CREATED)

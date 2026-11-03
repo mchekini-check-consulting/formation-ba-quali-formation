@@ -143,3 +143,22 @@ class Session(models.Model):
 
     def __str__(self):
         return f'{self.formation.intitule} : {self.date_debut} → {self.date_fin}'
+
+
+class Utilisateur(models.Model):
+    """Compte du responsable d'un organisme de formation (SCRUM-15 « Créer un compte »).
+
+    `email` est enregistré en minuscules, sans espaces autour : l'unicité ignore les majuscules (RG-CC-02).
+    `mot_de_passe` contient uniquement le hash Django, jamais le mot de passe en clair (RG-CC-07)."""
+
+    email = models.EmailField(max_length=254, unique=True)
+    mot_de_passe = models.CharField(max_length=128)
+    cgu_acceptees_le = models.DateTimeField()
+    date_creation = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'utilisateur'
+        ordering = ('id',)
+
+    def __str__(self):
+        return self.email

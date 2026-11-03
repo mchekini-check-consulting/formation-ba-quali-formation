@@ -1,5 +1,8 @@
 """Règles de gestion du module Formations (RG01 à RG38), indépendantes de l'API pour être testées seules."""
 
+from django.contrib.auth.hashers import make_password
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 from rest_framework.exceptions import APIException
@@ -13,6 +16,7 @@ from quali_formation.models import (
     Item,
     Sequence,
     Session,
+    Utilisateur,
 )
 from quali_formation.serializers import ItemSerializer
 
@@ -205,3 +209,89 @@ class ItemService:
 
 
 item_service = ItemService()
+
+
+# ---- Créer un compte (SCRUM-15) ----
+
+# RG-CC-03 et RG-CC-04 : mêmes règles que les indicateurs cochés en direct dans l'écran
+REGLES_MOT_DE_PASSE = (
+    ('8 caractères minimum', lambda m: len(m) >= 8),
+    ('une majuscule', lambda m: any(c.isupper() for c in m)),
+    ('une minuscule', lambda m: any(c.islower() for c in m)),
+    ('un chiffre', lambda m: any(c.isdigit() for c in m)),
+    ('un caractère spécial', lambda m: any(not c.isalnum() and not c.isspace() for c in m)),
+)
+
+
+class DonneesInvalides(APIException):
+    """Une ou plusieurs informations du formulaire sont invalides : liste de {champ, code, message}.
+    Erreur « client » (400) : journalisée en avertissement par @loggable."""
+
+    status_code = 400
+
+    def __init__(self, erreurs):
+        super().__init__(f'{len(erreurs)} information(s) invalide(s)')
+        self.erreurs = erreurs
+
+
+def _erreur_champ(champ, code, message):
+    return {'champ': champ, 'code': code, 'message': message}
+
+
+def _erreur_email(email):
+    # RG-CC-01
+    if not email:
+        return _erreur_champ('email', 'EMAIL_REQUIS', "L'adresse e-mail est obligatoire.")
+    try:
+        validate_email(email)
+    except ValidationError:
+        return _erreur_champ('email', 'EMAIL_INVALIDE', "L'adresse e-mail n'est pas au bon format (ex. vous@organisme.fr).")
+    return None
+
+
+def _erreur_mot_de_passe(mot_de_passe):
+    # RG-CC-03 et RG-CC-04
+    if not mot_de_passe:
+        return _erreur_champ('mot_de_passe', 'MOT_DE_PASSE_REQUIS', 'Le mot de passe est obligatoire.')
+    manquantes = [libelle for libelle, respectee in REGLES_MOT_DE_PASSE if not respectee(mot_de_passe)]
+    if manquantes:
+        return _erreur_champ('mot_de_passe', 'MOT_DE_PASSE_NON_CONFORME',
+                       f"Le mot de passe doit contenir : {', '.join(manquantes)}.")
+    return None
+
+
+def _erreurs_inscription(email, mot_de_passe, confirmation, cgu_acceptees):
+    erreurs = [_erreur_email(email), _erreur_mot_de_passe(mot_de_passe)]
+    if confirmation != mot_de_passe:  # RG-CC-05
+        erreurs.append(_erreur_champ('confirmation', 'CONFIRMATION_DIFFERENTE',
+                               'La confirmation ne correspond pas au mot de passe.'))
+    if cgu_acceptees is not True:  # RG-CC-06
+        erreurs.append(_erreur_champ('cgu_acceptees', 'CGU_NON_ACCEPTEES',
+                               'Vous devez accepter les CGU / CGV et la politique de confidentialité.'))
+    return [e for e in erreurs if e]
+
+
+@loggable
+class CompteService:
+    """Création du compte d'un organisme de formation. Ni l'e-mail ni le mot de passe ne sont journalisés :
+    @loggable ne trace que la méthode, et les messages d'erreur ne reprennent aucune donnée saisie."""
+
+    def creer_compte(self, email, mot_de_passe, confirmation, cgu_acceptees):
+        email = str(email or '').strip().lower()  # RG-CC-02 : majuscules et espaces autour ignorés
+        mot_de_passe = str(mot_de_passe or '')
+        confirmation = str(confirmation or '')
+        erreurs = _erreurs_inscription(email, mot_de_passe, confirmation, cgu_acceptees)
+        if erreurs:
+            raise DonneesInvalides(erreurs)  # RG-CC-10 : rien n'est créé
+        deja = ErreurMetier('EMAIL_DEJA_UTILISE', 'Un compte existe déjà avec cet e-mail.', 409)
+        if Utilisateur.objects.filter(email__iexact=email).exists():
+            raise deja
+        try:
+            # RG-CC-07 : seul le hash du mot de passe est enregistré
+            return Utilisateur.objects.create(email=email, mot_de_passe=make_password(mot_de_passe),
+                                              cgu_acceptees_le=timezone.now())
+        except IntegrityError:  # deux inscriptions simultanées avec la même adresse
+            raise deja from None
+
+
+compte_service = CompteService()
