@@ -13,7 +13,7 @@ applications:
     # remplace tout jusqu'à la fin de la ligne.
     tag:
       dev: 4c35a47
-      qualif: 6f5877d
+      qualif: 4c35a47
       preprod: ""
       prod: ""
     containerPort: 8000
@@ -65,7 +65,7 @@ applications:
     # remplace tout jusqu'à la fin de la ligne.
     tag:
       dev: 4c35a47
-      qualif: 6f5877d
+      qualif: 4c35a47
       preprod: ""
       prod: ""
     containerPort: 8080
