@@ -1,9 +1,17 @@
+from decimal import Decimal
 from typing import ClassVar
 
 from rest_framework import serializers
 
 from quali_formation.blocs import blocs_manquants
-from quali_formation.models import Formation, Item, Sequence, Session
+from quali_formation.models import (
+    Apprenant,
+    Formateur,
+    Formation,
+    Item,
+    Sequence,
+    Session,
+)
 
 
 class ItemSerializer(serializers.ModelSerializer):
@@ -79,3 +87,59 @@ class FormationEcritureSerializer(serializers.Serializer):
     valeurs = serializers.DictField(required=False, default=dict)
     autres_informations = AutreInformationSerializer(many=True, required=False, default=list)
     sequences = SequenceSerializer(many=True, required=False, default=list)
+
+
+# ---- Sessions et planning (SCRUM-25) ----
+
+class FormateurSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Formateur
+        fields = ('id', 'prenom', 'nom', 'email', 'specialites')
+
+
+class ApprenantSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Apprenant
+        fields = ('id', 'prenom', 'nom', 'email')
+
+
+class SessionPlanningSerializer(serializers.ModelSerializer):
+    """Lecture : une session de la page Sessions et planning."""
+
+    formation_intitule = serializers.CharField(source='formation.intitule', read_only=True)
+    nombre_apprenants = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Session
+        fields = ('id', 'formation', 'formation_intitule', 'date_debut', 'date_fin', 'heure_debut', 'heure_fin',
+                  'duree_heures', 'modalite', 'lieu', 'lien_classe_virtuelle', 'nombre_places', 'statut',
+                  'formateurs', 'apprenants', 'nombre_apprenants')
+
+    def get_nombre_apprenants(self, session):
+        return len(session.apprenants.all())  # apprenants préchargés par la vue
+
+
+class SessionCreationSerializer(serializers.Serializer):
+    """Écriture : étape 1 (tous les champs obligatoires), formateurs (étape 2) et apprenants (étape 3).
+    Les listes vides sont acceptées ici : la règle « au moins un » est dans le service (message dédié)."""
+
+    formation = serializers.PrimaryKeyRelatedField(queryset=Formation.objects.all())
+    date_debut = serializers.DateField()
+    date_fin = serializers.DateField()
+    heure_debut = serializers.TimeField()
+    heure_fin = serializers.TimeField()
+    duree_heures = serializers.DecimalField(max_digits=7, decimal_places=2, min_value=Decimal('0.01'))
+    modalite = serializers.ChoiceField(choices=Session.Modalite.choices)
+    lieu = serializers.CharField(max_length=255, required=False, allow_blank=True, default='')
+    lien_classe_virtuelle = serializers.CharField(max_length=500, required=False, allow_blank=True, default='')
+    nombre_places = serializers.IntegerField(min_value=1)
+    formateurs = serializers.PrimaryKeyRelatedField(queryset=Formateur.objects.all(), many=True, required=False, default=list)
+    apprenants = serializers.PrimaryKeyRelatedField(queryset=Apprenant.objects.all(), many=True, required=False, default=list)
+
+    def validate(self, attrs):
+        # Lieu (présentiel) ou lien de classe virtuelle : celui qui correspond à la modalité est obligatoire
+        champ = 'lieu' if attrs['modalite'] == Session.Modalite.PRESENTIEL else 'lien_classe_virtuelle'
+        attrs[champ] = attrs[champ].strip()
+        if not attrs[champ]:
+            raise serializers.ValidationError({champ: ['Ce champ est obligatoire.']})
+        return attrs

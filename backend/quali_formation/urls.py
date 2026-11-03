@@ -10,4 +10,8 @@ urlpatterns = [
     path('formations/<int:pk>/publier/', views.publier),
     path('formations/<int:pk>/retirer-publication/', views.retirer_publication),
     path('formations/<int:pk>/sessions/', views.sessions),
+    # Sessions et planning (SCRUM-25)
+    path('sessions/', views.sessions_planning),
+    path('formateurs/', views.formateurs),
+    path('apprenants/', views.apprenants),
 ]

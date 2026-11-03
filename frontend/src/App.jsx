@@ -5,6 +5,8 @@ import FormationDetail from './pages/FormationDetail'
 import FormationForm from './pages/FormationForm'
 import FormationsListe from './pages/FormationsListe'
 import Items from './pages/Items'
+import NouvelleSession from './pages/NouvelleSession'
+import SessionsPlanning from './pages/SessionsPlanning'
 import LandingPage from './landing/LandingPage'
 
 // Routes de l'application (utilisées par main.jsx et par les tests)
@@ -19,6 +21,9 @@ export const routes = [
       { path: '/formations/nouvelle', element: <FormationForm /> },
       { path: '/formations/:id/modifier', element: <FormationForm /> },
       { path: '/formations/:id', element: <FormationDetail /> },
+      // Sessions et planning (SCRUM-25)
+      { path: '/sessions', element: <SessionsPlanning /> },
+      { path: '/sessions/nouvelle', element: <NouvelleSession /> },
       // Écran d'exemple de l'équipe (GET / POST /items)
       { path: '/items', element: <Items /> },
       { path: '*', element: <Navigate to="/" replace /> },

@@ -40,9 +40,10 @@ function Layout() {
           <nav className="nav" aria-label="Menu principal">
             <NavLink to="/tableau-de-bord" end onClick={fermerMenu}><IconeMenu nom="tableau" />Tableau de bord</NavLink>
             <NavLink to="/formations" onClick={fermerMenu}><IconeMenu nom="formations" />Formations</NavLink>
-            {/* Fonctionnalités à venir (pas encore de page) */}
-            {MENU.map((titre) => FONCTIONNALITES.find((f) => f.titre === titre)).map((f) => (
-              <span className="nav-a" aria-disabled="true" key={f.titre}><IconeMenu nom={f.icone} />{f.titre}</span>
+            {/* Fonctionnalités avec leur page (`lien`), puis celles à venir (grisées) */}
+            {MENU.map((titre) => FONCTIONNALITES.find((f) => f.titre === titre)).map((f) => (f.lien
+              ? <NavLink to={f.lien} onClick={fermerMenu} key={f.titre}><IconeMenu nom={f.icone} />{f.titre}</NavLink>
+              : <span className="nav-a" aria-disabled="true" key={f.titre}><IconeMenu nom={f.icone} />{f.titre}</span>
             ))}
           </nav>
 

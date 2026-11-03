@@ -2,7 +2,7 @@
 // `lien` : la fonctionnalité est disponible et a sa propre entrée dans le menu principal.
 export const FONCTIONNALITES = [
   { icone: 'formations', titre: 'Formations', detail: 'Créer et suivre vos formations', lien: '/formations' },
-  { icone: 'sessions', titre: 'Sessions & planning', detail: '5 sessions à venir' },
+  { icone: 'sessions', titre: 'Sessions & planning', detail: '5 sessions à venir', lien: '/sessions' },
   { icone: 'apprenants', iconeModule: 'inscription', titre: 'Apprenants & inscriptions', detail: '9 dossiers incomplets' },
   { icone: 'documents', titre: 'Modèles de documents', detail: '16 modèles' },
   { icone: 'signature', titre: 'Signature électronique', detail: '8 en attente' },

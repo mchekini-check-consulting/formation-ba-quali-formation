@@ -6,7 +6,14 @@ from rest_framework.exceptions import APIException
 
 from quali_formation.blocs import blocs_manquants
 from quali_formation.logging.loggable import loggable
-from quali_formation.models import Formation, Item, Sequence, Session
+from quali_formation.models import (
+    Apprenant,
+    Formateur,
+    Formation,
+    Item,
+    Sequence,
+    Session,
+)
 from quali_formation.serializers import ItemSerializer
 
 Statut = Formation.Statut
@@ -143,6 +150,38 @@ class FormationService:
 
 
 formation_service = FormationService()
+
+
+@loggable
+class SessionService:
+    """Règles de gestion de Sessions et planning (SCRUM-25)."""
+
+    def lister_sessions(self):
+        return Session.objects.select_related('formation').prefetch_related('formateurs', 'apprenants')
+
+    def lister_formateurs(self):
+        return Formateur.objects.all()
+
+    def lister_apprenants(self):
+        return Apprenant.objects.all()
+
+    def creer_session(self, formateurs, apprenants, **donnees):
+        """Crée une session « Prévue » avec ses formateurs et ses apprenants.
+        Le nombre d'apprenants n'est pas comparé au nombre de places (pas encore demandé)."""
+        if donnees['date_fin'] < donnees['date_debut']:
+            raise ErreurMetier('DATES_INVALIDES', 'La date de fin doit être postérieure ou égale à la date de début.')
+        if not formateurs:
+            raise ErreurMetier('FORMATEUR_REQUIS', 'Une session doit avoir au moins un formateur')
+        if not apprenants:
+            raise ErreurMetier('APPRENANT_REQUIS', 'Une session doit avoir au moins un apprenant')
+        with transaction.atomic():
+            session = Session.objects.create(statut=Session.Statut.PREVUE, **donnees)
+            session.formateurs.set(formateurs)
+            session.apprenants.set(apprenants)
+        return session
+
+
+session_service = SessionService()
 
 
 @loggable
