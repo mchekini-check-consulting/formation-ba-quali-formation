@@ -87,36 +87,39 @@ describe('Liste des formations', () => {
 
   it('à côté du prix, le bouton « Sessions » donne le total et déroule la liste des sessions', async () => {
     vi.useFakeTimers({ toFake: ['Date'] })
-    vi.setSystemTime(new Date('2026-11-08T10:00:00'))
+    vi.setSystemTime(new Date('2026-11-08T12:00:00Z'))
     onTestFinished(() => vi.useRealTimers())
+    // Sessions aux dates fixes (indépendantes du fuseau horaire), dans le désordre : 1 passée, 1 en cours, 2 à venir
+    for (const s of [['2027-03-14', '2027-03-14', 'Teams', ''], ['2026-10-01', '2026-10-02', 'Lyon', '10'],
+      ['2027-01-11', '2027-01-12', 'Lyon', '12'], ['2026-11-07', '2026-11-09', 'Paris', '8']]) {
+      await service.ajouterSession(2, { debut: s[0], fin: s[1], lieu: s[2], places: s[3] })
+    }
     await afficherListe()
     const libelles = (c) => Array.from(c.querySelectorAll('dt')).map((x) => x.textContent)
     expect(libelles(carte('Excel avancé'))).toEqual(['Durée', 'Prix', 'Sessions'])
     // Aucune session : « 0 », rien à dérouler (le mot « Sessions » n'est écrit qu'une fois, dans le titre)
-    const aucune = within(carte('Excel avancé')).getByRole('button', { name: '0 session pour Excel avancé' })
+    const aucune = within(carte('Anglais professionnel')).getByRole('button', { name: '0 session pour Anglais professionnel' })
     expect(aucune.textContent).toBe('0')
     expect(aucune.disabled).toBe(true)
-    // 4 sessions (05/09/2026, 08/11/2026, 11/01/2027, 14/03/2027), le 08/11/2026 : 1 passée, 1 en cours, 2 à venir
-    const c = carte('Bureautique — initiation')
-    const bouton = within(c).getByRole('button', { name: '3 sessions pour Bureautique — initiation' })
+    // Le total ne compte que les sessions en cours et à venir
+    const c = carte('Excel avancé')
+    const bouton = within(c).getByRole('button', { name: '3 sessions pour Excel avancé' })
     expect(bouton.textContent).toBe('3')
     expect(screen.queryByRole('dialog')).toBeNull()
     fireEvent.click(bouton)
     // Une pop-up avec un tableau : seulement les sessions en cours et à venir, dans l'ordre des dates
     const dialogue = screen.getByRole('dialog', { name: 'Sessions en cours et à venir' })
-    expect(within(dialogue).getByText('« Bureautique — initiation » · 3 sessions')).toBeTruthy()
+    expect(within(dialogue).getByText('« Excel avancé » · 3 sessions')).toBeTruthy()
     const lignes = within(dialogue).getAllByRole('row').slice(1).map((tr) => Array.from(tr.cells).map((td) => td.textContent))
     expect(lignes).toEqual([
-      ['En cours', 'du 08/11/2026au 09/11/2026', '2 jours', 'Lyon', '12'],
+      ['En cours', 'du 07/11/2026au 09/11/2026', '3 jours', 'Paris', '8'],
       ['À venir', 'du 11/01/2027au 12/01/2027', '2 jours', 'Lyon', '12'],
-      ['À venir', 'du 14/03/2027au 15/03/2027', '2 jours', 'Lyon', '12'],
+      ['À venir', '14/03/2027', '1 jour', 'Teams', '—'],
     ])
-    expect(within(dialogue).queryByText(/05\/09\/2026/)).toBeNull()
+    expect(within(dialogue).queryByText(/01\/10\/2026/)).toBeNull()
     // « Fermer » referme la pop-up
     fireEvent.click(within(dialogue).getByRole('button', { name: 'Fermer' }))
     expect(screen.queryByRole('dialog')).toBeNull()
-    // Une seule session, déjà passée (05/09/2026) : « 0 », rien à dérouler
-    expect(within(carte('Prise de parole en public')).getByRole('button', { name: '0 session pour Prise de parole en public' }).disabled).toBe(true)
   })
 
   it('menu « ··· » : Modifier, Archiver et Supprimer ; Modifier ouvre le formulaire (SCRUM-21, SCRUM-23)', async () => {
