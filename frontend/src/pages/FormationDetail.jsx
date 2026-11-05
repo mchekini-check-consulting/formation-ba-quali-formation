@@ -6,7 +6,7 @@ import { fmt, frDate, hasProg, life, missingTiles, num, one, SECTIONS, TILES, ti
 import Illustration from '../formations/Illustration'
 import * as service from '../formations/donnees'
 
-const ETAT = { brouillon: ['Brouillon', 'lc-draft', 'pen'], incomplete: ['Incomplète selon Qualiopi', 'lc-inc', 'alert'], apublier: ['Validée', 'lc-ready', 'check'] }
+const ETAT = { brouillon: ['Brouillon', 'lc-draft', 'pen'], incomplete: ['Incomplète selon Qualiopi', 'lc-inc', 'alert'], apublier: ['Validée', 'lc-ready', 'check'], archivee: ['Archivée', 'lc-arch', 'box'] }
 
 // Valeur d'une question, affichée selon son type
 function Valeur({ q, v }) {
@@ -66,9 +66,11 @@ function FormationDetail() {
   // RG39 : « Compléter » ouvre directement le bloc concerné
   const completer = (t) => navigate(`/formations/${f.id}/modifier?bloc=${t.id}&signaler=1`, retour)
 
+  // SCRUM-23 : une formation archivée ne se modifie pas (ni « Modifier » ni « Compléter »)
+  const archivee = f.statut === 'archivee'
   const aCompleter = (t) => (
     <div className="dt-empty"><Icone nom="alert" taille={16} epaisseur={2.2} /><span>Non renseigné</span>
-      <button type="button" className="dt-fix" aria-label={`Compléter : ${t.title}`} onClick={() => completer(t)}>Compléter</button></div>
+      {!archivee && <button type="button" className="dt-fix" aria-label={`Compléter : ${t.title}`} onClick={() => completer(t)}>Compléter</button>}</div>
   )
   const bloc = (t) => {
     const ok = tileDone(t, v, f)
@@ -116,13 +118,13 @@ function FormationDetail() {
         </div>
         <div className="dt-actions">
           {/* SCRUM-22 : modifier la formation depuis sa fiche */}
-          <button type="button" className="btn btn-primary" onClick={() => navigate(`/formations/${f.id}/modifier`, retour)}><Icone nom="pen" taille={16} />Modifier</button>
+          {!archivee && <button type="button" className="btn btn-primary" onClick={() => navigate(`/formations/${f.id}/modifier`, retour)}><Icone nom="pen" taille={16} />Modifier</button>}
           <button type="button" className="btn btn-line" onClick={() => window.print()}><Icone nom="doc" taille={16} />Exporter en PDF</button>
         </div>
       </header>
 
       {/* RG40 : indicateur X / 13 et liste de ce qui manque */}
-      {miss.length > 0 && (
+      {miss.length > 0 && !archivee && (
         <button type="button" className="dt-score card dt-score-wide" onClick={() => setManques(true)}>
           <div className="ring2" style={{ '--p': pct }}><span><b>{done}</b>/{TILES.length}</span></div>
           <div><b>Fiche Qualiopi incomplète</b><small>{miss.length} bloc{miss.length > 1 ? 's' : ''} à compléter</small><span className="dt-see">Voir ce qui manque <Icone nom="arrow" taille={14} epaisseur={2.4} /></span></div>

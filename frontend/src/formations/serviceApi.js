@@ -46,6 +46,7 @@ async function appel(chemin, { method = 'GET', corps } = {}) {
   try {
     reponse = await fetch(`${apiBase()}${chemin}`, {
       method,
+      credentials: 'include', // cookie de connexion (SCRUM-16) : l'historique sait qui a agi (SCRUM-23)
       headers: corps ? { 'Content-Type': 'application/json' } : {},
       body: corps ? JSON.stringify(corps) : undefined,
     })
@@ -75,6 +76,10 @@ export async function enregistrerFormation(form, statut, { doublonAccepte = fals
 
 export const publier = async (id, { confirmer = false } = {}) => depuisApi(await appel(`/formations/${id}/publier/`, { method: 'POST', corps: { confirmer } }))
 export const retirerPublication = async (id) => depuisApi(await appel(`/formations/${id}/retirer-publication/`, { method: 'POST', corps: {} }))
+// SCRUM-23
+export const archiver = async (id) => depuisApi(await appel(`/formations/${id}/archiver/`, { method: 'PATCH', corps: {} }))
+export const restaurer = async (id) => depuisApi(await appel(`/formations/${id}/restaurer/`, { method: 'PATCH', corps: {} }))
+export const supprimer = async (id) => { await appel(`/formations/${id}/`, { method: 'DELETE' }) }
 
 export async function ajouterSession(id, { debut, fin, lieu, places }) {
   const n = String(places || '').trim()

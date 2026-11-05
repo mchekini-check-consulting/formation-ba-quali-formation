@@ -6,7 +6,7 @@ from django.test import SimpleTestCase, TestCase
 from django.utils import timezone
 
 from quali_formation.blocs import BLOCS, blocs_manquants
-from quali_formation.models import Formation, Item
+from quali_formation.models import Formation, FormationHistorique, Item, Utilisateur
 
 ANNEE = timezone.localdate().year
 
@@ -238,6 +238,89 @@ class ApiFormationsTests(TestCase):
         self.assertEqual(r.status_code, 201)
         self.assertEqual(r.json()['sessions'][0]['date_debut'], date(2027, 2, 8).isoformat())
         self.assertIsNone(r.json()['sessions'][0]['nombre_places'])  # lieu et places facultatifs
+
+    # ---------- Modifier, archiver, supprimer (SCRUM-23) ----------
+    def ajouter_session(self, pk):
+        return self.action(pk, 'sessions', date_debut='2027-02-08', date_fin='2027-02-09')
+
+    def patch(self, pk, nom):
+        return self.client.patch(f'/formations/{pk}/{nom}/', {}, content_type='application/json')
+
+    def test_modifier_recalcule_le_statut_et_augmente_la_version(self):
+        f = self.creer().json()
+        r = self.modifier(f['id'], action='valider', duree_heures='7', valeurs=VALEURS_COMPLETES, sequences=[SEQUENCE])
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual((r.json()['statut'], r.json()['version']), ('VALIDEE', 2))
+
+    def test_modifier_400_et_404(self):
+        f = self.creer().json()
+        self.assertEqual(self.modifier(f['id'], intitule=' ').status_code, 400)
+        self.assertEqual(self.client.put('/formations/999/', {}, content_type='application/json').status_code, 404)
+
+    def test_archiver_puis_restaurer_en_brouillon(self):
+        f = self.formation_validee()
+        r = self.patch(f['id'], 'archiver')
+        self.assertEqual((r.status_code, r.json()['statut']), (200, 'ARCHIVEE'))
+        r = self.patch(f['id'], 'restaurer')
+        self.assertEqual((r.status_code, r.json()['statut']), (200, 'BROUILLON'))
+
+    def test_archiver_et_restaurer_en_patch_seulement(self):
+        f = self.creer().json()
+        self.assertEqual(self.action(f['id'], 'archiver').status_code, 405)
+
+    def test_restaurer_une_formation_non_archivee_refuse(self):
+        f = self.creer().json()
+        self.assertEqual(self.patch(f['id'], 'restaurer').json()['code'], 'NON_ARCHIVEE')
+
+    def test_une_formation_archivee_ne_se_modifie_pas(self):
+        f = self.creer().json()
+        self.patch(f['id'], 'archiver')
+        r = self.modifier(f['id'])
+        self.assertEqual((r.status_code, r.json()['code']), (409, 'ARCHIVEE'))
+        self.assertEqual(self.ajouter_session(f['id']).json()['code'], 'ARCHIVEE')
+
+    def test_supprimer_204(self):
+        f = self.creer().json()
+        self.assertEqual(self.client.delete(f'/formations/{f["id"]}/').status_code, 204)
+        self.assertFalse(Formation.objects.exists())
+        self.assertEqual(self.client.delete(f'/formations/{f["id"]}/').status_code, 404)
+
+    def test_supprimer_une_formation_avec_sessions_409_sauf_archivee(self):
+        f = self.creer().json()
+        self.ajouter_session(f['id'])
+        r = self.client.delete(f'/formations/{f["id"]}/')
+        self.assertEqual((r.status_code, r.json()['code']), (409, 'A_DES_SESSIONS'))
+        self.patch(f['id'], 'archiver')
+        self.assertEqual(self.client.delete(f'/formations/{f["id"]}/').status_code, 204)
+
+    # ---------- Historique : une ligne par action (SCRUM-20, SCRUM-23) ----------
+    def test_historique_de_chaque_action_avec_la_date(self):
+        f = self.creer().json()
+        self.modifier(f['id'])
+        self.patch(f['id'], 'archiver')
+        self.patch(f['id'], 'restaurer')
+        self.client.delete(f'/formations/{f["id"]}/')
+        lignes = list(FormationHistorique.objects.all())
+        self.assertEqual([h.action for h in lignes], ['CREATION', 'MODIFICATION', 'ARCHIVAGE', 'RESTAURATION', 'SUPPRESSION'])
+        self.assertTrue(all(h.date and h.reference == f['reference'] and h.intitule == 'Management' for h in lignes))
+        self.assertTrue(all(h.formation is None for h in lignes))  # la formation supprimée, l'historique reste
+        self.assertTrue(all(h.utilisateur is None for h in lignes))  # personne n'est connecté
+
+    def test_historique_garde_l_utilisateur_connecte(self):
+        u = Utilisateur.objects.create(email='camille@organisme.fr', mot_de_passe='x', cgu_acceptees_le=timezone.now())
+        session = self.client.session
+        session['utilisateur_id'] = u.pk
+        session.save()
+        f = self.creer().json()
+        self.patch(f['id'], 'archiver')
+        self.assertEqual([(h.action, h.utilisateur) for h in FormationHistorique.objects.all()], [('CREATION', u), ('ARCHIVAGE', u)])
+
+    def test_pas_d_historique_si_l_action_est_refusee(self):
+        f = self.creer().json()
+        self.ajouter_session(f['id'])
+        self.client.delete(f'/formations/{f["id"]}/')
+        self.modifier(f['id'], intitule=' ')
+        self.assertEqual([h.action for h in FormationHistorique.objects.all()], ['CREATION'])
 
 
 

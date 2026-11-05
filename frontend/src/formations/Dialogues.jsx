@@ -18,6 +18,27 @@ export function ProgrammeRequisDialog({ formation, onCreer, onAnnuler }) {
   )
 }
 
+// SCRUM-23 : suppression définitive, le bouton ne s'active qu'une fois « supprimer » tapé
+export function SuppressionDialog({ formation, onSupprimer, onAnnuler }) {
+  const [saisie, setSaisie] = useState('')
+  const ok = saisie.trim().toLowerCase() === 'supprimer'
+  return (
+    <Modal onFermer={onAnnuler}>
+      <dialog open className="dialog del-dlg" aria-modal="true" aria-labelledby="dd">
+        <span className="dlg-ic" style={{ background: 'var(--danger-soft)', color: 'var(--danger)' }}><Icone nom="trash" taille={24} /></span>
+        <h2 id="dd">Supprimer « {formation.title} » ?</h2>
+        <p>Cette action est définitive. La formation et toutes ses informations seront supprimées et ne pourront pas être récupérées.</p>
+        <label className="del-l" htmlFor="del-in">Pour confirmer la suppression, saisissez <b>supprimer</b> ci-dessous</label>
+        <input className="inp" id="del-in" autoComplete="off" placeholder="supprimer" value={saisie} onChange={(e) => setSaisie(e.target.value)} autoFocus />
+        <div className="foot">
+          <button type="button" className="btn btn-line" onClick={onAnnuler}>Annuler</button>
+          <button type="button" className="btn btn-danger" disabled={!ok} onClick={onSupprimer}>Supprimer</button>
+        </div>
+      </dialog>
+    </Modal>
+  )
+}
+
 // RG38 : ajout d'une session (début et fin obligatoires, fin ≥ début)
 export function SessionDialog({ formation, onAjouter, onAnnuler }) {
   const [s, setS] = useState({ debut: '', fin: '', lieu: formation.values?.lieu || '', places: '' })

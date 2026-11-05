@@ -95,6 +95,8 @@ function useFormationChargee(id, params, ouvrirBloc) {
     const charger = id ? service.obtenirFormation(id) : Promise.resolve(copie(NOUVELLE))
     charger.then((f) => {
       if (!actif) return
+      // SCRUM-23 : une formation archivée ne se modifie pas, on reste sur sa fiche
+      if (f.statut === 'archivee') { navigate(`/formations/${f.id}`, { replace: true }); return }
       f.values = f.values || {}; f.others = f.others || []
       setForm(f); setInstantane(JSON.stringify(f))
       const bloc = TILES.findIndex((t) => t.id === params.get('bloc'))

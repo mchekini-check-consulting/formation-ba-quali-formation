@@ -55,7 +55,7 @@ export const SECTIONS = ['La formation', 'Accès et tarif', 'Évaluation et suiv
 export const MODALITES = ['Présentiel', 'Distanciel', 'Mixte']
 
 // RG23 : statuts ; le libellé et la classe de la pastille
-export const STATUS = { brouillon: ['Brouillon', 'st-brouillon'], incomplete: ['Incomplète selon Qualiopi', 'st-incomplete'], validee: ['Validée', 'st-validee'] }
+export const STATUS = { brouillon: ['Brouillon', 'st-brouillon'], incomplete: ['Incomplète selon Qualiopi', 'st-incomplete'], validee: ['Validée', 'st-validee'], archivee: ['Archivée', 'st-archivee'] }
 
 export const filled = (v) => Array.isArray(v) ? v.some((x) => String(x ?? '').trim() !== '') : String(v ?? '').trim() !== ''
 
@@ -94,7 +94,7 @@ export const missingTiles = (f) => TILES.filter((t) => !tileDone(t, f.values || 
 export const hasProg = (f) => (f.values?.modules || []).some((m) => String(m.seq || '').trim())
 
 // État affiché d'une formation sur sa carte (« apublier » = validée)
-const ETAT_CARTE = { brouillon: 'brouillon', validee: 'apublier' }
+const ETAT_CARTE = { brouillon: 'brouillon', validee: 'apublier', archivee: 'archivee' }
 export const life = (f) => ETAT_CARTE[f.statut] || 'incomplete'
 // RG24 : seule une formation validée ou incomplète peut être publiée
 export const isPub = (f) => f.pub === 'publiee' && (f.statut === 'validee' || f.statut === 'incomplete')
@@ -105,6 +105,7 @@ export const LC = {
   incomplete: { lab: 'Incomplète selon Qualiopi', ic: 'alert', cls: 'lc-inc', help: 'Des informations Qualiopi manquent' },
   apublier: { lab: 'Validée', ic: 'check', cls: 'lc-ready', help: 'Toutes les informations Qualiopi sont remplies' },
   publiee: { lab: 'Publiée', ic: 'globe', cls: 'lc-pub', help: 'Visible dans votre catalogue' },
+  archivee: { lab: 'Archivée', ic: 'box', cls: 'lc-arch', help: 'Retirée de la liste principale : restaurez-la pour la modifier' },
 }
 
 // Utilitaires d'affichage

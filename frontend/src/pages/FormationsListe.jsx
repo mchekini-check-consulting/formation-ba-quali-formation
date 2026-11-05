@@ -5,14 +5,16 @@ import { ConfirmDialog } from '../components/Modal'
 import { useToast } from '../components/toastContext'
 import { life } from '../formations/catalogue'
 import CarteFormation from '../formations/CarteFormation'
+import { SuppressionDialog } from '../formations/Dialogues'
 import * as service from '../formations/donnees'
 
 // Couleur de la pastille de chaque filtre
-const PC = { all: '#0F766E', brouillon: '#64748B', incomplete: '#E11D48', apublier: '#10B981' }
-// RG30 : filtres de la liste (SCRUM-21 : sans « Publiées »)
-const FILTRES = [['all', 'Toutes'], ['brouillon', 'Brouillons'], ['incomplete', 'Incomplètes'], ['apublier', 'Validées']]
+const PC = { all: '#0F766E', brouillon: '#64748B', incomplete: '#E11D48', apublier: '#10B981', archivee: '#A1A1AA' }
+// RG30 : filtres de la liste (SCRUM-21 : sans « Publiées » ; SCRUM-23 : « Archivées »)
+const FILTRES = [['all', 'Toutes'], ['brouillon', 'Brouillons'], ['incomplete', 'Incomplètes'], ['apublier', 'Validées'], ['archivee', 'Archivées']]
 
-const dansFiltre = (f, filtre) => filtre === 'all' || life(f) === filtre
+// SCRUM-23 : « Toutes » n'affiche pas les formations archivées
+const dansFiltre = (f, filtre) => (filtre === 'all' ? life(f) !== 'archivee' : life(f) === filtre)
 
 function FormationsListe() {
   const navigate = useNavigate()
@@ -21,7 +23,7 @@ function FormationsListe() {
   const [filtre, setFiltre] = useState('all')
   const [recherche, setRecherche] = useState('')
   const [menu, setMenu] = useState(null)        // id de la carte dont le menu « ··· » est ouvert
-  const [dialogue, setDialogue] = useState(null) // { type }
+  const [dialogue, setDialogue] = useState(null) // { type, formation }
 
   const [erreur, setErreur] = useState(null)
   const recharger = useCallback(() => service.listerFormations().then((l) => { setFormations(l); setErreur(null) }).catch((e) => setErreur(e.message)), [])
@@ -62,6 +64,11 @@ function FormationsListe() {
       case 'saisir': return ouvrirFormulaire(f, f.statut !== 'validee' ? { signaler: 1 } : {})
       case 'modifier': return ouvrirFormulaire(f)
       case 'creerProgramme': return ouvrirFormulaire(f, { bloc: 'programme', signaler: 1 })
+      // SCRUM-23
+      case 'archiver': return setDialogue({ type: 'archiver', formation: f })
+      case 'restaurer': return executer(service.restaurer(f.id), `« ${f.title} » est restaurée en brouillon.`)
+      // Une formation qui a des sessions doit d'abord être archivée
+      case 'supprimer': return setDialogue({ type: (f.sess || []).length > 0 && f.statut !== 'archivee' ? 'suppressionImpossible' : 'supprimer', formation: f })
       default: return undefined
     }
   }
@@ -81,8 +88,14 @@ function FormationsListe() {
       {' · '}<button type="button" className="reset" onClick={() => setDialogue({ type: 'vider' })}>vider</button></p>
   )
 
+  const f = dialogue?.formation
   const dialogues = dialogue && <>
-    {dialogue.type === 'vider' && <ConfirmDialog titre="Vider la démo ?" texte="Toutes les formations de la démo sont supprimées. Vous revenez à l'écran de départ, sans aucune formation."
+    {dialogue.type === 'archiver' && <ConfirmDialog titre={`Archiver « ${f.title} » ?`} texte="Elle n'apparaîtra plus dans « Toutes ». Vous la retrouverez dans le filtre « Archivées » et pourrez la restaurer à tout moment."
+      action="Archiver" icone="box" fondIcone="var(--brand-soft)" couleurIcone="var(--brand-text)" onAnnuler={fermerDialogue} onOk={() => executer(service.archiver(f.id), `« ${f.title} » est archivée.`)} />}
+    {dialogue.type === 'suppressionImpossible' && <ConfirmDialog titre="Suppression impossible" texte={`Cette formation a ${f.sess.length} session${f.sess.length > 1 ? 's' : ''} : elle doit d'abord être archivée. Archivée, elle n'est plus proposée mais son historique est conservé.`}
+      action="Archiver la formation" icone="trash" fondIcone="var(--warn-soft)" couleurIcone="var(--warn)" onAnnuler={fermerDialogue} onOk={() => executer(service.archiver(f.id), `« ${f.title} » est archivée.`)} />}
+    {dialogue.type === 'supprimer' && <SuppressionDialog formation={f} onAnnuler={fermerDialogue} onSupprimer={() => executer(service.supprimer(f.id), `« ${f.title} » a été supprimée.`)} />}
+    {dialogue.type === 'vider' &&<ConfirmDialog titre="Vider la démo ?" texte="Toutes les formations de la démo sont supprimées. Vous revenez à l'écran de départ, sans aucune formation."
       action="Vider la démo" icone="restore" fondIcone="var(--brand-soft)" couleurIcone="var(--brand-text)" onAnnuler={fermerDialogue}
       onOk={() => { setFiltre('all'); setRecherche(''); void executer(service.viderDemo(), 'La démo est vide : vous pouvez créer votre première formation.') }} />}
   </>
