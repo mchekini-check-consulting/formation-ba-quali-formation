@@ -30,6 +30,13 @@ describe('App', () => {
     expect(sidebar.classList.contains('ouverte')).toBe(false)
   })
 
+  it('le logo Quali-formation de la barre latérale ramène à la landing page', async () => {
+    afficher('/tableau-de-bord')
+    fireEvent.click(screen.getByRole('link', { name: 'Quali-formation' }))
+    expect(await screen.findByRole('link', { name: 'Se connecter' })).toBeTruthy()
+    expect(screen.queryByText('Bonjour Nassiba')).toBeNull()
+  })
+
   it('le lien « Formations » de la barre latérale ouvre la liste des formations', async () => {
     afficher()
     const menu = screen.getByRole('navigation', { name: 'Menu principal' })

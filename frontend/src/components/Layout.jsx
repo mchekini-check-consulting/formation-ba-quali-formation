@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { Link, NavLink, Outlet } from 'react-router-dom'
 import Icone from './Icone'
 import { ToastProvider } from './Toast'
 import { FONCTIONNALITES } from '../pages/fonctionnalites'
@@ -35,7 +35,8 @@ function Layout() {
 
         {/* ================= BARRE LATÉRALE ================= */}
         <aside className={`sidebar${menuOuvert ? ' ouverte' : ''}`} ref={sidebarRef}>
-          <div className="logo"><div className="logo-badge"><Icone nom="qualiopi" taille={18} epaisseur={2.2} /></div>Quali-formation</div>
+          {/* Le logo ramène à la landing page */}
+          <Link className="logo" to="/" onClick={fermerMenu}><div className="logo-badge"><Icone nom="qualiopi" taille={18} epaisseur={2.2} /></div>Quali-formation</Link>
 
           <nav className="nav" aria-label="Menu principal">
             <NavLink to="/tableau-de-bord" end onClick={fermerMenu}><IconeMenu nom="tableau" />Tableau de bord</NavLink>
