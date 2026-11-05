@@ -67,6 +67,21 @@ def _statut_demande(donnees, nb_sequences, action, forcer):
     return Statut.INCOMPLETE if manque else Statut.VALIDEE
 
 
+def _meme_intitule(intitule):
+    # Majuscules et espaces en trop ignorés : « Excel  avancé » = « excel avancé »
+    return ' '.join(intitule.split()).casefold()
+
+
+def _verifier_intitule_unique(formation, donnees):
+    """SCRUM-20 : une autre formation de l'organisme porte déjà cet intitulé (la formation modifiée est exclue)."""
+    autres = Formation.objects.filter(organisme=donnees['organisme'])
+    if formation is not None:
+        autres = autres.exclude(pk=formation.pk)
+    cherche = _meme_intitule(donnees['intitule'])
+    if any(_meme_intitule(i) == cherche for i in autres.values_list('intitule', flat=True)):
+        raise ErreurMetier('INTITULE_EXISTANT', 'Une formation portant le même nom existe déjà.', 409)
+
+
 def _ajuster_publication(formation):
     # RG28 : une formation publiée qui repasse en brouillon redevient « À publier »
     if formation.statut == Statut.BROUILLON:
@@ -94,18 +109,21 @@ def _enregistrer_avec_reference(formation):
 class FormationService:
     """Règles de gestion du module Formations (couche service, journalisée par @loggable)."""
 
-    def enregistrer(self, formation, donnees, action, forcer=False):
+    def enregistrer(self, formation, donnees, action, forcer=False, doublon_accepte=False):
         """Crée (formation=None) ou modifie une formation.
 
         action « brouillon » : seul l'intitulé est obligatoire (RG02) ;
         action « valider » : intitulé, durée > 0 et modalité obligatoires (RG01), puis Validée si tous les
         blocs sont complets (RG13), sinon refus sauf `forcer` qui l'enregistre Incomplète (RG14, RG15).
+        Même intitulé qu'une autre formation de l'organisme : refus sauf `doublon_accepte` (SCRUM-20).
         """
         if not donnees['intitule'].strip():
             raise ErreurMetier('INTITULE_REQUIS', "L'intitulé est obligatoire.")
         sequences = donnees.pop('sequences')
 
         statut = _statut_demande(donnees, len(sequences), action, forcer)
+        if not doublon_accepte:
+            _verifier_intitule_unique(formation, donnees)
 
         with transaction.atomic():
             nouvelle = formation is None

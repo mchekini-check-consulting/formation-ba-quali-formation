@@ -59,7 +59,6 @@ function Layout() {
             <button className="menu-btn" ref={menuBtnRef} aria-label="Ouvrir le menu" onClick={() => setMenuOuvert((o) => !o)}>
               <Icone nom="menu" taille={20} />
             </button>
-            <label className="recherche"><Icone nom="recherche" /><input type="search" placeholder="Rechercher…" /></label>
             <div className="topbar-droite">
               <div className="icone-btn" title="Notifications"><Icone nom="notifications" taille={20} /><span className="pastille"></span></div>
               <div className="avatar" title="Nassiba B. — Responsable de centre">NB</div>

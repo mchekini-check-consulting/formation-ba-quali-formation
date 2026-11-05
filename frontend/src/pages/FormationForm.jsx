@@ -3,7 +3,7 @@ import { useBlocker, useLocation, useNavigate, useParams, useSearchParams } from
 import Icone from '../components/Icone'
 import { ConfirmDialog, Modal } from '../components/Modal'
 import { useToast } from '../components/toastContext'
-import { filled, fmt, frDate, MOD_LBL, MOD_REQ, MODALITES, missingTiles, num, pluriel, SECTIONS, STATUS, TILES, tileDone, visibleQs } from '../formations/catalogue'
+import { filled, fmt, frDate, hasProg, MOD_LBL, MOD_REQ, MODALITES, missingTiles, num, pluriel, SECTIONS, STATUS, TILES, tileDone, visibleQs } from '../formations/catalogue'
 import AssistantBloc from '../formations/AssistantBloc'
 import * as service from '../formations/donnees'
 
@@ -173,14 +173,17 @@ function FormationForm() {
   const fermerAssistant = () => garde(() => { setAssistant(null); setProgErr(false) })
 
   // ---------- Enregistrement ----------
-  const persister = async (statut, message) => {
+  const persister = async (statut, message, options = {}) => {
     try {
-      const f = await service.enregistrerFormation(form, statut)
+      const f = await service.enregistrerFormation(form, statut, options)
       enregistre.current = true
-      void navigate(edit ? retour : '/formations')
+      // SCRUM-22 : un brouillon n'a pas de fiche, on revient à la liste
+      void navigate(edit && f.statut !== 'brouillon' ? retour : '/formations')
       toast(message(f))
     } catch (e) {
-      toast(e.message)
+      // SCRUM-20 : même intitulé qu'une autre formation, « Valider quand même » ou « Annuler »
+      if (e.code === 'INTITULE_EXISTANT') setDialogue({ type: 'doublon', statut, message })
+      else toast(e.message)
     }
   }
   const baseOk = () => form.title.trim() && num(form.duree) > 0 && form.modalite
@@ -193,9 +196,14 @@ function FormationForm() {
   const terminerValidation = () => void persister(miss.length ? 'incomplete' : 'validee', (f) => messageValidation(f, miss.length, edit))
   const valider = () => {
     if (!baseOk()) { setErreurBase(true); window.scrollTo({ top: 0, behavior: 'smooth' }); return }
-    if (miss.length) setDialogue({ type: 'valider' })
+    // SCRUM-20 : seul le programme manque, pop-up dédiée ; sinon la liste des blocs manquants
+    if (!hasProg(form) && miss.every((t) => t.id === 'programme')) setDialogue({ type: 'sansProgramme' })
+    else if (miss.length) setDialogue({ type: 'valider' })
     else terminerValidation()
   }
+  const creerProgramme = () => { setDialogue(null); ouvrirBloc(TILES.findIndex((t) => t.id === 'programme')) }
+  // SCRUM-20 : « Programme non créé » dans la liste des blocs manquants
+  const nomBloc = (t) => (t.id === 'programme' && !hasProg(form) ? 'Programme non créé' : t.title)
   const quitter = () => { if (modifie) setDialogue({ type: 'quitter' }); else void navigate(retour) }
 
   const tErr = erreurBase && !form.title.trim(), dErr = erreurBase && num(form.duree) <= 0
@@ -323,13 +331,44 @@ function FormationForm() {
             <ul className="misslist">
               {miss.map((t) => (
                 <li key={t.id}><button type="button" className="mi" onClick={() => { setDialogue(null); ouvrirBloc(TILES.indexOf(t)) }}>
-                  <span className="mi-ic"><Icone nom={t.id} taille={18} /></span><span className="mi-t">{t.title}</span><span className="mi-go">Remplir <Icone nom="arrow" taille={14} epaisseur={2.4} /></span>
+                  <span className="mi-ic"><Icone nom={t.id} taille={18} /></span><span className="mi-t">{nomBloc(t)}</span><span className="mi-go">Remplir <Icone nom="arrow" taille={14} epaisseur={2.4} /></span>
                 </button></li>
               ))}
             </ul>
             <div className="foot">
               <button type="button" className="btn btn-line" onClick={() => { setDialogue(null); terminerValidation() }}>Valider quand même</button>
               <button type="button" className="btn btn-primary" autoFocus onClick={() => { setDialogue(null); setSignaler(true); contenuRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'start' }) }}>Compléter la formation</button>
+            </div>
+          </dialog>
+        </Modal>
+      )}
+
+      {/* SCRUM-20 : tout est rempli sauf le programme */}
+      {dialogue?.type === 'sansProgramme' && (
+        <Modal onFermer={() => setDialogue(null)} classeFond="ov-valid">
+          <dialog open className="dialog dlg-warn" aria-modal="true" aria-labelledby="dsp">
+            <div className="dw-head"><span className="dw-ic"><Icone nom="programme" taille={24} /></span><div><h2 id="dsp">Le programme n’est pas encore créé</h2><p>« {form.title} »</p></div></div>
+            <div className="dw-alert" role="alert"><Icone nom="info" taille={20} /><span>Tous les autres blocs sont remplis. Sans programme, la formation sera enregistrée avec le statut <b>« Incomplète »</b>.</span></div>
+            <div className="foot">
+              <button type="button" className="btn btn-line" onClick={() => setDialogue(null)}>Annuler</button>
+              <button type="button" className="btn btn-line" onClick={() => { setDialogue(null); terminerValidation() }}>Valider quand même</button>
+              <button type="button" className="btn btn-primary" autoFocus onClick={creerProgramme}><Icone nom="plus" taille={16} epaisseur={2.4} />Créer le programme</button>
+            </div>
+          </dialog>
+        </Modal>
+      )}
+
+      {/* SCRUM-20 : une autre formation porte déjà cet intitulé */}
+      {dialogue?.type === 'doublon' && (
+        <Modal onFermer={() => setDialogue(null)}>
+          <dialog open className="dialog dlg-warn" aria-modal="true" aria-labelledby="ddb">
+            <div className="dw-head"><span className="dw-ic"><Icone nom="alert" taille={24} /></span><div><h2 id="ddb">Une formation portant le même nom existe déjà</h2><p>« {form.title} »</p></div></div>
+            <div className="dw-alert" role="alert"><Icone nom="info" taille={20} /><span>Vérifiez qu’il ne s’agit pas d’un doublon avant de continuer.</span></div>
+            <div className="foot">
+              <button type="button" className="btn btn-line" autoFocus onClick={() => setDialogue(null)}>Annuler</button>
+              <button type="button" className="btn btn-primary" onClick={() => { const { statut, message } = dialogue; setDialogue(null); void persister(statut, message, { doublonAccepte: true }) }}>
+                {dialogue.statut === 'brouillon' ? 'Enregistrer quand même' : 'Valider quand même'}
+              </button>
             </div>
           </dialog>
         </Modal>

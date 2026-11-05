@@ -51,6 +51,89 @@ describe('Formulaire de création / modification', () => {
     expect((await derniere()).statut).toBe('incomplete')
   })
 
+  it('la liste des blocs manquants signale « Programme non créé » (SCRUM-20)', async () => {
+    await ouvrir('/formations/nouvelle')
+    saisir('Intitulé de la formation', 'Excel débutant')
+    saisir('Durée (en heures)', '7')
+    fireEvent.click(screen.getByRole('button', { name: 'Valider' }))
+    const blocs = within(await screen.findByRole('dialog')).getAllByRole('button', { name: /Remplir/ }).map((b) => b.querySelector('.mi-t').textContent)
+    expect(blocs).toContain('Programme non créé')
+    expect(blocs).not.toContain('Programme')
+  })
+
+  describe('tout est rempli sauf le programme (SCRUM-20)', () => {
+    // « Excel avancé » (n° 2) est complète : on retire son programme
+    beforeEach(async () => {
+      const f = await service.obtenirFormation(2)
+      await service.enregistrerFormation({ ...f, values: { ...f.values, modules: [] } }, 'incomplete')
+    })
+    const validerSansProgramme = async () => {
+      const router = await ouvrir('/formations/2/modifier')
+      fireEvent.click(screen.getByRole('button', { name: 'Valider' }))
+      expect(await screen.findByRole('heading', { name: 'Le programme n’est pas encore créé' })).toBeTruthy()
+      expect(screen.queryByRole('heading', { name: 'Votre formation n’est pas complète' })).toBeNull()
+      return router
+    }
+
+    it('propose « Annuler », « Valider quand même » et « Créer le programme »', async () => {
+      await validerSansProgramme()
+      expect(within(screen.getByRole('dialog')).getAllByRole('button').map((b) => b.textContent)).toEqual(['Annuler', 'Valider quand même', 'Créer le programme'])
+      fireEvent.click(screen.getByRole('button', { name: 'Annuler' }))
+      expect(screen.queryByRole('dialog')).toBeNull()
+    })
+
+    it('« Créer le programme » ouvre l’étape Programme', async () => {
+      await validerSansProgramme()
+      fireEvent.click(screen.getByRole('button', { name: 'Créer le programme' }))
+      expect(await screen.findByRole('heading', { level: 3, name: 'Créer un programme' })).toBeTruthy()
+    })
+
+    it('« Valider quand même » enregistre la formation « Incomplète »', async () => {
+      const router = await validerSansProgramme()
+      fireEvent.click(screen.getByRole('button', { name: 'Valider quand même' }))
+      await waitFor(() => expect(router.state.location.pathname).toBe('/formations'))
+      expect((await service.obtenirFormation(2)).statut).toBe('incomplete')
+    })
+  })
+
+  describe('même intitulé qu’une autre formation (SCRUM-20)', () => {
+    const nombre = async () => (await service.listerFormations()).filter((f) => f.title === 'Excel avancé').length
+
+    it('en brouillon : « Annuler » ne crée rien, « Enregistrer quand même » crée la formation', async () => {
+      const router = await ouvrir('/formations/nouvelle')
+      saisir('Intitulé de la formation', '  excel   AVANCÉ ')
+      fireEvent.click(screen.getByRole('button', { name: 'Enregistrer en brouillon' }))
+      expect(await screen.findByRole('heading', { name: 'Une formation portant le même nom existe déjà' })).toBeTruthy()
+      expect(within(screen.getByRole('dialog')).getAllByRole('button').map((b) => b.textContent)).toEqual(['Annuler', 'Enregistrer quand même'])
+      fireEvent.click(screen.getByRole('button', { name: 'Annuler' }))
+      expect(router.state.location.pathname).toBe('/formations/nouvelle')
+      saisir('Intitulé de la formation', 'Excel avancé')
+      fireEvent.click(screen.getByRole('button', { name: 'Enregistrer en brouillon' }))
+      fireEvent.click(await screen.findByRole('button', { name: 'Enregistrer quand même' }))
+      await waitFor(() => expect(router.state.location.pathname).toBe('/formations'))
+      expect(await nombre()).toBe(2)
+    })
+
+    it('en validation : « Valider quand même » enregistre la formation', async () => {
+      const router = await ouvrir('/formations/nouvelle')
+      saisir('Intitulé de la formation', 'Excel avancé')
+      saisir('Durée (en heures)', '7')
+      fireEvent.click(screen.getByRole('button', { name: 'Valider' }))
+      fireEvent.click(await screen.findByRole('button', { name: 'Valider quand même' }))  // blocs manquants
+      expect(await screen.findByRole('heading', { name: 'Une formation portant le même nom existe déjà' })).toBeTruthy()
+      fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Valider quand même' }))
+      await waitFor(() => expect(router.state.location.pathname).toBe('/formations'))
+      expect(await nombre()).toBe(2)
+    })
+
+    it('modifier une formation sans changer son intitulé ne déclenche pas la pop-up', async () => {
+      const router = await ouvrir('/formations/2/modifier')
+      fireEvent.click(screen.getByRole('button', { name: 'Enregistrer en brouillon' }))
+      await waitFor(() => expect(router.state.location.pathname).toBe('/formations'))
+      expect(screen.queryByRole('heading', { name: 'Une formation portant le même nom existe déjà' })).toBeNull()
+    })
+  })
+
   it('valide une formation complète et augmente sa version (RG04, RG13)', async () => {
     await service.enregistrerFormation({ ...(await service.obtenirFormation(6)) }, 'brouillon') // version 2
     await ouvrir('/formations/6/modifier')

@@ -63,11 +63,11 @@ def _enregistrer(request, formation):
     entree = FormationEcritureSerializer(data=request.data)
     entree.is_valid(raise_exception=True)
     donnees = dict(entree.validated_data)
-    action, forcer = donnees.pop('action'), donnees.pop('forcer')
+    action, forcer, doublon_accepte = donnees.pop('action'), donnees.pop('forcer'), donnees.pop('doublon_accepte')
     donnees['autres_informations'] = [dict(o) for o in donnees['autres_informations']]
     donnees['sequences'] = [dict(s) for s in donnees['sequences']]
     try:
-        formation = formation_service.enregistrer(formation, donnees, action, forcer)
+        formation = formation_service.enregistrer(formation, donnees, action, forcer, doublon_accepte)
     except ErreurMetier as e:
         return _erreur(e)
     return Response(FormationSerializer(_formations().get(pk=formation.pk)).data,

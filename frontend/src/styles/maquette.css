@@ -262,6 +262,7 @@ button.db-card{cursor:pointer;transition:box-shadow .2s,transform .2s}button.db-
 .menu-pop{position:absolute;z-index:20;right:0;bottom:calc(100% + 8px);width:220px;padding:6px;border-radius:14px;background:var(--surface);border:1px solid var(--line);box-shadow:0 16px 40px rgba(15,23,42,.16);display:flex;flex-direction:column}
 .mn-i{display:flex;align-items:center;gap:10px;padding:10px 12px;border:0;border-radius:10px;background:none;color:var(--ink);font-size:15px;font-weight:500;text-align:left}
 .mn-i:hover{background:var(--surface-2)}.mn-i svg{color:var(--ink-3)}
+.mn-i:disabled{color:var(--ink-3);cursor:not-allowed}.mn-i:disabled:hover{background:none}.mn-bientot{margin-left:auto;padding-left:12px;font-size:12px;font-weight:500;color:var(--ink-3)}
 .mn-i.danger{color:#DC2626}.mn-i.danger svg{color:#DC2626}.mn-i.danger:hover{background:#FEF2F2}
 .toolbar{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line)}
 .tabs{display:flex;flex-wrap:wrap;gap:2px}

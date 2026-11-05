@@ -41,7 +41,16 @@ describe('service API', () => {
     await api.enregistrerFormation({ id: null, title: 'Nouvelle', duree: '', modalite: 'Présentiel', values: {}, others: [] }, 'brouillon')
     const [url, options] = fetch.mock.calls[0]
     expect([url, options.method]).toEqual(['/api/formations/', 'POST'])
-    expect(JSON.parse(options.body)).toMatchObject({ action: 'brouillon', forcer: false, duree_heures: null })
+    expect(JSON.parse(options.body)).toMatchObject({ action: 'brouillon', forcer: false, duree_heures: null, doublon_accepte: false })
+  })
+
+  it('même intitulé : remonte INTITULE_EXISTANT puis envoie doublon_accepte (SCRUM-20)', async () => {
+    const f = { id: null, title: 'Excel avancé', duree: '', modalite: 'Présentiel', values: {}, others: [] }
+    repondre(409, { code: 'INTITULE_EXISTANT', detail: 'Une formation portant le même nom existe déjà.' })
+    await expect(api.enregistrerFormation(f, 'brouillon')).rejects.toMatchObject({ code: 'INTITULE_EXISTANT' })
+    repondre(201, FORMATION_API)
+    await api.enregistrerFormation(f, 'brouillon', { doublonAccepte: true })
+    expect(JSON.parse(fetch.mock.calls[0][1].body)).toMatchObject({ doublon_accepte: true })
   })
 
   it('remonte le code d’erreur métier de l’API (RG26)', async () => {
