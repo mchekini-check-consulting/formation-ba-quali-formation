@@ -79,6 +79,7 @@ class FormationEcritureSerializer(serializers.Serializer):
 
     action = serializers.ChoiceField(choices=['brouillon', 'valider'])
     forcer = serializers.BooleanField(required=False, default=False)  # « Valider quand même » (RG14)
+    doublon_accepte = serializers.BooleanField(required=False, default=False)  # même intitulé accepté (SCRUM-20)
     intitule = serializers.CharField(allow_blank=True, max_length=255)
     duree_heures = serializers.DecimalField(max_digits=7, decimal_places=2, allow_null=True, required=False, default=None)
     modalite = serializers.ChoiceField(choices=Formation.Modalite.choices)

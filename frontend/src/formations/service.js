@@ -39,13 +39,21 @@ function prochaineReference() {
   return `FOR-${annee}-${String(Math.max(0, ...nums) + 1).padStart(3, '0')}`
 }
 
+// SCRUM-20 : majuscules et espaces en trop ignorés pour comparer deux intitulés
+const memeIntitule = (t) => String(t || '').trim().split(/\s+/).join(' ').toLocaleLowerCase('fr')
+
 // Enregistre le formulaire avec le statut voulu (brouillon, incomplete, validee)
-export async function enregistrerFormation(form, statut) {
+export async function enregistrerFormation(form, statut, { doublonAccepte = false } = {}) {
   const f = copie(form)
   // RG02 : l'intitulé suffit pour un brouillon ; RG01 : intitulé, durée > 0 et modalité pour valider
   if (!String(f.title || '').trim()) throw new ErreurMetier('INTITULE_REQUIS', "L'intitulé est obligatoire.")
   if (statut !== 'brouillon' && !(Number(String(f.duree).replace(',', '.')) > 0 && f.modalite)) {
     throw new ErreurMetier('BASE_INCOMPLETE', "Renseignez l'intitulé et une durée supérieure à 0.")
+  }
+  // SCRUM-20 : une autre formation de l'organisme porte déjà cet intitulé
+  const organisme = f.organisme || 'Cap Compétences'
+  if (!doublonAccepte && charger().some((x) => x.id !== f.id && (x.organisme || 'Cap Compétences') === organisme && memeIntitule(x.title) === memeIntitule(f.title))) {
+    throw new ErreurMetier('INTITULE_EXISTANT', 'Une formation portant le même nom existe déjà.')
   }
   f.statut = statut
   f.maj = today()

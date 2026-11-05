@@ -1,45 +1,37 @@
 import Icone from '../components/Icone'
-import { frDate, hasProg, isPub, LC, life, missingTiles, money } from './catalogue'
+import { frDate, hasProg, LC, life, money } from './catalogue'
 import Illustration from './Illustration'
 import { artAccent } from './themes'
 
 const ICONE_MODALITE = { Présentiel: 'organisation', Distanciel: 'moyens' }
 
-// Une carte de la liste des formations (RG31 à RG33)
+// Une carte de la liste des formations (RG31 à RG33, SCRUM-21)
 function CarteFormation({ f, menuOuvert, onMenu, onAction }) {
-  const L = life(f), st = LC[L], miss = missingTiles(f).length
-  const n = (f.sess || []).length
-  const publiable = L === 'incomplete' || L === 'apublier'
+  const L = life(f), st = LC[L]
   const prix = money(f)
   const action = (nom) => () => onAction(nom, f)
+  // SCRUM-22 : un brouillon n'a pas de fiche, il s'ouvre dans le formulaire
+  const ouvrir = action(L === 'brouillon' ? 'saisir' : 'voir')
 
-  // RG33 : le bouton principal dépend du statut
-  let principal
-  if (L === 'brouillon') {
-    principal = <button type="button" className="btn btn-act btn-sm" onClick={action('saisir')}>{miss ? 'Continuer la saisie' : 'Ouvrir et valider'}<Icone nom="arrow" taille={16} epaisseur={2.2} /></button>
-  } else if (L === 'incomplete') {
-    principal = <button type="button" className="btn btn-act btn-fix btn-sm" onClick={action('saisir')}>Compléter les informations<Icone nom="arrow" taille={16} epaisseur={2.2} /></button>
-  } else {
-    principal = <button type="button" className="btn btn-soft btn-sm" data-view onClick={action('voir')}><Icone nom="doc" taille={16} />Voir la formation</button>
-  }
+  // SCRUM-21 : « Compléter la formation » pour un brouillon, « Voir la formation » pour les autres
+  const principal = L === 'brouillon'
+    ? <button type="button" className="btn btn-act btn-sm" onClick={ouvrir}>Compléter la formation<Icone nom="arrow" taille={16} epaisseur={2.2} /></button>
+    : <button type="button" className="btn btn-soft btn-sm" data-view onClick={ouvrir}><Icone nom="doc" taille={16} />Voir la formation</button>
   const item = (nom, ic, lab) => <button type="button" className="mn-i" role="menuitem" onClick={action(nom)}><Icone nom={ic} taille={16} />{lab}</button>
+  // SCRUM-23 (à venir) : affiché grisé en attendant
+  const bientot = (ic, lab) => <button type="button" className="mn-i" role="menuitem" disabled aria-disabled="true" title="Bientôt disponible"><Icone nom={ic} taille={16} />{lab}<small className="mn-bientot">Bientôt disponible</small></button>
 
   return (
     <article className={`fcard ${st.cls}-card ${f.statut === 'incomplete' ? 'is-inc' : ''}`} style={{ '--fc': artAccent(f) }}>
       <div className="fc-top">
         <Illustration formation={f} />
         <span className="fc-tag"><Icone nom={ICONE_MODALITE[f.modalite] || 'globe'} taille={14} />{f.modalite}</span>
-        {/* RG24 : l'état de publication ne concerne que les formations validées ou incomplètes */}
-        {publiable && (isPub(f)
-          ? <span className="fc-tag fc-pub on"><i></i>Publiée</span>
-          : <span className="fc-tag fc-pub wait"><i></i>À publier</span>)}
       </div>
-      <h3><button type="button" className="fc-t" onClick={action('voir')}>{f.title}</button></h3>
+      <h3><button type="button" className="fc-t" onClick={ouvrir}>{f.title}</button></h3>
       <p className="fc-sub">Mise à jour le {frDate(f.maj)}</p>
       <dl className="fc-info">
         <div><dt>Durée</dt><dd>{f.duree ? `${f.duree} h` : <span className="na">—</span>}</dd></div>
         <div><dt>Prix</dt><dd>{prix || <span className="na">—</span>}</dd></div>
-        <div><dt>Sessions</dt><dd>{n}</dd></div>
       </dl>
 
       <div className="fc-head">
@@ -56,9 +48,10 @@ function CarteFormation({ f, menuOuvert, onMenu, onAction }) {
           </button>
           {menuOuvert && (
             <div className="menu-pop" role="menu">
-              {/* RG25 : publier / retirer de la publication depuis le menu */}
-              {publiable && (isPub(f) ? item('retirer', 'globe', 'Retirer de la publication') : item('publier', 'publication', 'Publier'))}
-              {item('nouvelleSession', 'cal', 'Ajouter une session')}
+              {/* SCRUM-21 : Modifier, Archiver, Supprimer */}
+              {item('modifier', 'pen', 'Modifier')}
+              {bientot('box', 'Archiver')}
+              {bientot('trash', 'Supprimer')}
             </div>
           )}
         </div>

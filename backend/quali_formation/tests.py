@@ -127,13 +127,46 @@ class ApiFormationsTests(TestCase):
 
     def test_reference_automatique_et_sequentielle(self):  # RG03
         self.assertEqual(self.creer().json()['reference'], f'FOR-{ANNEE}-001')
-        self.assertEqual(self.creer().json()['reference'], f'FOR-{ANNEE}-002')
+        self.assertEqual(self.creer(intitule='Excel').json()['reference'], f'FOR-{ANNEE}-002')
 
     def test_version_augmente_a_chaque_modification(self):  # RG04
         f = self.creer().json()
         self.assertEqual(f['version'], 1)
         self.assertEqual(self.modifier(f['id']).json()['version'], 2)
         self.assertEqual(self.modifier(f['id'], intitule='Management 2').json()['version'], 3)
+
+    # ---------- Même intitulé (SCRUM-20) ----------
+    def test_meme_intitule_refuse_en_brouillon_et_en_validation(self):
+        self.creer(intitule="Management d'équipe")
+        for corps in ({}, {'action': 'valider', 'duree_heures': '7', 'forcer': True}):
+            r = self.creer(intitule="Management d'équipe", **corps)
+            self.assertEqual(r.status_code, 409)
+            self.assertEqual(r.json()['code'], 'INTITULE_EXISTANT')
+            self.assertEqual(r.json()['detail'], 'Une formation portant le même nom existe déjà.')
+        self.assertEqual(Formation.objects.count(), 1)
+
+    def test_meme_intitule_ignore_majuscules_et_espaces(self):
+        self.creer(intitule="Management d'équipe")
+        self.assertEqual(self.creer(intitule="  MANAGEMENT   d'Équipe ").json()['code'], 'INTITULE_EXISTANT')
+
+    def test_meme_intitule_accepte_avec_valider_quand_meme(self):
+        self.creer(intitule="Management d'équipe")
+        r = self.creer(intitule="Management d'équipe", doublon_accepte=True)
+        self.assertEqual(r.status_code, 201)
+        self.assertEqual(Formation.objects.filter(intitule="Management d'équipe").count(), 2)
+
+    def test_modifier_une_formation_sans_changer_son_intitule(self):
+        f = self.creer(intitule="Management d'équipe").json()
+        self.assertEqual(self.modifier(f['id']).status_code, 200)
+
+    def test_renommer_avec_l_intitule_d_une_autre_formation(self):
+        self.creer(intitule="Management d'équipe")
+        f = self.creer(intitule='Excel').json()
+        self.assertEqual(self.modifier(f['id'], intitule="Management d'équipe").json()['code'], 'INTITULE_EXISTANT')
+
+    def test_meme_intitule_dans_un_autre_organisme(self):
+        self.creer(intitule="Management d'équipe")
+        self.assertEqual(self.creer(intitule="Management d'équipe", organisme='Autre organisme').status_code, 201)
 
     # ---------- Valider (RG13 à RG15) ----------
     def test_validee_si_tous_les_blocs_sont_complets(self):  # RG13

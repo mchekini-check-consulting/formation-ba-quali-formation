@@ -66,9 +66,10 @@ export const listerFormations = async () => (await appel('/formations/')).map(de
 export const obtenirFormation = async (id) => depuisApi(await appel(`/formations/${id}/`))
 
 // statut voulu par l'écran : brouillon, validee, ou incomplete (« Valider quand même »)
-export async function enregistrerFormation(form, statut) {
+// doublonAccepte : même intitulé qu'une autre formation accepté (SCRUM-20)
+export async function enregistrerFormation(form, statut, { doublonAccepte = false } = {}) {
   const valider = statut === 'validee' || statut === 'incomplete'
-  const corps = { ...versApi(form), action: valider ? 'valider' : 'brouillon', forcer: statut === 'incomplete' }
+  const corps = { ...versApi(form), action: valider ? 'valider' : 'brouillon', forcer: statut === 'incomplete', doublon_accepte: doublonAccepte }
   return depuisApi(await appel(form.id ? `/formations/${form.id}/` : '/formations/', { method: form.id ? 'PUT' : 'POST', corps }))
 }
 

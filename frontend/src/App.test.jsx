@@ -20,6 +20,11 @@ describe('App', () => {
     expect(container.querySelectorAll('.module, .kpi, .carte')).toHaveLength(0)
   })
 
+  it('la barre du haut n’a plus de champ « Rechercher… »', () => {
+    afficher()
+    expect(screen.queryByPlaceholderText('Rechercher…')).toBeNull()
+  })
+
   it('ouvre et ferme le menu au clic', () => {
     const { container } = afficher()
     const sidebar = container.querySelector('.sidebar')

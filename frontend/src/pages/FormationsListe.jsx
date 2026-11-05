@@ -3,18 +3,16 @@ import { useNavigate } from 'react-router-dom'
 import Icone from '../components/Icone'
 import { ConfirmDialog } from '../components/Modal'
 import { useToast } from '../components/toastContext'
-import { isPub, life } from '../formations/catalogue'
+import { life } from '../formations/catalogue'
 import CarteFormation from '../formations/CarteFormation'
-import { ProgrammeRequisDialog, SessionDialog } from '../formations/Dialogues'
 import * as service from '../formations/donnees'
 
 // Couleur de la pastille de chaque filtre
-const PC = { all: '#0F766E', brouillon: '#64748B', incomplete: '#E11D48', apublier: '#10B981', publiee: '#6366F1' }
-// RG30 : filtres de la liste
-const FILTRES = [['all', 'Toutes'], ['brouillon', 'Brouillons'], ['incomplete', 'Incomplètes'], ['apublier', 'Validées'], ['publiee', 'Publiées']]
+const PC = { all: '#0F766E', brouillon: '#64748B', incomplete: '#E11D48', apublier: '#10B981' }
+// RG30 : filtres de la liste (SCRUM-21 : sans « Publiées »)
+const FILTRES = [['all', 'Toutes'], ['brouillon', 'Brouillons'], ['incomplete', 'Incomplètes'], ['apublier', 'Validées']]
 
-// « Publiées » regroupe les validées et incomplètes publiées
-const dansFiltre = (f, filtre) => filtre === 'all' || (filtre === 'publiee' ? isPub(f) : life(f) === filtre)
+const dansFiltre = (f, filtre) => filtre === 'all' || life(f) === filtre
 
 function FormationsListe() {
   const navigate = useNavigate()
@@ -23,7 +21,7 @@ function FormationsListe() {
   const [filtre, setFiltre] = useState('all')
   const [recherche, setRecherche] = useState('')
   const [menu, setMenu] = useState(null)        // id de la carte dont le menu « ··· » est ouvert
-  const [dialogue, setDialogue] = useState(null) // { type, formation }
+  const [dialogue, setDialogue] = useState(null) // { type }
 
   const [erreur, setErreur] = useState(null)
   const recharger = useCallback(() => service.listerFormations().then((l) => { setFormations(l); setErreur(null) }).catch((e) => setErreur(e.message)), [])
@@ -56,29 +54,14 @@ function FormationsListe() {
     }
   }
 
-  const publier = async (f, confirmer = false) => {
-    try {
-      await service.publier(f.id, { confirmer })
-      setDialogue(null)
-      await recharger()
-      toast(f.statut === 'incomplete' ? `« ${f.title} » est publiée. Pensez à compléter ses informations Qualiopi.` : `« ${f.title} » est publiée.`)
-    } catch (e) {
-      if (e.code === 'PROGRAMME_REQUIS') setDialogue({ type: 'programmeRequis', formation: f })     // RG26
-      else if (e.code === 'CONFIRMATION_REQUISE') setDialogue({ type: 'publierIncomplete', formation: f }) // RG27
-      else toast(e.message)
-    }
-  }
-
   const onAction = (nom, f) => {
     setMenu(null)
     switch (nom) {
       case 'voir': return navigate(`/formations/${f.id}`)
       // Depuis la carte, les blocs manquants sont signalés (sauf pour une formation validée)
       case 'saisir': return ouvrirFormulaire(f, f.statut !== 'validee' ? { signaler: 1 } : {})
+      case 'modifier': return ouvrirFormulaire(f)
       case 'creerProgramme': return ouvrirFormulaire(f, { bloc: 'programme', signaler: 1 })
-      case 'publier': return publier(f)
-      case 'retirer': return executer(service.retirerPublication(f.id), `« ${f.title} » repasse en « À publier » : elle n’est plus visible dans le catalogue.`)
-      case 'nouvelleSession': return setDialogue({ type: 'session', formation: f })
       default: return undefined
     }
   }
@@ -98,12 +81,7 @@ function FormationsListe() {
       {' · '}<button type="button" className="reset" onClick={() => setDialogue({ type: 'vider' })}>vider</button></p>
   )
 
-  const f = dialogue?.formation
   const dialogues = dialogue && <>
-    {dialogue.type === 'programmeRequis' && <ProgrammeRequisDialog formation={f} onAnnuler={fermerDialogue} onCreer={() => ouvrirFormulaire(f, { bloc: 'programme', signaler: 1 })} />}
-    {dialogue.type === 'publierIncomplete' && <ConfirmDialog titre="Publier une formation incomplète ?" texte={`« ${f.title} » ne contient pas toutes les informations demandées lors de l’audit Qualiopi. Vous pouvez la publier maintenant et la compléter plus tard.`}
-      action="Publier quand même" icone="alert" fondIcone="#FFEDD5" couleurIcone="#EA580C" onAnnuler={fermerDialogue} onOk={() => publier(f, true)} />}
-    {dialogue.type === 'session' && <SessionDialog formation={f} onAnnuler={fermerDialogue} onAjouter={(s) => executer(service.ajouterSession(f.id, s), 'Session ajoutée à la formation.')} />}
     {dialogue.type === 'vider' && <ConfirmDialog titre="Vider la démo ?" texte="Toutes les formations de la démo sont supprimées. Vous revenez à l'écran de départ, sans aucune formation."
       action="Vider la démo" icone="restore" fondIcone="var(--brand-soft)" couleurIcone="var(--brand-text)" onAnnuler={fermerDialogue}
       onOk={() => { setFiltre('all'); setRecherche(''); void executer(service.viderDemo(), 'La démo est vide : vous pouvez créer votre première formation.') }} />}
@@ -131,8 +109,8 @@ function FormationsListe() {
     )
   }
 
-  const q = recherche.trim().toLowerCase()
   const compteurs = Object.fromEntries(FILTRES.map(([k]) => [k, formations.filter((x) => dansFiltre(x, k)).length]))
+  const q = recherche.trim().toLowerCase()
   const affichees = formations.filter((x) => dansFiltre(x, filtre)).filter((x) => !q || x.title.toLowerCase().includes(q))
 
   return (

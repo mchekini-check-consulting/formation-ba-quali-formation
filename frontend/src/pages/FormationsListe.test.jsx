@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { routes } from '../App'
@@ -26,14 +26,15 @@ describe('Liste des formations', () => {
     expect(t[8]).toBe('Bureautique — initiation')
   })
 
-  it('affiche les compteurs des filtres et filtre par statut (RG30)', async () => {
+  it('affiche les compteurs des filtres et filtre par statut, sans filtre « Publiées » (RG30, SCRUM-21)', async () => {
     const { container } = await afficherListe()
     expect(filtre('Toutes').textContent).toBe('Toutes9')
     expect(filtre('Brouillons').textContent).toBe('Brouillons2')
     expect(filtre('Validées').textContent).toBe('Validées5')
-    expect(within(screen.getByRole('toolbar')).getAllByRole('button')).toHaveLength(5)
-    fireEvent.click(filtre('Publiées'))
-    expect(titres(container).sort()).toEqual(['Gestion de projet agile', "Management d'équipe — niveau 1", 'Prise de parole en public'])
+    expect(within(screen.getByRole('toolbar')).getAllByRole('button').map((b) => b.textContent.replace(/\d+$/, '')))
+      .toEqual(['Toutes', 'Brouillons', 'Incomplètes', 'Validées'])
+    fireEvent.click(filtre('Brouillons'))
+    expect(titres(container).sort()).toEqual(['Anglais professionnel', 'Sauveteur secouriste du travail (SST)'])
   })
 
   it('cherche par intitulé (RG30)', async () => {
@@ -44,16 +45,29 @@ describe('Liste des formations', () => {
     expect(screen.getByText('Aucune formation ne correspond à cette recherche.')).toBeTruthy()
   })
 
-  it('choisit le bouton principal selon le statut (RG33)', async () => {
-    await afficherListe()
-    expect(within(carte('Sauveteur secouriste du travail (SST)')).getByRole('button', { name: /Continuer la saisie/ })).toBeTruthy()
-    expect(within(carte('Anglais professionnel')).getByRole('button', { name: /Ouvrir et valider/ })).toBeTruthy()
-    expect(within(carte("Management d'équipe — niveau 2")).getByRole('button', { name: /Compléter les informations/ })).toBeTruthy()
-    expect(within(carte('Excel avancé')).getByRole('button', { name: /Voir la formation/ })).toBeTruthy()
-    // Une formation publiée ouvre aussi sa fiche (et non plus la liste des sessions)
-    expect(within(carte('Prise de parole en public')).getByRole('button', { name: /Voir la formation/ })).toBeTruthy()
-    expect(within(carte('Gestion de projet agile')).getByRole('button', { name: /Compléter les informations/ })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: /^Sessions \(/ })).toBeNull()
+  it('bouton principal : « Compléter la formation » pour un brouillon, « Voir la formation » sinon (SCRUM-21)', async () => {
+    const { router } = await afficherListe()
+    for (const t of ['Sauveteur secouriste du travail (SST)', 'Anglais professionnel']) {
+      expect(within(carte(t)).getByRole('button', { name: /Compléter la formation/ })).toBeTruthy()
+      expect(within(carte(t)).queryByRole('button', { name: /Voir la formation/ })).toBeNull()
+    }
+    // Validées et incomplètes
+    for (const t of ['Excel avancé', 'Prise de parole en public', "Management d'équipe — niveau 2", 'Gestion de projet agile']) {
+      expect(within(carte(t)).getByRole('button', { name: /Voir la formation/ })).toBeTruthy()
+    }
+    expect(screen.queryByRole('button', { name: /Continuer la saisie|Ouvrir et valider|Compléter les informations/ })).toBeNull()
+    fireEvent.click(within(carte("Management d'équipe — niveau 2")).getByRole('button', { name: /Voir la formation/ }))
+    expect(router.state.location.pathname).toBe('/formations/1')
+  })
+
+  it('un brouillon s’ouvre dans le formulaire, jamais dans la fiche (SCRUM-22)', async () => {
+    const { router } = await afficherListe()
+    fireEvent.click(within(carte('Anglais professionnel')).getByRole('button', { name: /Compléter la formation/ }))
+    expect(router.state.location.pathname).toBe('/formations/6/modifier')
+    await router.navigate('/formations')
+    await screen.findByRole('toolbar', { name: 'Filtrer par statut' })
+    fireEvent.click(screen.getByRole('button', { name: 'Anglais professionnel' }))
+    expect(router.state.location.pathname).toBe('/formations/6/modifier')
   })
 
   it('affiche « Programme non créé » seulement sans programme et ouvre sa création (RG32)', async () => {
@@ -64,42 +78,23 @@ describe('Liste des formations', () => {
     expect(router.state.location.search).toContain('bloc=programme')
   })
 
-  it('n’affiche l’état de publication que pour les formations validées ou incomplètes (RG24, RG31)', async () => {
-    await afficherListe()
-    expect(within(carte('Excel avancé')).getByText('À publier')).toBeTruthy()
-    expect(within(carte('Prise de parole en public')).getByText('Publiée')).toBeTruthy()
-    expect(within(carte('Anglais professionnel')).queryByText(/publier|Publiée/)).toBeNull()
+  it('les cartes n’affichent plus « Publiée », « À publier » ni les sessions (SCRUM-21)', async () => {
+    const { container } = await afficherListe()
+    expect(within(container.querySelector('.fgrid')).queryByText(/^(Publiée|À publier)$/)).toBeNull()
+    expect(within(container.querySelector('.fgrid')).queryByText('Sessions')).toBeNull()
+    expect(within(carte('Excel avancé')).getByText('Durée')).toBeTruthy()
+    expect(within(carte('Excel avancé')).getByText('Prix')).toBeTruthy()
   })
 
-  it('refuse de publier sans programme et propose de le créer (RG26)', async () => {
-    await service.enregistrerFormation({ ...(await service.obtenirFormation(4)), values: { modules: [] } }, 'incomplete')
-    await afficherListe()
-    const c = carte('Sauveteur secouriste du travail (SST)')
+  it('menu « ··· » : seulement Modifier, Archiver et Supprimer (grisés, bientôt disponibles) (SCRUM-21)', async () => {
+    const { router } = await afficherListe()
+    const c = carte('Prise de parole en public')
     fireEvent.click(within(c).getByRole('button', { name: /Plus d’actions/ }))
-    fireEvent.click(within(c).getByRole('menuitem', { name: 'Publier' }))
-    expect(await screen.findByRole('heading', { name: 'Programme requis pour publier' })).toBeTruthy()
-  })
-
-  it('demande confirmation pour publier une formation incomplète (RG27)', async () => {
-    await afficherListe()
-    const c = carte("Management d'équipe — niveau 2")
-    fireEvent.click(within(c).getByRole('button', { name: /Plus d’actions/ }))
-    fireEvent.click(within(c).getByRole('menuitem', { name: 'Publier' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Publier quand même' }))
-    await waitFor(() => expect(within(carte("Management d'équipe — niveau 2")).getByText('Publiée')).toBeTruthy())
-  })
-
-  it('ajoute une session depuis le menu « ··· » (RG38)', async () => {
-    await afficherListe()
-    const c = carte('Excel avancé')
-    fireEvent.click(within(c).getByRole('button', { name: /Plus d’actions/ }))
-    fireEvent.click(within(c).getByRole('menuitem', { name: 'Ajouter une session' }))
-    fireEvent.change(screen.getByLabelText('Date de début'), { target: { value: '2027-03-01' } })
-    fireEvent.change(screen.getByLabelText('Date de fin'), { target: { value: '2027-02-01' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Ajouter la session' }))
-    expect(screen.getByText('Indiquez une date de début et une date de fin (la fin après le début).')).toBeTruthy()
-    fireEvent.change(screen.getByLabelText('Date de fin'), { target: { value: '2027-03-02' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Ajouter la session' }))
-    await waitFor(() => expect(within(carte('Excel avancé')).getByText('Sessions').nextSibling.textContent).toBe('1'))
+    const items = within(c).getAllByRole('menuitem')
+    expect(items.map((b) => b.textContent)).toEqual(['Modifier', 'ArchiverBientôt disponible', 'SupprimerBientôt disponible'])
+    expect(items.map((b) => b.disabled)).toEqual([false, true, true])
+    expect(within(c).queryByRole('menuitem', { name: /Publier|Retirer|session/ })).toBeNull()
+    fireEvent.click(items[0])
+    expect(router.state.location.pathname).toBe('/formations/5/modifier')
   })
 })

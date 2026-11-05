@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import Icone from '../components/Icone'
 import { Modal } from '../components/Modal'
-import { fmt, frDate, life, missingTiles, num, one, SECTIONS, TILES, tileDone, visibleQs } from '../formations/catalogue'
+import { fmt, frDate, hasProg, life, missingTiles, num, one, SECTIONS, TILES, tileDone, visibleQs } from '../formations/catalogue'
 import Illustration from '../formations/Illustration'
 import * as service from '../formations/donnees'
 
@@ -49,7 +49,11 @@ function FormationDetail() {
   const [manques, setManques] = useState(false)
 
   useEffect(() => {
-    service.obtenirFormation(id).then(setF).catch(() => navigate('/formations', { replace: true }))
+    service.obtenirFormation(id).then((x) => {
+      // SCRUM-22 : un brouillon n'a pas de fiche, il s'ouvre dans le formulaire
+      if (x.statut === 'brouillon') navigate(`/formations/${id}/modifier`, { replace: true })
+      else setF(x)
+    }).catch(() => navigate('/formations', { replace: true }))
   }, [id, navigate])
 
   if (!f) return <div className="wrap"><p className="chargement">Chargement de la formation…</p></div>
@@ -98,7 +102,8 @@ function FormationDetail() {
       <header className="dt-hero">
         <div className="dt-cov"><Illustration formation={f} large /></div>
         <div className="dt-hb">
-          <div className="dt-tags"><span className={`lc ${st[1]}`}><Icone nom={st[2]} taille={14} epaisseur={2.4} />{st[0]}</span><span className="dt-tag">{f.modalite}</span>{f.ref && <span className="dt-tag">{f.ref}</span>}</div>
+          <div className="dt-tags"><span className={`lc ${st[1]}`}><Icone nom={st[2]} taille={14} epaisseur={2.4} />{st[0]}</span><span className="dt-tag">{f.modalite}</span>{f.ref && <span className="dt-tag">{f.ref}</span>}
+            {!hasProg(f) && <span className="lc lc-noprog"><Icone nom="programme" taille={14} epaisseur={2.4} />Programme non créé</span>}</div>
           <h1>{f.title}</h1>
           <p className="dt-sub">Version {f.version || 1} · mise à jour le {frDate(f.maj)}{f.prepare ? ` · par ${f.prepare}` : ''}</p>
           <div className="dt-facts">
@@ -110,6 +115,8 @@ function FormationDetail() {
           </div>
         </div>
         <div className="dt-actions">
+          {/* SCRUM-22 : modifier la formation depuis sa fiche */}
+          <button type="button" className="btn btn-primary" onClick={() => navigate(`/formations/${f.id}/modifier`, retour)}><Icone nom="pen" taille={16} />Modifier</button>
           <button type="button" className="btn btn-line" onClick={() => window.print()}><Icone nom="doc" taille={16} />Exporter en PDF</button>
         </div>
       </header>

@@ -74,8 +74,6 @@ svg{flex-shrink:0}
 .contenu .wrap{max-width:none;margin:0}
 .topbar{display:flex;align-items:center;gap:16px;margin-bottom:32px}
 .menu-btn{display:none;background:var(--carte);border:1px solid var(--bordure);border-radius:10px;padding:8px;color:var(--texte-2)}
-.recherche{flex:1;max-width:420px;display:flex;align-items:center;gap:10px;background:var(--carte);border:1px solid var(--bordure);border-radius:12px;padding:10px 14px;color:var(--texte-3)}
-.recherche input{border:none;outline:none;background:none;width:100%;color:var(--texte)}
 .topbar-droite{margin-left:auto;display:flex;align-items:center;gap:12px}
 .icone-btn{position:relative;width:42px;height:42px;border-radius:12px;background:var(--carte);border:1px solid var(--bordure);display:grid;place-items:center;color:var(--texte-2);cursor:pointer}
 .pastille{position:absolute;top:8px;right:9px;width:8px;height:8px;border-radius:50%;background:var(--vert);border:2px solid var(--carte)}
@@ -135,7 +133,6 @@ svg{flex-shrink:0}
   .sidebar{position:fixed;left:0;top:0;width:290px;z-index:20;transform:translateX(-100%);transition:transform .2s;box-shadow:var(--ombre-forte)}
   .sidebar.ouverte{transform:none}
   .menu-btn{display:grid;place-items:center}
-  .recherche{display:none}
   .contenu{padding:16px}
 }
 @media (max-width:480px){.kpis,.modules{grid-template-columns:1fr}}
