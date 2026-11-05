@@ -189,7 +189,7 @@ button.db-card{cursor:pointer;transition:box-shadow .2s,transform .2s}button.db-
 .dt-empty span{flex:1}.dt-fix{border:0;background:#E11D48;color:#fff;font-weight:600;font-size:13px;padding:6px 12px;border-radius:999px}
 .dt-partial .dt-empty span::after{content:" : certains champs manquent"}
 @media (max-width:980px){.dt-layout{grid-template-columns:1fr}.dt-side{position:static}.dt-hero{grid-template-columns:1fr}.dt-actions{margin-top:0}.dt-row{grid-template-columns:1fr;gap:4px}}
-.fc-top{display:flex;justify-content:space-between;gap:8px;margin:0 -18px 6px;padding:12px 14px;position:relative;overflow:hidden;height:124px;align-items:flex-start;border-radius:18px 18px 0 0}
+.fc-top{display:flex;justify-content:flex-end;gap:8px;margin:0 -18px 6px;padding:12px 14px;position:relative;overflow:hidden;height:76px;align-items:center;border-radius:18px 18px 0 0}
 .fc-top .fc-art{position:absolute;inset:0;width:100%;height:100%}
 .fc-top .fc-tag{border:0;box-shadow:0 2px 6px rgba(15,23,42,.12)}
 .fc-top .fc-tag:first-of-type{background:#fff;color:#0F766E}.fc-top .fc-tag:first-of-type svg{color:#0F766E}
@@ -206,6 +206,7 @@ button.db-card{cursor:pointer;transition:box-shadow .2s,transform .2s}button.db-
 
 .fc-mod2{font-size:13px;font-weight:600;color:var(--ink-3);padding:3px 10px;border-radius:999px;background:var(--surface-2)}
 .fcard h3{font-size:17px;line-height:1.3;margin:0}
+.fc-ligne{display:flex;align-items:center;justify-content:space-between;gap:10px}.fc-ligne .fc-tag{flex:none;height:26px;padding:0 10px;font-size:12.5px}
 .fc-sn{display:inline-flex;align-items:center;gap:4px;margin-left:8px;padding:1px 8px;border-radius:999px;background:var(--brand-soft);color:var(--brand-text);font-weight:600}
 .fc-upd{margin:-2px 0 0;display:flex;align-items:center;gap:5px;font-size:13px;color:var(--ink-3)}
 .sess-ic{flex:0 0 38px;width:38px;height:38px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);display:grid;place-items:center}.sess-ic:hover{background:var(--surface-2)}
@@ -262,7 +263,6 @@ button.db-card{cursor:pointer;transition:box-shadow .2s,transform .2s}button.db-
 .menu-pop{position:absolute;z-index:20;right:0;bottom:calc(100% + 8px);width:220px;padding:6px;border-radius:14px;background:var(--surface);border:1px solid var(--line);box-shadow:0 16px 40px rgba(15,23,42,.16);display:flex;flex-direction:column}
 .mn-i{display:flex;align-items:center;gap:10px;padding:10px 12px;border:0;border-radius:10px;background:none;color:var(--ink);font-size:15px;font-weight:500;text-align:left}
 .mn-i:hover{background:var(--surface-2)}.mn-i svg{color:var(--ink-3)}
-.mn-i:disabled{color:var(--ink-3);cursor:not-allowed}.mn-i:disabled:hover{background:none}.mn-bientot{margin-left:auto;padding-left:12px;font-size:12px;font-weight:500;color:var(--ink-3)}
 .mn-i.danger{color:#DC2626}.mn-i.danger svg{color:#DC2626}.mn-i.danger:hover{background:#FEF2F2}
 .toolbar{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line)}
 .tabs{display:flex;flex-wrap:wrap;gap:2px}
@@ -453,6 +453,22 @@ button.db-card{cursor:pointer;transition:box-shadow .2s,transform .2s}button.db-
 .fc-info dt{display:flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-3)}
 .fc-info dd{margin:3px 0 0;font-size:15px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
 .fc-info .na{color:var(--ink-3);font-weight:500}
+/* Sessions de la carte : bouton avec le total, pop-up avec le tableau des sessions en cours et à venir */
+.fc-sess-btn{display:inline-flex;align-items:center;gap:4px;padding:0;border:0;background:none;font:inherit;font-weight:700;color:var(--brand-text);cursor:pointer}
+.fc-sess-btn:hover{text-decoration:underline}.fc-sess-btn:disabled{color:var(--ink-3);font-weight:500;cursor:default;text-decoration:none}
+.fc-sess-btn svg{transform:rotate(-90deg)}
+.sess-liste{width:min(680px,100%)}
+.sess-liste-tete{display:flex;align-items:center;gap:14px}.sess-liste-tete h2{margin:0}.sess-liste-tete p{margin:4px 0 0;color:var(--ink-3)}
+.sess-liste-ic{flex:none;width:44px;height:44px;border-radius:12px;background:var(--brand-soft);color:var(--brand-text);display:grid;place-items:center}
+.sess-tab-zone{max-height:min(420px,60vh);overflow:auto;margin-top:16px;border:1px solid var(--line);border-radius:12px}
+.sess-tab{width:100%;border-collapse:collapse;font-size:14.5px}
+.sess-tab th{position:sticky;top:0;padding:10px 14px;background:var(--surface-2);text-align:left;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-3)}
+.sess-tab td{padding:12px 14px;border-top:1px solid var(--line);color:var(--ink);vertical-align:middle}
+.sess-tab tbody tr:nth-child(even) td{background:var(--surface-2)}
+.sess-tab .na{color:var(--ink-3)}.sess-tab .sess-dates{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.sess-st{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12.5px;font-weight:600;white-space:nowrap}
+.sess-st.en-cours{background:#ECFDF5;color:#047857}.sess-st.a-venir{background:#EFF6FF;color:#1D4ED8}
+@media (max-width:560px){.sess-tab th:nth-child(3),.sess-tab td:nth-child(3){display:none}}
 .fc-prog.no span{flex:1;white-space:nowrap}.fc-prog button{display:inline-flex;align-items:center;gap:4px;flex:0 0 auto;border:0;background:none;padding:0;color:var(--brand-text);font-size:13px;font-weight:600}.fc-prog button:hover{text-decoration:underline;text-underline-offset:3px}
 @media (max-width:520px){.misslist{grid-template-columns:1fr}}
 .mi{width:100%;display:flex;align-items:center;gap:10px;padding:8px 10px;border:1.5px solid var(--line);border-radius:10px;background:var(--surface);text-align:left;color:var(--ink);font-weight:600;font-size:15px}

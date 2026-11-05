@@ -13,6 +13,7 @@ from quali_formation.models import (
     Apprenant,
     Formateur,
     Formation,
+    FormationHistorique,
     Item,
     Sequence,
     Session,
@@ -22,6 +23,7 @@ from quali_formation.serializers import ItemSerializer
 
 Statut = Formation.Statut
 Publication = Formation.Publication
+Action = FormationHistorique.Action
 
 
 class ErreurMetier(APIException):
@@ -82,6 +84,12 @@ def _verifier_intitule_unique(formation, donnees):
         raise ErreurMetier('INTITULE_EXISTANT', 'Une formation portant le même nom existe déjà.', 409)
 
 
+def _historiser(formation, action, utilisateur):
+    # formation_historique : une ligne par action, avec l'utilisateur connecté et la date
+    FormationHistorique.objects.create(formation=formation, reference=formation.reference, intitule=formation.intitule,
+                                       utilisateur=utilisateur, action=action)
+
+
 def _ajuster_publication(formation):
     # RG28 : une formation publiée qui repasse en brouillon redevient « À publier »
     if formation.statut == Statut.BROUILLON:
@@ -109,14 +117,17 @@ def _enregistrer_avec_reference(formation):
 class FormationService:
     """Règles de gestion du module Formations (couche service, journalisée par @loggable)."""
 
-    def enregistrer(self, formation, donnees, action, forcer=False, doublon_accepte=False):
+    def enregistrer(self, formation, donnees, action, forcer=False, doublon_accepte=False, utilisateur=None):
         """Crée (formation=None) ou modifie une formation.
 
         action « brouillon » : seul l'intitulé est obligatoire (RG02) ;
         action « valider » : intitulé, durée > 0 et modalité obligatoires (RG01), puis Validée si tous les
         blocs sont complets (RG13), sinon refus sauf `forcer` qui l'enregistre Incomplète (RG14, RG15).
         Même intitulé qu'une autre formation de l'organisme : refus sauf `doublon_accepte` (SCRUM-20).
+        Une formation archivée ne se modifie pas : il faut d'abord la restaurer (SCRUM-23).
         """
+        if formation is not None and formation.statut == Statut.ARCHIVEE:
+            raise ErreurMetier('ARCHIVEE', "Une formation archivée ne se modifie pas : restaurez-la d'abord.", 409)
         if not donnees['intitule'].strip():
             raise ErreurMetier('INTITULE_REQUIS', "L'intitulé est obligatoire.")
         sequences = donnees.pop('sequences')
@@ -140,7 +151,38 @@ class FormationService:
             else:
                 formation.save()
             _remplacer_sequences(formation, sequences)
+            _historiser(formation, Action.CREATION if nouvelle else Action.MODIFICATION, utilisateur)
         return formation
+
+
+    def archiver(self, formation, utilisateur=None):
+        # SCRUM-23 : la formation quitte « Toutes » pour le filtre « Archivées »
+        formation.statut = Statut.ARCHIVEE
+        with transaction.atomic():
+            formation.save()
+            _historiser(formation, Action.ARCHIVAGE, utilisateur)
+        return formation
+
+
+    def restaurer(self, formation, utilisateur=None):
+        # SCRUM-23 : retour en brouillon (et donc « À publier », RG28)
+        if formation.statut != Statut.ARCHIVEE:
+            raise ErreurMetier('NON_ARCHIVEE', "Seule une formation archivée peut être restaurée.", 409)
+        formation.statut = Statut.BROUILLON
+        _ajuster_publication(formation)
+        with transaction.atomic():
+            formation.save()
+            _historiser(formation, Action.RESTAURATION, utilisateur)
+        return formation
+
+
+    def supprimer(self, formation, utilisateur=None):
+        # SCRUM-23 : une formation qui a des sessions doit d'abord être archivée
+        if formation.sessions.exists() and formation.statut != Statut.ARCHIVEE:
+            raise ErreurMetier('A_DES_SESSIONS', 'Cette formation a des sessions : archivez-la avant de la supprimer.', 409)
+        with transaction.atomic():
+            _historiser(formation, Action.SUPPRESSION, utilisateur)  # la ligne reste, sans lien vers la formation
+            formation.delete()
 
 
     def publier(self, formation, confirmer=False):
@@ -165,6 +207,8 @@ class FormationService:
 
 
     def ajouter_session(self, formation, date_debut, date_fin, lieu='', nombre_places=None):
+        if formation.statut == Statut.ARCHIVEE:  # SCRUM-23
+            raise ErreurMetier('ARCHIVEE', 'Une formation archivée ne reçoit plus de nouvelle session.', 409)
         if date_fin < date_debut:  # RG38
             raise ErreurMetier('DATES_INVALIDES', 'La date de fin ne peut pas être avant la date de début.')
         return Session.objects.create(formation=formation, date_debut=date_debut, date_fin=date_fin,

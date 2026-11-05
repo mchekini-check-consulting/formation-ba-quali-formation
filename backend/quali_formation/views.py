@@ -59,6 +59,11 @@ def _formations():
     return Formation.objects.prefetch_related('sequences', 'sessions')
 
 
+def _utilisateur_connecte(request):
+    # Compte de la session (SCRUM-16), pour l'historique des formations ; None si personne n'est connecté
+    return Utilisateur.objects.filter(pk=request.session.get(SESSION_UTILISATEUR)).first()
+
+
 def _enregistrer(request, formation):
     entree = FormationEcritureSerializer(data=request.data)
     entree.is_valid(raise_exception=True)
@@ -67,7 +72,7 @@ def _enregistrer(request, formation):
     donnees['autres_informations'] = [dict(o) for o in donnees['autres_informations']]
     donnees['sequences'] = [dict(s) for s in donnees['sequences']]
     try:
-        formation = formation_service.enregistrer(formation, donnees, action, forcer, doublon_accepte)
+        formation = formation_service.enregistrer(formation, donnees, action, forcer, doublon_accepte, _utilisateur_connecte(request))
     except ErreurMetier as e:
         return _erreur(e)
     return Response(FormationSerializer(_formations().get(pk=formation.pk)).data,
@@ -82,17 +87,24 @@ def formations(request):
     return Response(FormationSerializer(_formations(), many=True).data)
 
 
-@api_view(["GET", "PUT"])
+@api_view(["GET", "PUT", "DELETE"])
 def formation(request, pk):
+    """GET : la formation ; PUT : modification (200/400/404) ; DELETE : suppression (204, 409 si elle a des sessions)."""
     f = get_object_or_404(_formations(), pk=pk)
     if request.method == 'PUT':
         return _enregistrer(request, f)
+    if request.method == 'DELETE':
+        try:
+            formation_service.supprimer(f, _utilisateur_connecte(request))
+        except ErreurMetier as e:
+            return _erreur(e)
+        return Response(status=status.HTTP_204_NO_CONTENT)
     return _lire(f)
 
 
-def _action(fonction):
-    """Vue POST /api/formations/<id>/<action>/ qui applique une règle et renvoie la formation."""
-    @api_view(["POST"])
+def _action(fonction, methode='POST'):
+    """Vue POST (ou PATCH) /api/formations/<id>/<action>/ qui applique une règle et renvoie la formation."""
+    @api_view([methode])
     def vue(request, pk):
         f = get_object_or_404(_formations(), pk=pk)
         try:
@@ -105,6 +117,9 @@ def _action(fonction):
 
 publier = _action(lambda f, request: formation_service.publier(f, confirmer=bool(request.data.get('confirmer'))))
 retirer_publication = _action(lambda f, request: formation_service.retirer_publication(f))
+# SCRUM-23 : PATCH /formations/<id>/archiver/ et /restaurer/ (200)
+archiver = _action(lambda f, request: formation_service.archiver(f, _utilisateur_connecte(request)), 'PATCH')
+restaurer = _action(lambda f, request: formation_service.restaurer(f, _utilisateur_connecte(request)), 'PATCH')
 
 
 @api_view(["POST"])

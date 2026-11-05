@@ -71,6 +71,23 @@ describe('Fiche détaillée', () => {
     expect(router.state.location.pathname).toBe('/formations/6/modifier')
   })
 
+  it('une formation archivée ne se modifie pas : ni « Modifier » ni « Compléter » sur sa fiche (SCRUM-23)', async () => {
+    await service.archiver(1)
+    await ouvrir(1)
+    expect(within(document.querySelector('.dt-tags')).getByText('Archivée')).toBeTruthy()
+    expect(within(document.querySelector('.dt-actions')).queryByRole('button', { name: 'Modifier' })).toBeNull()
+    expect(screen.queryByRole('button', { name: /^Compléter/ })).toBeNull()
+    expect(screen.queryByText('Fiche Qualiopi incomplète')).toBeNull()
+  })
+
+  it('l’adresse du formulaire d’une formation archivée ramène à sa fiche (SCRUM-23)', async () => {
+    await service.archiver(1)
+    const router = createMemoryRouter(routes, { initialEntries: ['/formations/1/modifier'] })
+    render(<RouterProvider router={router} />)
+    await screen.findByRole('heading', { level: 2, name: /La formation$/ })
+    expect(router.state.location.pathname).toBe('/formations/1')
+  })
+
   it('signale « Programme non créé » sur la fiche d’une formation sans programme', async () => {
     const f = await service.obtenirFormation(2)
     await service.enregistrerFormation({ ...f, values: { ...f.values, modules: [] } }, 'incomplete')

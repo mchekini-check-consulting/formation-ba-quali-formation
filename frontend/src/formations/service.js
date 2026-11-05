@@ -45,6 +45,8 @@ const memeIntitule = (t) => String(t || '').trim().split(/\s+/).join(' ').toLoca
 // Enregistre le formulaire avec le statut voulu (brouillon, incomplete, validee)
 export async function enregistrerFormation(form, statut, { doublonAccepte = false } = {}) {
   const f = copie(form)
+  // SCRUM-23 : une formation archivée ne se modifie pas, on la restaure d'abord
+  if (f.id && trouver(f.id).statut === 'archivee') throw new ErreurMetier('ARCHIVEE', 'Une formation archivée ne se modifie pas : restaurez-la d’abord.')
   // RG02 : l'intitulé suffit pour un brouillon ; RG01 : intitulé, durée > 0 et modalité pour valider
   if (!String(f.title || '').trim()) throw new ErreurMetier('INTITULE_REQUIS', "L'intitulé est obligatoire.")
   if (statut !== 'brouillon' && !(Number(String(f.duree).replace(',', '.')) > 0 && f.modalite)) {
@@ -92,9 +94,34 @@ export async function retirerPublication(id) {
   return copie(f)
 }
 
+// SCRUM-23 : la formation quitte « Toutes » pour le filtre « Archivées »
+export async function archiver(id) {
+  const f = trouver(id)
+  f.statut = 'archivee'; f.maj = today(); sauver()
+  return copie(f)
+}
+
+// SCRUM-23 : une formation restaurée revient en brouillon (RG28 : et donc « À publier »)
+export async function restaurer(id) {
+  const f = trouver(id)
+  if (f.statut !== 'archivee') throw new ErreurMetier('NON_ARCHIVEE', 'Seule une formation archivée peut être restaurée.')
+  f.statut = 'brouillon'; f.maj = today()
+  if (f.pub === 'publiee') f.pub = 'apublier'
+  sauver()
+  return copie(f)
+}
+
+// SCRUM-23 : suppression définitive ; une formation qui a des sessions doit d'abord être archivée
+export async function supprimer(id) {
+  const f = trouver(id)
+  if ((f.sess || []).length > 0 && f.statut !== 'archivee') throw new ErreurMetier('A_DES_SESSIONS', 'Cette formation a des sessions : archivez-la avant de la supprimer.')
+  db = charger().filter((x) => x !== f); sauver()
+}
+
 // RG38 : début et fin obligatoires, fin ≥ début
 export async function ajouterSession(id, { debut, fin, lieu, places }) {
   const f = trouver(id)
+  if (f.statut === 'archivee') throw new ErreurMetier('ARCHIVEE', 'Une formation archivée ne reçoit plus de nouvelle session.')
   if (!debut || !fin || fin < debut) throw new ErreurMetier('DATES_INVALIDES', 'Indiquez une date de début et une date de fin (la fin après le début).')
   f.sess = [...(f.sess || []), { debut, fin, lieu: String(lieu || '').trim(), places: String(places || '').trim() }]
   sauver()

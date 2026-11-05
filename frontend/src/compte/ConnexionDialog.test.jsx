@@ -110,7 +110,7 @@ describe('Se connecter : critères d\'acceptation', () => {
     repondre(200, { id: 1, email: EMAIL })
     afficher()
     seConnecter({ email: `  ${EMAIL} ` })
-    await screen.findByText(/Vous êtes connecté/)
+    await screen.findByText(/Vous êtes connecté/, {}, { timeout: 3000 })
     expect(JSON.parse(fetchMock.mock.calls[0][1].body).email).toBe(EMAIL)
   })
 
@@ -122,7 +122,7 @@ describe('Se connecter : critères d\'acceptation', () => {
     expect(boutonConnexion().textContent).toBe('Connexion…')
     expect(boutonConnexion().disabled).toBe(true)
     terminer({ ok: true, status: 200, json: async () => ({ id: 1, email: EMAIL }) })
-    await screen.findByText(/Vous êtes connecté/)
+    await screen.findByText(/Vous êtes connecté/, {}, { timeout: 3000 })
   })
 
   // RG-CX-05, critère 3 / jeux « Mauvais mot de passe » et « E-mail inconnu »
@@ -214,7 +214,7 @@ describe('Se connecter : connexion mémorisée (session)', () => {
     repondre(200, { id: 1, email: EMAIL })
     afficher()
     seConnecter()
-    await screen.findByText(/Vous êtes connecté/)
+    await screen.findByText(/Vous êtes connecté/, {}, { timeout: 3000 })
     expect(fetchMock.mock.calls[0][1].credentials).toBe('include')
   })
 

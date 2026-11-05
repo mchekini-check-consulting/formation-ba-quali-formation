@@ -53,6 +53,22 @@ describe('service API', () => {
     expect(JSON.parse(fetch.mock.calls[0][1].body)).toMatchObject({ doublon_accepte: true })
   })
 
+  it('archive et restaure en PATCH, supprime en DELETE, avec le cookie de connexion (SCRUM-23)', async () => {
+    repondre(200, FORMATION_API)
+    await api.archiver(3)
+    await api.restaurer(3)
+    expect(fetch.mock.calls.map(([url, o]) => [url, o.method, o.credentials])).toEqual([
+      ['/api/formations/3/archiver/', 'PATCH', 'include'], ['/api/formations/3/restaurer/', 'PATCH', 'include']])
+    repondre(204, null)
+    await expect(api.supprimer(3)).resolves.toBeUndefined()
+    expect(fetch.mock.calls[0].slice(0, 1).concat(fetch.mock.calls[0][1].method)).toEqual(['/api/formations/3/', 'DELETE'])
+  })
+
+  it('suppression refusée : une formation avec des sessions doit d’abord être archivée (409)', async () => {
+    repondre(409, { code: 'A_DES_SESSIONS', detail: 'Cette formation a des sessions : archivez-la avant de la supprimer.' })
+    await expect(api.supprimer(3)).rejects.toMatchObject({ code: 'A_DES_SESSIONS' })
+  })
+
   it('remonte le code d’erreur métier de l’API (RG26)', async () => {
     repondre(409, { code: 'PROGRAMME_REQUIS', detail: 'Une formation ne peut pas être publiée sans son programme.' })
     await expect(api.publier(3)).rejects.toMatchObject({ code: 'PROGRAMME_REQUIS' })

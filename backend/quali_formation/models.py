@@ -26,6 +26,7 @@ class Formation(models.Model):
         BROUILLON = 'BROUILLON', 'Brouillon'
         INCOMPLETE = 'INCOMPLETE', 'Incomplète selon Qualiopi'
         VALIDEE = 'VALIDEE', 'Validée'
+        ARCHIVEE = 'ARCHIVEE', 'Archivée'  # SCRUM-23
 
     # RG24 : seulement pour les formations validées ou incomplètes
     class Publication(models.TextChoices):
@@ -162,3 +163,30 @@ class Utilisateur(models.Model):
 
     def __str__(self):
         return self.email
+
+
+class FormationHistorique(models.Model):
+    """Une ligne par action sur une formation : création (SCRUM-20), modification, archivage, restauration,
+    suppression (SCRUM-23). Référence et intitulé sont recopiés : la ligne reste après la suppression de la formation."""
+
+    class Action(models.TextChoices):
+        CREATION = 'CREATION', 'Création'
+        MODIFICATION = 'MODIFICATION', 'Modification'
+        ARCHIVAGE = 'ARCHIVAGE', 'Archivage'
+        RESTAURATION = 'RESTAURATION', 'Restauration'
+        SUPPRESSION = 'SUPPRESSION', 'Suppression'
+
+    formation = models.ForeignKey(Formation, on_delete=models.SET_NULL, null=True, blank=True, related_name='historique')
+    reference = models.CharField(max_length=12)
+    intitule = models.CharField(max_length=255)
+    # Utilisateur connecté (SCRUM-16) ; vide si personne n'est connecté
+    utilisateur = models.ForeignKey(Utilisateur, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    action = models.CharField(max_length=12, choices=Action.choices)
+    date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'formation_historique'
+        ordering = ('date', 'id')
+
+    def __str__(self):
+        return f'{self.reference} : {self.action}'
