@@ -1,17 +1,48 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { apiBase } from './api'
 import { routes } from './App'
 
-afterEach(cleanup)
+// Compte connecté renvoyé par GET /auth/moi : personne par défaut (401)
+let fetchMock
+beforeEach(() => {
+  fetchMock = vi.fn(async () => ({ ok: false, status: 401, json: async () => ({ code: 'NON_CONNECTE' }) }))
+  vi.stubGlobal('fetch', fetchMock)
+})
+afterEach(() => {
+  cleanup()
+  vi.unstubAllGlobals()
+})
+const connecte = (email) => fetchMock.mockResolvedValue({ ok: true, status: 200, json: async () => ({ id: 7, email }) })
 
 const afficher = (adresse = '/tableau-de-bord') => render(<RouterProvider router={createMemoryRouter(routes, { initialEntries: [adresse] })} />)
 
 describe('App', () => {
-  it('affiche le titre', () => {
-    afficher()
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bonjour Nassiba')
+  it('personne n’est connecté : pas d’avatar', async () => {
+    const { container } = afficher()
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalled())
+    expect(fetchMock.mock.calls[0][0]).toMatch(/\/auth\/moi$/)
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bonjour, bienvenue dans Quali-formation')
+    expect(container.querySelector('.avatar')).toBeNull()
+    expect(container.textContent).not.toContain('Nassiba')
+  })
+
+  it('le titre ne change pas selon le compte ; l’avatar montre ses initiales (e-mail au survol)', async () => {
+    connecte('prenom.nom@organisme.fr')
+    const { container } = afficher()
+    await vi.waitFor(() => expect(container.querySelector('.avatar')).not.toBeNull())
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bonjour, bienvenue dans Quali-formation')
+    const avatar = container.querySelector('.avatar')
+    expect(avatar.textContent).toBe('PN')
+    expect(avatar.getAttribute('title')).toBe('prenom.nom@organisme.fr')
+    expect(container.textContent).not.toContain('Nassiba')
+  })
+
+  it('l’avatar suit le compte connecté sur les autres pages', async () => {
+    connecte('autre.compte@organisme.fr')
+    const { container } = afficher('/formations')
+    await vi.waitFor(() => expect(container.querySelector('.avatar')?.textContent).toBe('AC'))
   })
 
   it('le tableau de bord est vide pour l’instant (titre seulement)', () => {
@@ -39,7 +70,7 @@ describe('App', () => {
     afficher('/tableau-de-bord')
     fireEvent.click(screen.getByRole('link', { name: 'Quali-formation' }))
     expect(await screen.findByRole('link', { name: 'Se connecter' })).toBeTruthy()
-    expect(screen.queryByText('Bonjour Nassiba')).toBeNull()
+    expect(screen.queryByRole('heading', { level: 1, name: /^Bonjour/ })).toBeNull()
   })
 
   it('le lien « Formations » de la barre latérale ouvre la liste des formations', async () => {
