@@ -23,7 +23,7 @@ describe('App', () => {
     const { container } = afficher()
     await vi.waitFor(() => expect(fetchMock).toHaveBeenCalled())
     expect(fetchMock.mock.calls[0][0]).toMatch(/\/auth\/moi$/)
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bonjour, bienvenue dans Quali-formation')
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bienvenue dans Quali-formation')
     expect(container.querySelector('.avatar')).toBeNull()
     expect(container.textContent).not.toContain('Nassiba')
   })
@@ -32,7 +32,7 @@ describe('App', () => {
     connecte('prenom.nom@organisme.fr')
     const { container } = afficher()
     await vi.waitFor(() => expect(container.querySelector('.avatar')).not.toBeNull())
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bonjour, bienvenue dans Quali-formation')
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bienvenue dans Quali-formation')
     const avatar = container.querySelector('.avatar')
     expect(avatar.textContent).toBe('PN')
     expect(avatar.getAttribute('title')).toBe('prenom.nom@organisme.fr')
@@ -70,7 +70,7 @@ describe('App', () => {
     afficher('/tableau-de-bord')
     fireEvent.click(screen.getByRole('link', { name: 'Quali-formation' }))
     expect(await screen.findByRole('link', { name: 'Se connecter' })).toBeTruthy()
-    expect(screen.queryByRole('heading', { level: 1, name: /^Bonjour/ })).toBeNull()
+    expect(screen.queryByRole('heading', { level: 1, name: 'Bienvenue dans Quali-formation' })).toBeNull()
   })
 
   it('le lien « Formations » de la barre latérale ouvre la liste des formations', async () => {

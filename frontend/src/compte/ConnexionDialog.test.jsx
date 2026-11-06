@@ -218,13 +218,13 @@ describe('Se connecter : connexion mémorisée (session)', () => {
     expect(fetchMock.mock.calls[0][1].credentials).toBe('include')
   })
 
-  it('le tableau de bord affiche « Bonjour, bienvenue dans Quali-formation », le message de bienvenue et les initiales du compte', async () => {
+  it('le tableau de bord affiche « Bienvenue dans Quali-formation », le message de bienvenue et les initiales du compte', async () => {
     repondre(200, { id: 1, email: EMAIL })  // POST /auth/login
     repondre(200, { id: 1, email: EMAIL })  // GET /auth/moi (barre du haut)
     afficher()
     seConnecter()
     expect(await screen.findByText('Vous êtes connecté. Bienvenue sur Quali-formation !', {}, { timeout: 3000 })).toBeTruthy()
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bonjour, bienvenue dans Quali-formation')
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bienvenue dans Quali-formation')
     expect(screen.queryByText(/Connecté avec/)).toBeNull()
     expect(screen.queryByText(EMAIL)).toBeNull()
     await vi.waitFor(() => expect(document.querySelector('.avatar')?.textContent).toBe('RE'))
