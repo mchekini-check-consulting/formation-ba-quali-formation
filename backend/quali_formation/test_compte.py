@@ -118,5 +118,27 @@ class CreerCompteTests(TestCase):
         self.assert_refuse(r, {'email': 'EMAIL_REQUIS', 'mot_de_passe': 'MOT_DE_PASSE_REQUIS',
                                'cgu_acceptees': 'CGU_NON_ACCEPTEES'})
 
+    # Chaque compte n'accède qu'à ses informations : le compte créé est connecté, pas un compte précédent
+    def test_le_compte_cree_est_connecte(self):
+        self.assertEqual(self.client.get('/auth/moi').status_code, 401)
+        r = self.inscrire()
+        self.assertEqual(self.client.get('/auth/moi').json(), {'id': r.json()['id'], 'email': 'nouveau@organisme.fr'})
+        self.assertEqual(self.client.get('/formations/').json(), [])
+
+    def test_le_compte_cree_remplace_la_connexion_precedente(self):
+        ancien = self.inscrire(email='ancien@organisme.fr')
+        self.client.post('/formations/', {'action': 'brouillon', 'intitule': 'Formation de l’ancien', 'modalite': 'PRESENTIEL'},
+                         content_type='application/json')
+        nouveau = self.inscrire()
+        self.assertNotEqual(nouveau.json()['id'], ancien.json()['id'])
+        self.assertEqual(self.client.get('/auth/moi').json()['email'], 'nouveau@organisme.fr')
+        self.assertEqual(self.client.get('/formations/').json(), [])  # rien de l'ancien compte
+
+    def test_une_creation_refusee_ne_change_pas_la_connexion(self):
+        self.inscrire(email='ancien@organisme.fr')
+        self.assertEqual(self.inscrire(email='ancien@organisme.fr').status_code, 409)
+        self.assertEqual(self.inscrire(email='pas-un-email').status_code, 400)
+        self.assertEqual(self.client.get('/auth/moi').json()['email'], 'ancien@organisme.fr')
+
     def test_seul_post_est_accepte(self):
         self.assertEqual(self.client.get('/auth/register').status_code, 405)

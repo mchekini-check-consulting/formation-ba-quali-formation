@@ -220,7 +220,8 @@ def _formulaire_invalide(e):
 @api_view(["POST"])
 def inscription(request):
     """POST /auth/register {email, mot_de_passe, confirmation, cgu_acceptees} : création du compte.
-    201 compte créé (sans le mot de passe) ; 400 donnée invalide (champ + code) ; 409 EMAIL_DEJA_UTILISE."""
+    201 compte créé (sans le mot de passe) et connecté : la session d'un compte déjà connecté dans ce navigateur
+    est remplacée ; 400 donnée invalide (champ + code) ; 409 EMAIL_DEJA_UTILISE."""
     d = request.data
     try:
         utilisateur = compte_service.creer_compte(d.get('email'), d.get('mot_de_passe'), d.get('confirmation'),
@@ -229,6 +230,7 @@ def inscription(request):
         return _formulaire_invalide(e)
     except ErreurMetier as e:
         return Response({'code': e.code, 'champ': 'email', 'detail': e.message}, status=e.statut_http)
+    _ouvrir_session(request, utilisateur)
     return Response({'id': utilisateur.id, 'email': utilisateur.email,
                      'date_creation': utilisateur.date_creation}, status=status.HTTP_201_CREATED)
 
@@ -236,6 +238,12 @@ def inscription(request):
 # Mémorisation de la connexion : session Django. Le navigateur garde un cookie de session (HttpOnly, illisible
 # par le JavaScript) qui ne contient qu'un numéro ; le compte connecté est retenu côté serveur (table django_session).
 SESSION_UTILISATEUR = 'utilisateur_id'
+
+
+def _ouvrir_session(request, utilisateur):
+    # Nouveau numéro de session à chaque connexion ou création de compte : rien n'est repris du compte précédent
+    request.session.cycle_key()
+    request.session[SESSION_UTILISATEUR] = utilisateur.id
 
 
 def _compte(utilisateur):
@@ -252,8 +260,7 @@ def connexion(request):
         return _formulaire_invalide(e)
     except ErreurMetier as e:
         return _erreur(e)
-    request.session.cycle_key()  # nouveau numéro de session à chaque connexion
-    request.session[SESSION_UTILISATEUR] = utilisateur.id
+    _ouvrir_session(request, utilisateur)
     return _compte(utilisateur)
 
 
