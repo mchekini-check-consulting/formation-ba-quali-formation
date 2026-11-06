@@ -7,6 +7,7 @@ from django.utils import timezone
 
 from quali_formation.blocs import BLOCS, blocs_manquants
 from quali_formation.models import Formation, FormationHistorique, Item, Utilisateur
+from quali_formation.services import formations_visibles
 
 ANNEE = timezone.localdate().year
 
@@ -383,6 +384,9 @@ class FormationsParCompteTests(TestCase):
         Formation.objects.create(reference='FOR-2025-001', intitule='Ancienne')  # sans propriétaire
         self.assertEqual([f['intitule'] for f in self.client.get('/formations/').json()], [])
         self.assertTrue(Formation.objects.filter(intitule='Ancienne').exists())  # rien n'est supprimé
+
+    def test_aucune_formation_visible_sans_compte(self):
+        self.assertFalse(formations_visibles(None).exists())
 
     def test_la_reference_reste_unique_entre_les_comptes(self):
         r = self.client.post('/formations/', {'action': 'brouillon', 'modalite': 'PRESENTIEL', 'intitule': 'Word'}, content_type='application/json')

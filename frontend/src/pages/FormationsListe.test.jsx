@@ -207,3 +207,13 @@ describe('Archiver, restaurer, supprimer (SCRUM-23)', () => {
     expect(await screen.findByLabelText(/Pour confirmer la suppression/)).toBeTruthy()
   })
 })
+
+describe('Liste : erreur de chargement', () => {
+  it('personne n’est connecté : le message et le lien « Se connecter »', async () => {
+    const espion = vi.spyOn(service, 'listerFormations').mockRejectedValue(new service.ErreurMetier('NON_CONNECTE', "Vous n'êtes pas connecté."))
+    onTestFinished(() => espion.mockRestore())
+    render(<RouterProvider router={createMemoryRouter(routes, { initialEntries: ['/formations'] })} />)
+    expect((await screen.findByRole('alert')).textContent).toBe("Vous n'êtes pas connecté. Se connecter")
+    expect(screen.getByRole('link', { name: 'Se connecter' }).getAttribute('href')).toBe('/se-connecter')
+  })
+})

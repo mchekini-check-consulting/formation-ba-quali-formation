@@ -6,8 +6,8 @@ function ErreurChargement({ erreur }) {
   return (
     <p className="chargement" role="alert">
       {erreur.message}
-      {erreur.code === 'NON_CONNECTE' && <> <Link to="/se-connecter">Se connecter</Link></>}
-      {erreur.code === 'INTROUVABLE' && <> <Link to="/formations">Retour aux formations</Link></>}
+      {erreur.code === 'NON_CONNECTE' && <>{' '}<Link to="/se-connecter">Se connecter</Link></>}
+      {erreur.code === 'INTROUVABLE' && <>{' '}<Link to="/formations">Retour aux formations</Link></>}
     </p>
   )
 }
