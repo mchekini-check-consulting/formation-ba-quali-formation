@@ -74,6 +74,16 @@ describe('service API', () => {
     await expect(api.publier(3)).rejects.toMatchObject({ code: 'PROGRAMME_REQUIS' })
   })
 
+  it('formation inexistante ou d’un autre compte (404) : « Formation introuvable »', async () => {
+    repondre(404, { code: 'FORMATION_INTROUVABLE', detail: 'Formation introuvable' })
+    await expect(api.obtenirFormation(3)).rejects.toMatchObject({ code: 'INTROUVABLE', message: 'Formation introuvable.' })
+  })
+
+  it('personne n’est connecté (401) : NON_CONNECTE', async () => {
+    repondre(401, { code: 'NON_CONNECTE', detail: "Vous n'êtes pas connecté." })
+    await expect(api.listerFormations()).rejects.toMatchObject({ code: 'NON_CONNECTE', message: "Vous n'êtes pas connecté." })
+  })
+
   it('signale un backend injoignable', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('Failed to fetch') }))
     await expect(api.listerFormations()).rejects.toMatchObject({ code: 'RESEAU' })

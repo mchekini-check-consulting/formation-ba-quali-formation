@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import ErreurChargement from '../components/ErreurChargement'
 import Icone from '../components/Icone'
 import {
   creerSession, dateFr, heureFr, initiales, listerApprenants, listerFormateurs, listerFormations,
@@ -114,7 +115,7 @@ function NouvelleSession() {
   useEffect(() => {
     Promise.all([listerFormations(), listerFormateurs(), listerApprenants()])
       .then(([f, fo, a]) => setListes({ formations: f, formateurs: fo, apprenants: a }))
-      .catch((e) => setErreurChargement(e.message))
+      .catch(setErreurChargement)
   }, [])
 
   const annuler = () => navigate('/sessions')
@@ -169,7 +170,7 @@ function NouvelleSession() {
     </>
   )
   if (!listes) {
-    return <div className="wrap">{entete}<p className="chargement" role={erreurChargement ? 'alert' : undefined}>{erreurChargement || 'Chargement…'}</p></div>
+    return <div className="wrap">{entete}{erreurChargement ? <ErreurChargement erreur={erreurChargement} /> : <p className="chargement">Chargement…</p>}</div>
   }
 
   const resume = `Du ${dateFr(s.debut)} au ${dateFr(s.fin)} · ${heureFr(s.heureDebut)} – ${heureFr(s.heureFin)}`

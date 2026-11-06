@@ -3,6 +3,7 @@
 import { apiBase } from '../api'
 import { PRESENTIEL } from './regles'
 
+// `credentials: 'include'` : cookie de connexion (SCRUM-16), le backend ne renvoie que les sessions et formations du compte
 // Erreur renvoyée à l'écran : `code` (règle métier du backend) et `champs` (champs refusés)
 export class ErreurSession extends Error {
   constructor(code, message, champs = {}) { super(message); this.code = code; this.champs = champs }
@@ -12,8 +13,8 @@ async function appel(chemin, corps) {
   let reponse
   try {
     reponse = await fetch(`${apiBase()}${chemin}`, corps
-      ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corps) }
-      : undefined)
+      ? { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corps) }
+      : { credentials: 'include' })
   } catch {
     throw new ErreurSession('RESEAU', 'Le serveur ne répond pas : vérifiez que le backend est lancé.')
   }

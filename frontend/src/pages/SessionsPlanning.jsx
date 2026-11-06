@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import ErreurChargement from '../components/ErreurChargement'
 import Icone from '../components/Icone'
 import { MenuPartiesPrenantes, PanneauPartiePrenante } from '../sessions/PartiesPrenantes'
 import { messageCreation } from '../sessions/typesPersonnes'
@@ -19,7 +20,7 @@ function SessionsPlanning() {
   const [panneau, setPanneau] = useState(null) // 'formateur', 'apprenant' ou null
 
   useEffect(() => {
-    listerSessions().then(setSessions).catch((e) => setErreur(e.message))
+    listerSessions().then(setSessions).catch(setErreur)
   }, [])
 
   return (
@@ -42,7 +43,7 @@ function SessionsPlanning() {
           onCree={(p) => { setMessage(messageCreation(panneau, p)); setPanneau(null) }} />
       )}
 
-      {sessions === null && <p className="chargement" role={erreur ? 'alert' : undefined}>{erreur || 'Chargement des sessions…'}</p>}
+      {sessions === null && (erreur ? <ErreurChargement erreur={erreur} /> : <p className="chargement">Chargement des sessions…</p>)}
       {sessions?.length === 0 && <div className="card empty"><p className="sub">Aucune session programmée pour le moment.</p></div>}
       {sessions?.length > 0 && (
         <ul className="sp-liste" aria-label="Sessions">

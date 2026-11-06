@@ -1,9 +1,10 @@
-from django.shortcuts import get_object_or_404
+from functools import wraps
+
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from quali_formation.models import Formation, Utilisateur
+from quali_formation.models import Utilisateur
 from quali_formation.serializers import (
     ApprenantSerializer,
     FormateurSerializer,
@@ -18,8 +19,10 @@ from quali_formation.serializers import (
 from quali_formation.services import (
     DonneesInvalides,
     ErreurMetier,
+    FormationIntrouvable,
     compte_service,
     formation_service,
+    formations_visibles,
     item_service,
     session_service,
 )
@@ -55,16 +58,41 @@ def _lire(formation):
     return Response(FormationSerializer(formation).data)
 
 
-def _formations():
-    return Formation.objects.prefetch_related('sequences', 'sessions')
+def _formations(utilisateur):
+    # Seulement les formations du compte connecté
+    return formations_visibles(utilisateur).prefetch_related('sequences', 'sessions')
+
+
+def _trouver(utilisateur, pk):
+    # 404 « Formation introuvable » aussi pour la formation d'un autre compte : on ne dit pas qu'elle existe
+    formation = _formations(utilisateur).filter(pk=pk).first()
+    if formation is None:
+        raise FormationIntrouvable()
+    return formation
 
 
 def _utilisateur_connecte(request):
-    # Compte de la session (SCRUM-16), pour l'historique des formations ; None si personne n'est connecté
+    # Compte de la session (SCRUM-16) ; None si personne n'est connecté
     return Utilisateur.objects.filter(pk=request.session.get(SESSION_UTILISATEUR)).first()
 
 
-def _enregistrer(request, formation):
+def _non_connecte():
+    return Response({'code': 'NON_CONNECTE', 'detail': "Vous n'êtes pas connecté."},
+                    status=status.HTTP_401_UNAUTHORIZED)
+
+
+def _connexion_requise(vue):
+    """Vue réservée à un compte connecté : 401 NON_CONNECTE sinon ; le compte est passé à la vue après `request`."""
+    @wraps(vue)
+    def avec_compte(request, *args, **kwargs):
+        utilisateur = _utilisateur_connecte(request)
+        if utilisateur is None:
+            return _non_connecte()
+        return vue(request, utilisateur, *args, **kwargs)
+    return avec_compte
+
+
+def _enregistrer(request, utilisateur, formation):
     entree = FormationEcritureSerializer(data=request.data)
     entree.is_valid(raise_exception=True)
     donnees = dict(entree.validated_data)
@@ -72,85 +100,91 @@ def _enregistrer(request, formation):
     donnees['autres_informations'] = [dict(o) for o in donnees['autres_informations']]
     donnees['sequences'] = [dict(s) for s in donnees['sequences']]
     try:
-        formation = formation_service.enregistrer(formation, donnees, action, forcer, doublon_accepte, _utilisateur_connecte(request))
+        formation = formation_service.enregistrer(formation, donnees, action, forcer, doublon_accepte, utilisateur)
     except ErreurMetier as e:
         return _erreur(e)
-    return Response(FormationSerializer(_formations().get(pk=formation.pk)).data,
+    return Response(FormationSerializer(_formations(utilisateur).get(pk=formation.pk)).data,
                     status=status.HTTP_201_CREATED if request.method == 'POST' else status.HTTP_200_OK)
 
 
+# Formations : réservées au compte connecté (401 sinon), qui ne voit et ne modifie que les siennes (404 sinon)
+
 @api_view(["GET", "POST"])
-def formations(request):
-    """GET : toutes les formations, de la plus récente à la plus ancienne (RG29). POST : création."""
+@_connexion_requise
+def formations(request, utilisateur):
+    """GET : les formations du compte, de la plus récente à la plus ancienne (RG29). POST : création."""
     if request.method == 'POST':
-        return _enregistrer(request, None)
-    return Response(FormationSerializer(_formations(), many=True).data)
+        return _enregistrer(request, utilisateur, None)
+    return Response(FormationSerializer(_formations(utilisateur), many=True).data)
 
 
 @api_view(["GET", "PUT", "DELETE"])
-def formation(request, pk):
+@_connexion_requise
+def formation(request, utilisateur, pk):
     """GET : la formation ; PUT : modification (200/400/404) ; DELETE : suppression (204, 409 si elle a des sessions)."""
-    f = get_object_or_404(_formations(), pk=pk)
-    if request.method == 'PUT':
-        return _enregistrer(request, f)
-    if request.method == 'DELETE':
-        try:
-            formation_service.supprimer(f, _utilisateur_connecte(request))
-        except ErreurMetier as e:
-            return _erreur(e)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+    try:
+        f = _trouver(utilisateur, pk)
+        if request.method == 'PUT':
+            return _enregistrer(request, utilisateur, f)
+        if request.method == 'DELETE':
+            formation_service.supprimer(f, utilisateur)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+    except ErreurMetier as e:
+        return _erreur(e)
     return _lire(f)
 
 
 def _action(fonction, methode='POST'):
     """Vue POST (ou PATCH) /api/formations/<id>/<action>/ qui applique une règle et renvoie la formation."""
     @api_view([methode])
-    def vue(request, pk):
-        f = get_object_or_404(_formations(), pk=pk)
+    @_connexion_requise
+    def vue(request, utilisateur, pk):
         try:
-            fonction(f, request)
+            fonction(_trouver(utilisateur, pk), request, utilisateur)
         except ErreurMetier as e:
             return _erreur(e)
-        return _lire(_formations().get(pk=pk))
+        return _lire(_formations(utilisateur).get(pk=pk))
     return vue
 
 
-publier = _action(lambda f, request: formation_service.publier(f, confirmer=bool(request.data.get('confirmer'))))
-retirer_publication = _action(lambda f, request: formation_service.retirer_publication(f))
+publier = _action(lambda f, request, u: formation_service.publier(f, confirmer=bool(request.data.get('confirmer'))))
+retirer_publication = _action(lambda f, request, u: formation_service.retirer_publication(f))
 # SCRUM-23 : PATCH /formations/<id>/archiver/ et /restaurer/ (200)
-archiver = _action(lambda f, request: formation_service.archiver(f, _utilisateur_connecte(request)), 'PATCH')
-restaurer = _action(lambda f, request: formation_service.restaurer(f, _utilisateur_connecte(request)), 'PATCH')
+archiver = _action(lambda f, request, u: formation_service.archiver(f, u), 'PATCH')
+restaurer = _action(lambda f, request, u: formation_service.restaurer(f, u), 'PATCH')
 
 
 @api_view(["POST"])
-def sessions(request, pk):
+@_connexion_requise
+def sessions(request, utilisateur, pk):
     """Ajout d'une session (RG38 : début et fin obligatoires, fin ≥ début)."""
-    f = get_object_or_404(Formation, pk=pk)
     entree = SessionSerializer(data=request.data)
-    entree.is_valid(raise_exception=True)
     try:
+        f = _trouver(utilisateur, pk)
+        entree.is_valid(raise_exception=True)
         formation_service.ajouter_session(f, **entree.validated_data)
     except ErreurMetier as e:
         return _erreur(e)
-    return Response(FormationSerializer(_formations().get(pk=pk)).data, status=status.HTTP_201_CREATED)
+    return Response(FormationSerializer(_formations(utilisateur).get(pk=pk)).data, status=status.HTTP_201_CREATED)
 
 
 # ---- Sessions et planning (SCRUM-25) ----
 
 @api_view(["GET", "POST"])
-def sessions_planning(request):
+@_connexion_requise
+def sessions_planning(request, utilisateur):
     """GET : toutes les sessions, par date de début. POST : création d'une session « Prévue »
     (201 ; 400 si une donnée est invalide, sans formateur ou sans apprenant)."""
     if request.method == 'POST':
         entree = SessionCreationSerializer(data=request.data)
         entree.is_valid(raise_exception=True)
         try:
-            session = session_service.creer_session(**entree.validated_data)
+            session = session_service.creer_session(utilisateur, **entree.validated_data)
         except ErreurMetier as e:
             return _erreur(e)
-        session = session_service.lister_sessions().get(pk=session.pk)
+        session = session_service.lister_sessions(utilisateur).get(pk=session.pk)
         return Response(SessionPlanningSerializer(session).data, status=status.HTTP_201_CREATED)
-    return Response(SessionPlanningSerializer(session_service.lister_sessions(), many=True).data)
+    return Response(SessionPlanningSerializer(session_service.lister_sessions(utilisateur), many=True).data)
 
 
 def _personnes(request, lister, creer, serializer):
@@ -226,8 +260,7 @@ def connexion(request):
 @api_view(["GET"])
 def moi(request):
     """GET /auth/moi : le compte connecté ({id, email}), ou 401 NON_CONNECTE."""
-    utilisateur = Utilisateur.objects.filter(pk=request.session.get(SESSION_UTILISATEUR)).first()
+    utilisateur = _utilisateur_connecte(request)
     if utilisateur is None:
-        return Response({'code': 'NON_CONNECTE', 'detail': "Vous n'êtes pas connecté."},
-                        status=status.HTTP_401_UNAUTHORIZED)
+        return _non_connecte()
     return _compte(utilisateur)

@@ -124,6 +124,7 @@ svg{flex-shrink:0}
 
 /* ---------- Chargement / erreur d'une page ---------- */
 .chargement{padding:48px 24px;text-align:center;color:var(--texte-3)}
+.chargement a{color:var(--vert-texte);font-weight:600;text-decoration:underline}
 
 /* ---------- Responsive ---------- */
 @media (max-width:1200px){.kpis{grid-template-columns:repeat(2,1fr)}.modules{grid-template-columns:repeat(2,1fr)}}

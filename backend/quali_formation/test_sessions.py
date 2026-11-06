@@ -3,11 +3,14 @@
 from django.test import TestCase
 
 from quali_formation.models import Apprenant, Formateur, Formation, Session
+from quali_formation.tests import connecter
 
 
 class SessionsPlanningTests(TestCase):
     def setUp(self):
-        self.formation = Formation.objects.create(reference='FOR-2026-001', intitule="Management d'équipe", duree_heures=21)
+        self.compte = connecter(self.client)
+        self.formation = Formation.objects.create(reference='FOR-2026-001', intitule="Management d'équipe", duree_heures=21,
+                                                  proprietaire=self.compte)
         self.formateur = Formateur.objects.get(email='julien.lefevre@exemple.fr')
         self.apprenants = list(Apprenant.objects.filter(email__in=['camille.martin@acme.fr', 'hugo.bernard@acme.fr']))
 
@@ -97,6 +100,17 @@ class SessionsPlanningTests(TestCase):
 
     def test_refuse_un_formateur_inconnu(self):
         self.assertEqual(self.poster(formateurs=[999999]).status_code, 400)
+
+    def test_ne_voit_que_les_sessions_de_ses_formations(self):
+        self.poster()
+        connecter(self.client, 'autre@organisme.fr')
+        self.assertEqual(self.client.get('/sessions/').json(), [])
+
+    def test_refuse_une_session_sur_la_formation_d_un_autre_compte(self):
+        connecter(self.client, 'autre@organisme.fr')
+        reponse = self.poster()
+        self.assertEqual((reponse.status_code, reponse.json()['code']), (404, 'FORMATION_INTROUVABLE'))
+        self.assertFalse(Session.objects.exists())
 
 
 class CreationApprenantTests(TestCase):

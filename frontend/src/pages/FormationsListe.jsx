@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import ErreurChargement from '../components/ErreurChargement'
 import Icone from '../components/Icone'
 import { ConfirmDialog } from '../components/Modal'
 import { useToast } from '../components/toastContext'
@@ -26,7 +27,7 @@ function FormationsListe() {
   const [dialogue, setDialogue] = useState(null) // { type, formation }
 
   const [erreur, setErreur] = useState(null)
-  const recharger = useCallback(() => service.listerFormations().then((l) => { setFormations(l); setErreur(null) }).catch((e) => setErreur(e.message)), [])
+  const recharger = useCallback(() => service.listerFormations().then((l) => { setFormations(l); setErreur(null) }).catch(setErreur), [])
   useEffect(() => { void recharger() }, [recharger])
 
   // Un clic en dehors du menu ouvert le referme
@@ -74,7 +75,7 @@ function FormationsListe() {
   }
 
   if (formations === null) {
-    return <div className="wrap"><p className="chargement" role={erreur ? 'alert' : undefined}>{erreur || 'Chargement des formations…'}</p></div>
+    return <div className="wrap">{erreur ? <ErreurChargement erreur={erreur} /> : <p className="chargement">Chargement des formations…</p>}</div>
   }
 
   const entete = (

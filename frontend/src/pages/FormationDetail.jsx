@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import ErreurChargement from '../components/ErreurChargement'
 import Icone from '../components/Icone'
 import { Modal } from '../components/Modal'
 import { fmt, frDate, hasProg, life, missingTiles, num, one, SECTIONS, TILES, tileDone, visibleQs } from '../formations/catalogue'
@@ -47,15 +48,17 @@ function FormationDetail() {
   const navigate = useNavigate()
   const [f, setF] = useState(null)
   const [manques, setManques] = useState(false)
+  const [erreur, setErreur] = useState(null)
 
   useEffect(() => {
     service.obtenirFormation(id).then((x) => {
       // SCRUM-22 : un brouillon n'a pas de fiche, il s'ouvre dans le formulaire
       if (x.statut === 'brouillon') navigate(`/formations/${id}/modifier`, { replace: true })
       else setF(x)
-    }).catch(() => navigate('/formations', { replace: true }))
+    }).catch(setErreur) // formation inexistante ou d'un autre compte : « Formation introuvable »
   }, [id, navigate])
 
+  if (erreur) return <div className="wrap"><ErreurChargement erreur={erreur} /></div>
   if (!f) return <div className="wrap"><p className="chargement">Chargement de la formation…</p></div>
 
   const v = f.values || {}, miss = missingTiles(f), done = TILES.length - miss.length, pct = Math.round((done / TILES.length) * 100)

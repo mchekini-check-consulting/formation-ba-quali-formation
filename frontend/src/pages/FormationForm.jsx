@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useBlocker, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import ErreurChargement from '../components/ErreurChargement'
 import Icone from '../components/Icone'
 import { ConfirmDialog, Modal } from '../components/Modal'
 import { useToast } from '../components/toastContext'
@@ -90,6 +91,7 @@ function useFormationChargee(id, params, ouvrirBloc) {
   const navigate = useNavigate()
   const [form, setForm] = useState(null)
   const [instantane, setInstantane] = useState('')   // formulaire tel qu'enregistré, pour détecter les modifications (RG05)
+  const [erreur, setErreur] = useState(null)         // formation inexistante ou d'un autre compte
   useEffect(() => {
     let actif = true
     const charger = id ? service.obtenirFormation(id) : Promise.resolve(copie(NOUVELLE))
@@ -101,10 +103,10 @@ function useFormationChargee(id, params, ouvrirBloc) {
       setForm(f); setInstantane(JSON.stringify(f))
       const bloc = TILES.findIndex((t) => t.id === params.get('bloc'))
       if (bloc >= 0) ouvrirBloc(bloc)
-    }).catch(() => navigate('/formations', { replace: true }))
+    }).catch((e) => { if (actif) setErreur(e) })
     return () => { actif = false }
   }, [id, params, navigate, ouvrirBloc])
-  return { form, setForm, instantane }
+  return { form, setForm, instantane, erreur }
 }
 
 // RG05 : confirmation si on quitte la page (lien ou fermeture de l'onglet) avec des modifications non enregistrées
@@ -148,7 +150,7 @@ function FormationForm() {
   const [signaler, setSignaler] = useState(params.get('signaler') === '1') // blocs manquants en pointillés
   const [erreurBase, setErreurBase] = useState(false)
   const [assistant, setAssistant] = useState(null)   // index du bloc ouvert dans l'assistant
-  const { form, setForm, instantane } = useFormationChargee(id, params, setAssistant)
+  const { form, setForm, instantane, erreur } = useFormationChargee(id, params, setAssistant)
   const [progErr, setProgErr] = useState(false)
   const [dialogue, setDialogue] = useState(null)
   const enregistre = useRef(false)
@@ -157,6 +159,7 @@ function FormationForm() {
   const modifie = form !== null && JSON.stringify(form) !== instantane
   const bloqueur = useProtectionModifications(modifie, enregistre)
 
+  if (erreur) return <div className="wrap"><ErreurChargement erreur={erreur} /></div>
   if (!form) return <div className="wrap"><p className="chargement">Chargement de la formation…</p></div>
 
   const edit = !!form.id, vals = form.values
