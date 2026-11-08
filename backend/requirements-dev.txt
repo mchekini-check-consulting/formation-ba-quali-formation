@@ -1,4 +1,4 @@
 # Outils de dev / CI (lint, couverture), en plus des dépendances de l'application
 -r requirements.txt
 coverage
-ruff
+ruff==0.17.4   # version fixée : une nouvelle version de ruff peut ajouter des règles et casser la CI
