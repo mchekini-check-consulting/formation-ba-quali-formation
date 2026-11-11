@@ -131,3 +131,26 @@ class MemorisationConnexionTests(TestCase):
 
     def test_seul_get_est_accepte(self):
         self.assertEqual(self.client.post('/auth/moi').status_code, 405)
+
+
+class SeDeconnecterTests(TestCase):
+    """SCRUM-17 / SCRUM-19 : « Se déconnecter » dans le menu du profil (POST /auth/logout)."""
+
+    def setUp(self):
+        compte_service.creer_compte(EMAIL, MOT_DE_PASSE, MOT_DE_PASSE, True)
+        self.client.post('/auth/login', {'email': EMAIL, 'mot_de_passe': MOT_DE_PASSE}, content_type='application/json')
+
+    def test_ferme_la_session(self):
+        self.assertEqual(self.client.get('/auth/moi').status_code, 200)
+        r = self.client.post('/auth/logout')
+        self.assertEqual(r.status_code, 204)
+        self.assertEqual(self.client.get('/auth/moi').status_code, 401)
+        # Les pages protégées ne sont plus accessibles
+        self.assertEqual(self.client.get('/sessions/').json()['code'], 'NON_CONNECTE')
+
+    def test_sans_connexion_ne_plante_pas(self):
+        self.client.post('/auth/logout')
+        self.assertEqual(self.client.post('/auth/logout').status_code, 204)
+
+    def test_refuse_le_get(self):
+        self.assertEqual(self.client.get('/auth/logout').status_code, 405)

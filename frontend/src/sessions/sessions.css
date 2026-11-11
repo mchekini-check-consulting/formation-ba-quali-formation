@@ -16,6 +16,9 @@
 .sp-titre{display:flex;flex-direction:column;min-width:0}
 .sp-titre b{font-size:16px;color:var(--ink)}
 .sp-titre span,.sp-col{font-size:14px;color:var(--ink-3)}
+.sp-vide{padding:48px 24px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px;border-style:dashed;border-color:var(--brand-line)}
+.sp-vide h2{font-size:20px;font-weight:700;margin:0}
+.sp-vide .sub{max-width:440px;margin:0}
 .sp-statut{padding:3px 12px;border-radius:999px;background:var(--info-soft);color:var(--info);font-size:13px;font-weight:700}
 .sp-chev{color:var(--ink-3);transform:rotate(-90deg);display:grid;place-items:center}
 @media (max-width:760px){

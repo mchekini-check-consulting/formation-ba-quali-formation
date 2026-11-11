@@ -1,13 +1,22 @@
-// Les 9 fonctionnalités de l'application (tableau de bord et barre latérale).
-// `lien` : la fonctionnalité est disponible et a sa propre entrée dans le menu principal.
+// Menu latéral (SCRUM-19), dans l'ordre de l'US. Chaque élément est cliquable :
+// `lien` = page disponible ; sinon, la page « Bientôt disponible » de la fonctionnalité (/bientot-disponible/<code>).
 export const FONCTIONNALITES = [
-  { icone: 'formations', titre: 'Formations', detail: 'Créer et suivre vos formations', lien: '/formations' },
-  { icone: 'sessions', titre: 'Sessions & planning', detail: '5 sessions à venir', lien: '/sessions' },
-  { icone: 'apprenants', iconeModule: 'inscription', titre: 'Apprenants & inscriptions', detail: '9 dossiers incomplets' },
-  { icone: 'documents', titre: 'Modèles de documents', detail: '16 modèles' },
-  { icone: 'signature', titre: 'Signature électronique', detail: '8 en attente' },
-  { icone: 'emargement', titre: 'Émargement', detail: '2 signatures manquantes' },
-  { icone: 'elearning', titre: 'E-learning', detail: '18 modules en ligne' },
-  { icone: 'evaluations', titre: 'Évaluations & satisfaction', detail: '142 réponses' },
-  { icone: 'qualiopi', titre: 'Suivi Qualiopi', detail: '4 indicateurs à traiter' },
+  { code: 'tableau-de-bord', icone: 'tableau', titre: 'Tableau de bord', lien: '/tableau-de-bord' },
+  { code: 'formations', icone: 'formations', titre: 'Formations et programmes', lien: '/formations' },
+  { code: 'sessions', icone: 'sessions', titre: 'Sessions et planning', lien: '/sessions' },
+  { code: 'documents', icone: 'documents', titre: 'Documents' },
+  { code: 'emargement', icone: 'emargement', titre: 'Émargement' },
+  { code: 'e-learning', icone: 'elearning', titre: 'E-learning' },
+  { code: 'evaluations', icone: 'evaluations', titre: 'Évaluations et satisfaction' },
+  { code: 'signature', icone: 'signature', titre: 'Signature électronique' },
+  { code: 'qualiopi', icone: 'qualiopi', titre: 'Qualiopi' },
 ]
+
+// Pages du menu du profil pas encore développées (SCRUM-19)
+export const PAGES_PROFIL = [
+  { code: 'mon-profil', titre: 'Mon profil' },
+  { code: 'parametres', titre: 'Paramètres' },
+]
+
+export const lienBientot = (code) => `/bientot-disponible/${code}`
+export const lienFonctionnalite = (f) => f.lien || lienBientot(f.code)

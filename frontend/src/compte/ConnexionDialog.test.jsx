@@ -218,16 +218,23 @@ describe('Se connecter : connexion mémorisée (session)', () => {
     expect(fetchMock.mock.calls[0][1].credentials).toBe('include')
   })
 
-  it('le tableau de bord affiche « Bienvenue dans Quali-formation », le message de bienvenue et les initiales du compte', async () => {
-    repondre(200, { id: 1, email: EMAIL })  // POST /auth/login
-    repondre(200, { id: 1, email: EMAIL })  // GET /auth/moi (barre du haut)
-    afficher()
+  it('après la connexion, Sessions et planning s’affiche avec le message de bienvenue et le profil du compte (SCRUM-19 CA1)', async () => {
+    // POST /auth/login et GET /auth/moi : le compte ; GET /sessions/ : aucune session
+    fetchMock.mockImplementation(async (url) => (url.endsWith('/sessions/')
+      ? { ok: true, status: 200, json: async () => [] }
+      : { ok: true, status: 200, json: async () => ({ id: 1, email: EMAIL }) }))
+    const router = afficher()
     seConnecter()
     expect(await screen.findByText('Vous êtes connecté. Bienvenue sur Quali-formation !', {}, { timeout: 3000 })).toBeTruthy()
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bienvenue dans Quali-formation')
-    expect(screen.queryByText(/Connecté avec/)).toBeNull()
-    expect(screen.queryByText(EMAIL)).toBeNull()
+    expect(router.state.location.pathname).toBe('/sessions')
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Sessions et planning')
+    expect(screen.getByRole('navigation', { name: 'Menu principal' })).toBeTruthy()
     await vi.waitFor(() => expect(document.querySelector('.avatar')?.textContent).toBe('RE'))
+  })
+
+  it('après « Se déconnecter », la page de connexion confirme la déconnexion (SCRUM-17)', async () => {
+    afficher({ pathname: '/se-connecter', state: { deconnecte: true } })
+    expect(within(screen.getByRole('dialog')).getByText('Vous êtes déconnecté.')).toBeTruthy()
   })
 
   it('le compte connecté est demandé au serveur avec le cookie de session (GET /auth/moi)', async () => {

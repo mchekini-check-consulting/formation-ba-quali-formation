@@ -7,6 +7,7 @@ import FormationDetail from './pages/FormationDetail'
 import FormationForm from './pages/FormationForm'
 import FormationsListe from './pages/FormationsListe'
 import Items from './pages/Items'
+import BientotDisponible from './pages/BientotDisponible'
 import NouvelleSession from './pages/NouvelleSession'
 import SessionsPlanning from './pages/SessionsPlanning'
 import LandingPage from './landing/LandingPage'
@@ -30,6 +31,8 @@ export const routes = [
       // Sessions et planning (SCRUM-25)
       { path: '/sessions', element: <SessionsPlanning /> },
       { path: '/sessions/nouvelle', element: <NouvelleSession /> },
+      // Fonctionnalités du menu ou du profil pas encore développées (SCRUM-19)
+      { path: '/bientot-disponible/:code', element: <BientotDisponible /> },
       // Écran d'exemple de l'équipe (GET / POST /items)
       { path: '/items', element: <Items /> },
       { path: '*', element: <Navigate to="/" replace /> },

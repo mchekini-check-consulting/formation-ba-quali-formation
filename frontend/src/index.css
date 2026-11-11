@@ -155,3 +155,29 @@ svg{flex-shrink:0}
    la mise en forme vient des classes .dialog, .wiz… et la position du fond .overlay */
 dialog{position:static;inset:auto;width:auto;height:auto;max-width:none;max-height:none;margin:0;padding:0;border:0;background:transparent;color:inherit}
 .dialog-form{display:contents}
+
+/* ---- Haut de page (SCRUM-19) : cloche de notifications et menu du profil ---- */
+.bh-zone{position:relative}
+button.icone-btn{padding:0;font:inherit}
+.icone-btn[aria-expanded="true"],.bh-profil[aria-expanded="true"]{border-color:var(--vert-bordure);background:var(--vert-doux)}
+.bh-profil{display:flex;align-items:center;gap:6px;height:42px;padding:0 8px 0 4px;border:1px solid var(--bordure);border-radius:12px;background:var(--carte);color:var(--texte-2);font:inherit;font-size:14px;font-weight:500;cursor:pointer}
+.bh-profil .avatar{width:32px;height:32px;font-size:13px}
+.bh-chev{display:grid;place-items:center;transition:transform .15s}
+.bh-chev.ouvert{transform:rotate(180deg)}
+.bh-panneau{position:absolute;z-index:30;right:0;top:calc(100% + 8px);min-width:260px;padding:8px;border:1px solid var(--bordure);border-radius:14px;background:var(--carte);box-shadow:0 16px 40px rgba(15,23,42,.16)}
+.bh-notifications{width:320px}
+.bh-notifications h2{font-size:15px;font-weight:700;margin:0;padding:8px 10px 10px;border-bottom:1px solid var(--bordure)}
+.bh-vide{margin:0;padding:22px 10px;text-align:center;color:var(--texte-2)}
+.bh-menu{display:flex;flex-direction:column}
+.bh-compte{margin:0 0 6px;padding:8px 10px 10px;border-bottom:1px solid var(--bordure);font-size:13px;color:var(--texte-2);overflow-wrap:anywhere}
+.bh-menu a,.bh-menu button{display:block;width:100%;padding:10px;border:0;border-radius:10px;background:none;text-align:left;font:inherit;font-size:14.5px;color:var(--texte);cursor:pointer;text-decoration:none}
+.bh-menu a:hover,.bh-menu button:hover{background:var(--carte-2)}
+.bh-deconnexion{color:var(--danger)!important}
+.bh-erreur{margin:6px 10px 4px;font-size:13px;color:var(--danger)}
+@media (max-width:760px){.bh-notifications{width:min(320px,calc(100vw - 32px))}}
+
+/* Page « Bientôt disponible » (SCRUM-19) */
+.bientot{padding:48px 24px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px}
+.bientot h2{font-size:20px;font-weight:700;margin:0}
+.bientot .sub{max-width:460px;margin:0}
+.bientot-ic{display:grid;place-items:center;width:60px;height:60px;border-radius:16px;background:var(--vert-doux);color:var(--vert-texte)}

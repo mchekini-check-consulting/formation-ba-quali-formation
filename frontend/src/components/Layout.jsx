@@ -1,12 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
-import { compteConnecte, initiales } from '../compte/serviceCompte'
+import { compteConnecte } from '../compte/serviceCompte'
+import BarreHaut from './BarreHaut'
 import Icone from './Icone'
 import { ToastProvider } from './Toast'
-import { FONCTIONNALITES } from '../pages/fonctionnalites'
-
-// Fonctionnalités affichées dans le menu, dans cet ordre
-const MENU = ['Sessions & planning', 'Émargement', 'Signature électronique', 'Modèles de documents', 'E-learning', 'Suivi Qualiopi']
+import { FONCTIONNALITES, lienFonctionnalite } from '../pages/fonctionnalites'
 
 // Icône du menu sur une pastille, du même vert que le logo
 const IconeMenu = ({ nom }) => <span className="nav-ic"><Icone nom={nom} taille={17} /></span>
@@ -18,7 +16,7 @@ function Layout() {
   // Un clic sur un lien du menu referme le menu (téléphone)
   const fermerMenu = () => setMenuOuvert(false)
   const menuBtnRef = useRef(null)
-  // Compte connecté (GET /auth/moi) : initiales dans l'avatar ; null si personne n'est connecté
+  // Compte connecté (GET /auth/moi) : profil du haut de page ; null si personne n'est connecté
   const [compte, setCompte] = useState(null)
 
   useEffect(() => {
@@ -47,18 +45,14 @@ function Layout() {
           {/* Le logo ramène à la landing page */}
           <Link className="logo" to="/" onClick={fermerMenu}><div className="logo-badge"><Icone nom="qualiopi" taille={18} epaisseur={2.2} /></div>Quali-formation</Link>
 
+          {/* SCRUM-19 : tous les éléments sont cliquables ; une fonctionnalité pas encore développée
+              ouvre sa page « Bientôt disponible » */}
           <nav className="nav" aria-label="Menu principal">
-            <NavLink to="/tableau-de-bord" end onClick={fermerMenu}><IconeMenu nom="tableau" />Tableau de bord</NavLink>
-            <NavLink to="/formations" onClick={fermerMenu}><IconeMenu nom="formations" />Formations</NavLink>
-            {/* Fonctionnalités avec leur page (`lien`), puis celles à venir (grisées) */}
-            {MENU.map((titre) => FONCTIONNALITES.find((f) => f.titre === titre)).map((f) => (f.lien
-              ? <NavLink to={f.lien} onClick={fermerMenu} key={f.titre}><IconeMenu nom={f.icone} />{f.titre}</NavLink>
-              : <span className="nav-a" aria-disabled="true" key={f.titre}><IconeMenu nom={f.icone} />{f.titre}</span>
+            {FONCTIONNALITES.map((f) => (
+              <NavLink to={lienFonctionnalite(f)} end={f.code === 'tableau-de-bord'} onClick={fermerMenu} key={f.code}>
+                <IconeMenu nom={f.icone} />{f.titre}
+              </NavLink>
             ))}
-          </nav>
-
-          <nav className="nav nav-bas">
-            <span className="nav-a" aria-disabled="true"><IconeMenu nom="parametres" />Paramètres</span>
           </nav>
         </aside>
 
@@ -68,10 +62,7 @@ function Layout() {
             <button className="menu-btn" ref={menuBtnRef} aria-label="Ouvrir le menu" onClick={() => setMenuOuvert((o) => !o)}>
               <Icone nom="menu" taille={20} />
             </button>
-            <div className="topbar-droite">
-              <div className="icone-btn" title="Notifications"><Icone nom="notifications" taille={20} /><span className="pastille"></span></div>
-              {compte && <div className="avatar" title={compte.email}>{initiales(compte.email)}</div>}
-            </div>
+            <BarreHaut compte={compte} />
           </div>
 
           <Outlet />

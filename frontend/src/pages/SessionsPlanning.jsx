@@ -44,7 +44,13 @@ function SessionsPlanning() {
       )}
 
       {sessions === null && (erreur ? <ErreurChargement erreur={erreur} /> : <p className="chargement">Chargement des sessions…</p>)}
-      {sessions?.length === 0 && <div className="card empty"><p className="sub">Aucune session programmée pour le moment.</p></div>}
+      {sessions?.length === 0 && (
+        <div className="card sp-vide">
+          <span className="bientot-ic" aria-hidden="true"><Icone nom="sessions" taille={24} /></span>
+          <h2>Aucune session pour l'instant</h2>
+          <p className="sub">Vos sessions et leur planning apparaîtront ici dès que vous les aurez créées.</p>
+        </div>
+      )}
       {sessions?.length > 0 && (
         <ul className="sp-liste" aria-label="Sessions">
           {sessions.map((s) => (

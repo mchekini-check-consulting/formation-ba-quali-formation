@@ -1,9 +1,14 @@
 // Appels de l'API des comptes (adresse du backend : apiBase()) :
-// « Créer un compte » (SCRUM-15) POST /auth/register, « Se connecter » (SCRUM-16) POST /auth/login
+// « Créer un compte » (SCRUM-15) POST /auth/register, « Se connecter » (SCRUM-16) POST /auth/login,
+// « Se déconnecter » (SCRUM-17, menu du profil SCRUM-19) POST /auth/logout
 import { apiBase } from '../api'
 
-// Page d'accueil (SCRUM-19) pas encore développée : page provisoire = tableau de bord (RG-CC-09, RG-CX-06)
-export const PAGE_D_ACCUEIL = '/tableau-de-bord'
+// Page d'accueil (SCRUM-19) : Sessions et planning, après la connexion et après la création de compte (RG-CC-09, RG-CX-06)
+export const PAGE_D_ACCUEIL = '/sessions'
+// Messages affichés en arrivant sur la page d'accueil, puis sur la page de connexion après la déconnexion
+export const MSG_COMPTE_CREE = 'Votre compte a été créé. Bienvenue sur Quali-formation !'
+export const MSG_CONNECTE = 'Vous êtes connecté. Bienvenue sur Quali-formation !'
+export const MSG_DECONNECTE = 'Vous êtes déconnecté.'
 
 export const IDENTIFIANTS_INCORRECTS = 'E-mail ou mot de passe incorrect'
 
@@ -70,6 +75,18 @@ export async function compteConnecte() {
   } catch {
     return null
   }
+}
+
+// Ferme la connexion côté serveur (le cookie de session n'est plus valable). Si le serveur ne répond pas,
+// la déconnexion n'est pas confirmée : l'erreur est remontée à l'écran.
+export async function seDeconnecter() {
+  let reponse
+  try {
+    reponse = await fetch(`${apiBase()}/auth/logout`, { method: 'POST', credentials: 'include' })
+  } catch {
+    throw new Error('Le serveur ne répond pas : la déconnexion n’a pas pu être faite. Réessayez.')
+  }
+  if (!reponse.ok) throw new Error('La déconnexion a échoué. Réessayez.')
 }
 
 // Initiales de l'avatar, tirées de l'e-mail (le compte n'a pas encore de prénom ni de nom) :

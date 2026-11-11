@@ -48,7 +48,7 @@ describe('Page Sessions et planning', () => {
   it('indique quand il n’y a aucune session', async () => {
     installerFauxBackend({ sessions: [] })
     afficher()
-    expect(await screen.findByText('Aucune session programmée pour le moment.')).toBeTruthy()
+    expect(await screen.findByText("Aucune session pour l'instant")).toBeTruthy()
   })
 
   it('signale un backend injoignable', async () => {
@@ -60,7 +60,7 @@ describe('Page Sessions et planning', () => {
   it('est accessible depuis le menu', async () => {
     installerFauxBackend()
     afficher('/tableau-de-bord')
-    fireEvent.click(screen.getByRole('link', { name: 'Sessions & planning' }))
+    fireEvent.click(screen.getByRole('link', { name: 'Sessions et planning' }))
     expect(await screen.findByRole('heading', { name: 'Sessions et planning' })).toBeTruthy()
   })
 })

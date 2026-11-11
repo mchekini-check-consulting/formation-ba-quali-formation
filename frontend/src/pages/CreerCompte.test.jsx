@@ -161,12 +161,12 @@ describe('Créer un compte : règles de gestion', () => {
 
 describe('Créer un compte : critères d’acceptation avec le serveur', () => {
   // Critère 1, RG-CC-09 (page provisoire en attendant SCRUM-19)
-  it('informations valides : le compte est créé et la page d’accueil provisoire s’affiche', async () => {
+  it('informations valides : le compte est créé et Sessions et planning s’affiche (SCRUM-19 CA1)', async () => {
     repondre(201, { id: 1, email: 'nouveau@organisme.fr' })
     const router = afficher()
     valider()
     expect(await screen.findByText(/Votre compte a été créé/)).toBeTruthy()
-    expect(router.state.location.pathname).toBe('/tableau-de-bord')
+    expect(router.state.location.pathname).toBe('/sessions')
     const [url, options] = fetchMock.mock.calls[0]
     expect(url).toBe('/api/auth/register')
     expect(options.method).toBe('POST')
