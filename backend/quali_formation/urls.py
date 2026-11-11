@@ -11,6 +11,8 @@ urlpatterns = [
     path('auth/login', views.connexion),
     # Compte connecté (connexion mémorisée par la session) : GET /auth/moi
     path('auth/moi', views.moi),
+    # Se déconnecter (SCRUM-17, menu du profil SCRUM-19) : POST /auth/logout
+    path('auth/logout', views.deconnexion),
     path('formations/', views.formations),
     path('formations/<int:pk>/', views.formation),
     path('formations/<int:pk>/publier/', views.publier),

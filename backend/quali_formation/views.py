@@ -271,3 +271,11 @@ def moi(request):
     if utilisateur is None:
         return _non_connecte()
     return _compte(utilisateur)
+
+
+@api_view(["POST"])
+def deconnexion(request):
+    """POST /auth/logout (SCRUM-17, menu du profil SCRUM-19) : ferme la session côté serveur et efface le cookie.
+    204, que quelqu'un soit connecté ou non ; ensuite les pages protégées répondent 401 NON_CONNECTE."""
+    request.session.flush()
+    return Response(status=status.HTTP_204_NO_CONTENT)

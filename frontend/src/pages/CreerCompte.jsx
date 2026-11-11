@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import Icone from '../components/Icone'
 import ChampMotDePasse from '../compte/ChampMotDePasse'
 import { REGLES_MOT_DE_PASSE, verifier } from '../compte/regles'
-import { creerCompte, PAGE_D_ACCUEIL } from '../compte/serviceCompte'
+import { creerCompte, MSG_COMPTE_CREE, PAGE_D_ACCUEIL } from '../compte/serviceCompte'
 import { LIENS } from '../landing/contenu'
 import '../styles/compte.css'
 
@@ -63,7 +63,7 @@ function CreerCompte() {
     setEnvoi(true)
     try {
       await creerCompte(valeurs)
-      await navigate(PAGE_D_ACCUEIL, { state: { compteCree: true } })
+      await navigate(PAGE_D_ACCUEIL, { state: { message: MSG_COMPTE_CREE } })
     } catch (err) {
       refuser(err.erreurs || { general: ERREUR_GENERALE })
       setEnvoi(false)

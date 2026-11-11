@@ -28,14 +28,14 @@ describe('App', () => {
     expect(container.textContent).not.toContain('Nassiba')
   })
 
-  it('le titre ne change pas selon le compte ; l’avatar montre ses initiales (e-mail au survol)', async () => {
+  it('le titre ne change pas selon le compte ; le profil montre les initiales, sans l’e-mail (SCRUM-19)', async () => {
     connecte('prenom.nom@organisme.fr')
     const { container } = afficher()
     await vi.waitFor(() => expect(container.querySelector('.avatar')).not.toBeNull())
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Bienvenue dans Quali-formation')
-    const avatar = container.querySelector('.avatar')
-    expect(avatar.textContent).toBe('PN')
-    expect(avatar.getAttribute('title')).toBe('prenom.nom@organisme.fr')
+    expect(container.querySelector('.avatar').textContent).toBe('PN')
+    expect(screen.getByRole('button', { name: 'Profil' }).textContent).toBe('PN')
+    expect(container.textContent).not.toContain('prenom.nom@organisme.fr')
     expect(container.textContent).not.toContain('Nassiba')
   })
 
@@ -73,10 +73,9 @@ describe('App', () => {
     expect(screen.queryByRole('heading', { level: 1, name: 'Bienvenue dans Quali-formation' })).toBeNull()
   })
 
-  it('le lien « Formations » de la barre latérale ouvre la liste des formations', async () => {
+  it('le lien « Formations et programmes » de la barre latérale ouvre la liste des formations', async () => {
     afficher()
-    const menu = screen.getByRole('navigation', { name: 'Menu principal' })
-    fireEvent.click(Array.from(menu.querySelectorAll('a')).find((a) => a.textContent === 'Formations'))
+    fireEvent.click(screen.getByRole('link', { name: 'Formations et programmes' }))
     expect((await screen.findByRole('heading', { level: 1 })).textContent).toBe('Formations')
   })
 })
