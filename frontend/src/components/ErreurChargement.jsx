@@ -12,4 +12,9 @@ function ErreurChargement({ erreur }) {
   )
 }
 
+// Page pas encore chargée : le message d'attente, ou l'erreur si le chargement a échoué
+export function PageEnChargement({ erreur, texte }) {
+  return <div className="wrap">{erreur ? <ErreurChargement erreur={erreur} /> : <p className="chargement">{texte}</p>}</div>
+}
+
 export default ErreurChargement

@@ -1,7 +1,7 @@
 import { cleanup, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it } from 'vitest'
-import ErreurChargement from './ErreurChargement'
+import ErreurChargement, { PageEnChargement } from './ErreurChargement'
 
 afterEach(cleanup)
 
@@ -23,5 +23,19 @@ describe('Erreur de chargement', () => {
     afficher({ code: 'RESEAU', message: 'Le serveur ne répond pas.' })
     expect(screen.getByRole('alert').textContent).toBe('Le serveur ne répond pas.')
     expect(screen.queryByRole('link')).toBeNull()
+  })
+})
+
+describe('Page en chargement', () => {
+  it('pendant le chargement : le message d’attente', () => {
+    render(<MemoryRouter><PageEnChargement erreur={null} texte="Chargement de la formation…" /></MemoryRouter>)
+    expect(screen.getByText('Chargement de la formation…')).toBeTruthy()
+    expect(screen.queryByRole('alert')).toBeNull()
+  })
+
+  it('chargement en échec : l’erreur à la place du message d’attente', () => {
+    render(<MemoryRouter><PageEnChargement erreur={{ code: 'INTROUVABLE', message: 'Formation introuvable.' }} texte="Chargement de la formation…" /></MemoryRouter>)
+    expect(screen.getByRole('alert').textContent).toContain('Formation introuvable.')
+    expect(screen.queryByText('Chargement de la formation…')).toBeNull()
   })
 })

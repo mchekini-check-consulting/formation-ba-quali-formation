@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useBlocker, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import ErreurChargement from '../components/ErreurChargement'
+import { PageEnChargement } from '../components/ErreurChargement'
 import Icone from '../components/Icone'
 import { ConfirmDialog, Modal } from '../components/Modal'
 import { useToast } from '../components/toastContext'
@@ -159,8 +159,7 @@ function FormationForm() {
   const modifie = form !== null && JSON.stringify(form) !== instantane
   const bloqueur = useProtectionModifications(modifie, enregistre)
 
-  if (erreur) return <div className="wrap"><ErreurChargement erreur={erreur} /></div>
-  if (!form) return <div className="wrap"><p className="chargement">Chargement de la formation…</p></div>
+  if (!form) return <PageEnChargement erreur={erreur} texte="Chargement de la formation…" />
 
   const edit = !!form.id, vals = form.values
   const miss = missingTiles(form), doneN = TILES.length - miss.length, pct = Math.round((doneN / TILES.length) * 100)
