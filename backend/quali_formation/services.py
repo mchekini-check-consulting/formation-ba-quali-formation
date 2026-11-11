@@ -46,6 +46,13 @@ class FormationIntrouvable(ErreurMetier):
         super().__init__('FORMATION_INTROUVABLE', 'Formation introuvable', 404)
 
 
+class SessionIntrouvable(ErreurMetier):
+    """404 : session inexistante ou d'une formation d'un autre compte (SCRUM-36)."""
+
+    def __init__(self):
+        super().__init__('SESSION_INTROUVABLE', 'Session introuvable', 404)
+
+
 def _prochaine_reference():
     # RG03 : FOR-AAAA-NNN, numéro suivant pour l'année en cours
     annee = timezone.localdate().year
@@ -258,9 +265,16 @@ class SessionService:
         """Enregistre un apprenant (SCRUM-27) ; il est ensuite proposé à l'étape 3 de « Nouvelle session »."""
         return Apprenant.objects.create(prenom=prenom, nom=nom, email=email)
 
-    def creer_session(self, utilisateur, formateurs, apprenants, **donnees):
-        """Crée une session « Prévue » avec ses formateurs et ses apprenants, sur une formation du compte.
-        Le nombre d'apprenants n'est pas comparé au nombre de places (pas encore demandé)."""
+    def trouver_session(self, utilisateur, pk):
+        """La session `pk` d'une formation du compte (SCRUM-36) ; 404 aussi pour la session d'un autre compte."""
+        session = self.lister_sessions(utilisateur).filter(pk=pk).first()
+        if session is None:
+            raise SessionIntrouvable()
+        return session
+
+    def _verifier(self, utilisateur, formateurs, apprenants, donnees):
+        # Règles communes à la création (SCRUM-25) et à la modification (SCRUM-36).
+        # Le nombre d'apprenants n'est pas comparé au nombre de places (pas encore demandé).
         if not formations_visibles(utilisateur).filter(pk=donnees['formation'].pk).exists():
             raise FormationIntrouvable()
         if donnees['date_fin'] < donnees['date_debut']:
@@ -269,8 +283,24 @@ class SessionService:
             raise ErreurMetier('FORMATEUR_REQUIS', 'Une session doit avoir au moins un formateur')
         if not apprenants:
             raise ErreurMetier('APPRENANT_REQUIS', 'Une session doit avoir au moins un apprenant')
+
+    def creer_session(self, utilisateur, formateurs, apprenants, **donnees):
+        """Crée une session « Prévue » avec ses formateurs et ses apprenants, sur une formation du compte."""
+        self._verifier(utilisateur, formateurs, apprenants, donnees)
         with transaction.atomic():
             session = Session.objects.create(statut=Session.Statut.PREVUE, **donnees)
+            session.formateurs.set(formateurs)
+            session.apprenants.set(apprenants)
+        return session
+
+    def modifier_session(self, utilisateur, session, formateurs, apprenants, **donnees):
+        """Met à jour les informations, les formateurs et les apprenants d'une session (SCRUM-36).
+        Mêmes règles qu'à la création ; le statut ne change pas."""
+        self._verifier(utilisateur, formateurs, apprenants, donnees)
+        with transaction.atomic():
+            for champ, valeur in donnees.items():
+                setattr(session, champ, valeur)
+            session.save()
             session.formateurs.set(formateurs)
             session.apprenants.set(apprenants)
         return session

@@ -159,7 +159,7 @@ describe('Nouvelle session (SCRUM-25)', () => {
     expect(message.textContent).toBe('La session « Management d’équipe — les fondamentaux » du 18/11/2026 a été créée avec le statut « Prévue ».')
     const post = fetch.mock.calls.find(([, o]) => o?.method === 'POST')
     expect(JSON.parse(post[1].body)).toMatchObject({ formation: 2, formateurs: [4], apprenants: [1, 2], duree_heures: '21' })
-    const ligne = (await screen.findByText('Management d’équipe — les fondamentaux')).closest('li')
+    const ligne = (await screen.findByText('Management d’équipe — les fondamentaux')).closest('a')
     expect(ligne.classList.contains('nouvelle')).toBe(true)
     expect(within(ligne).getByText('2 / 10 apprenants')).toBeTruthy()
     fireEvent.click(bouton('Fermer le message'))

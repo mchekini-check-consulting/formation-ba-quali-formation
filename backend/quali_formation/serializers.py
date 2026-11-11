@@ -130,6 +130,13 @@ class SessionPlanningSerializer(serializers.ModelSerializer):
         return len(session.apprenants.all())  # apprenants préchargés par la vue
 
 
+class SessionFicheSerializer(SessionPlanningSerializer):
+    """Lecture : la fiche d'une session (SCRUM-36), avec le détail des formateurs et des apprenants rattachés."""
+
+    formateurs = FormateurSerializer(many=True, read_only=True)
+    apprenants = ApprenantSerializer(many=True, read_only=True)
+
+
 class SessionCreationSerializer(serializers.Serializer):
     """Écriture : étape 1 (tous les champs obligatoires), formateurs (étape 2) et apprenants (étape 3).
     Les listes vides sont acceptées ici : la règle « au moins un » est dans le service (message dédié)."""

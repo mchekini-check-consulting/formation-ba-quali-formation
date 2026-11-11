@@ -9,11 +9,12 @@ export class ErreurSession extends Error {
   constructor(code, message, champs = {}) { super(message); this.code = code; this.champs = champs }
 }
 
-async function appel(chemin, corps) {
+// corps : envoyé en JSON avec `methode` (POST par défaut) ; sans corps : lecture (GET)
+async function appel(chemin, corps, methode = 'POST') {
   let reponse
   try {
     reponse = await fetch(`${apiBase()}${chemin}`, corps
-      ? { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corps) }
+      ? { method: methode, credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corps) }
       : { credentials: 'include' })
   } catch {
     throw new ErreurSession('RESEAU', 'Le serveur ne répond pas : vérifiez que le backend est lancé.')
@@ -40,15 +41,31 @@ export async function listerFormations() {
 }
 
 // s : valeurs du formulaire (chaînes), formateurs et apprenants : identifiants cochés
-export function creerSession(s, formateurs, apprenants) {
+function corpsSession(s, formateurs, apprenants) {
   const presentiel = s.modalite === PRESENTIEL
-  return appel('/sessions/', {
+  return {
     formation: Number(s.formation), date_debut: s.debut, date_fin: s.fin, heure_debut: s.heureDebut, heure_fin: s.heureFin,
     duree_heures: s.duree.replaceAll(',', '.'), modalite: s.modalite,
     lieu: presentiel ? s.lieu.trim() : '', lien_classe_virtuelle: presentiel ? '' : s.lien.trim(),
     nombre_places: Number(s.places), formateurs, apprenants,
-  })
+  }
 }
+export const creerSession = (s, formateurs, apprenants) => appel('/sessions/', corpsSession(s, formateurs, apprenants))
+
+// Fiche d'une session (SCRUM-36), avec ses formateurs et apprenants détaillés ; 404 SESSION_INTROUVABLE
+export const lireSession = (id) => appel(`/sessions/${id}/`)
+// PUT : mêmes données qu'à la création ; le statut ne change pas
+export const modifierSession = (id, s, formateurs, apprenants) =>
+  appel(`/sessions/${id}/`, corpsSession(s, formateurs, apprenants), 'PUT')
+
+// Session de l'API -> valeurs du formulaire (chaînes), pour pré-remplir « Modifier la session »
+const texte = (v) => (v === null || v === undefined ? '' : String(v))
+export const versFormulaire = (session) => ({
+  formation: texte(session.formation), debut: session.date_debut, fin: session.date_fin,
+  heureDebut: texte(session.heure_debut).slice(0, 5), heureFin: texte(session.heure_fin).slice(0, 5),
+  duree: session.duree_heures === null ? '' : String(Number(session.duree_heures)), places: texte(session.nombre_places),
+  modalite: session.modalite, lieu: session.lieu, lien: session.lien_classe_virtuelle,
+})
 
 // ---- Affichage ----
 
