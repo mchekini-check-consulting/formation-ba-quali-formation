@@ -46,7 +46,7 @@ async function appel(chemin, { method = 'GET', corps } = {}) {
   try {
     reponse = await fetch(`${apiBase()}${chemin}`, {
       method,
-      credentials: 'include', // cookie de connexion (SCRUM-16) : l'historique sait qui a agi (SCRUM-23)
+      credentials: 'include', // cookie de connexion (SCRUM-16) : le backend ne renvoie que les formations du compte
       headers: corps ? { 'Content-Type': 'application/json' } : {},
       body: corps ? JSON.stringify(corps) : undefined,
     })

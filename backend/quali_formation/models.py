@@ -47,6 +47,10 @@ class Formation(models.Model):
     preparee_par = models.CharField(max_length=255, default='Camille Laurent')
     valeurs = models.JSONField(default=dict, blank=True)
     autres_informations = models.JSONField(default=list, blank=True)  # [{titre, contenu}]
+    # Compte qui a créé la formation : lui seul la voit et la modifie (formations_visibles dans services.py).
+    # Vide pour les formations créées avant cette règle : elles ne sont plus visibles par personne.
+    proprietaire = models.ForeignKey('Utilisateur', on_delete=models.SET_NULL, null=True, blank=True,
+                                     related_name='formations')
     date_creation = models.DateTimeField(auto_now_add=True)
     date_mise_a_jour = models.DateTimeField(auto_now=True)
 

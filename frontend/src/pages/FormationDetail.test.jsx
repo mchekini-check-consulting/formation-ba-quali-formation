@@ -13,6 +13,15 @@ async function ouvrir(id) {
   await screen.findByRole('heading', { level: 2, name: /La formation$/ })
   return router
 }
+// Formation inexistante, ou créée par un autre compte (l'API répond 404 dans les deux cas)
+async function introuvable(adresse) {
+  const router = createMemoryRouter(routes, { initialEntries: [adresse] })
+  render(<RouterProvider router={router} />)
+  expect((await screen.findByRole('alert')).textContent).toContain('Formation introuvable.')
+  fireEvent.click(screen.getByRole('link', { name: 'Retour aux formations' }))
+  await waitFor(() => expect(router.state.location.pathname).toBe('/formations'))
+}
+
 const blocFiche = (titre) => screen.getByRole('heading', { level: 3, name: titre }).closest('section')
 
 describe('Fiche détaillée', () => {
@@ -96,5 +105,15 @@ describe('Fiche détaillée', () => {
     cleanup()
     await ouvrir(8)
     expect(within(document.querySelector('.dt-tags')).queryByText('Programme non créé')).toBeNull()
+  })
+})
+
+describe('Formation introuvable', () => {
+  it('la fiche d’une formation inexistante ou d’un autre compte affiche « Formation introuvable »', async () => {
+    await introuvable('/formations/999')
+  })
+
+  it('le formulaire de modification aussi', async () => {
+    await introuvable('/formations/999/modifier')
   })
 })

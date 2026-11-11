@@ -7,6 +7,7 @@ from django.utils import timezone
 
 from quali_formation.blocs import BLOCS, blocs_manquants
 from quali_formation.models import Formation, FormationHistorique, Item, Utilisateur
+from quali_formation.services import formations_visibles
 
 ANNEE = timezone.localdate().year
 
@@ -23,6 +24,19 @@ VALEURS_COMPLETES = {
     'document': 'Attestation de réalisation', 'satisfaction': ['À chaud (fin de formation)'],
     'resultats_plan': 'Questionnaire à chaud',
 }
+def connecter(client, email='camille@organisme.fr'):
+    """Crée un compte et ouvre sa session (SCRUM-16) : les formations sont réservées au compte connecté."""
+    compte = Utilisateur.objects.create(email=email, mot_de_passe='x', cgu_acceptees_le=timezone.now())
+    connecter_existant(client, compte)
+    return compte
+
+
+def connecter_existant(client, compte):
+    session = client.session
+    session['utilisateur_id'] = compte.pk
+    session.save()
+
+
 SEQUENCE = {'titre': 'Fédérer', 'duree_heures': '7', 'objectif_vise': 'Fixer des objectifs', 'modalite': 'PRESENTIEL',
             'contenu': 'Rôle du manager', 'methodes_activites': 'Études de cas'}
 
@@ -90,6 +104,9 @@ class BlocsTests(SimpleTestCase):
 
 
 class ApiFormationsTests(TestCase):
+    def setUp(self):
+        self.compte = connecter(self.client)
+
     def creer(self, **donnees):
         corps = {'action': 'brouillon', 'intitule': 'Management', 'modalite': 'PRESENTIEL', **donnees}
         return self.client.post('/formations/', corps, content_type='application/json')
@@ -164,9 +181,10 @@ class ApiFormationsTests(TestCase):
         f = self.creer(intitule='Excel').json()
         self.assertEqual(self.modifier(f['id'], intitule="Management d'équipe").json()['code'], 'INTITULE_EXISTANT')
 
-    def test_meme_intitule_dans_un_autre_organisme(self):
+    def test_meme_intitule_dans_un_autre_compte(self):
         self.creer(intitule="Management d'équipe")
-        self.assertEqual(self.creer(intitule="Management d'équipe", organisme='Autre organisme').status_code, 201)
+        connecter(self.client, 'autre@organisme.fr')
+        self.assertEqual(self.creer(intitule="Management d'équipe").status_code, 201)
 
     # ---------- Valider (RG13 à RG15) ----------
     def test_validee_si_tous_les_blocs_sont_complets(self):  # RG13
@@ -304,16 +322,7 @@ class ApiFormationsTests(TestCase):
         self.assertEqual([h.action for h in lignes], ['CREATION', 'MODIFICATION', 'ARCHIVAGE', 'RESTAURATION', 'SUPPRESSION'])
         self.assertTrue(all(h.date and h.reference == f['reference'] and h.intitule == 'Management' for h in lignes))
         self.assertTrue(all(h.formation is None for h in lignes))  # la formation supprimée, l'historique reste
-        self.assertTrue(all(h.utilisateur is None for h in lignes))  # personne n'est connecté
-
-    def test_historique_garde_l_utilisateur_connecte(self):
-        u = Utilisateur.objects.create(email='camille@organisme.fr', mot_de_passe='x', cgu_acceptees_le=timezone.now())
-        session = self.client.session
-        session['utilisateur_id'] = u.pk
-        session.save()
-        f = self.creer().json()
-        self.patch(f['id'], 'archiver')
-        self.assertEqual([(h.action, h.utilisateur) for h in FormationHistorique.objects.all()], [('CREATION', u), ('ARCHIVAGE', u)])
+        self.assertTrue(all(h.utilisateur == self.compte for h in lignes))  # le compte connecté
 
     def test_pas_d_historique_si_l_action_est_refusee(self):
         f = self.creer().json()
@@ -322,6 +331,66 @@ class ApiFormationsTests(TestCase):
         self.modifier(f['id'], intitule=' ')
         self.assertEqual([h.action for h in FormationHistorique.objects.all()], ['CREATION'])
 
+
+
+class FormationsParCompteTests(TestCase):
+    """Chaque formation appartient au compte qui l'a créée : lui seul la voit et la modifie."""
+
+    def setUp(self):
+        self.camille = connecter(self.client)
+        self.sienne = self.client.post('/formations/', {'action': 'brouillon', 'modalite': 'PRESENTIEL', 'intitule': 'Excel'},
+                                       content_type='application/json').json()
+        self.lucas = connecter(self.client, 'lucas@organisme.fr')
+
+    def test_la_formation_appartient_au_compte_qui_la_cree(self):
+        self.assertEqual(Formation.objects.get(pk=self.sienne['id']).proprietaire, self.camille)
+
+    def test_un_compte_ne_voit_que_ses_formations(self):
+        self.client.post('/formations/', {'action': 'brouillon', 'modalite': 'PRESENTIEL', 'intitule': 'Word'}, content_type='application/json')
+        self.assertEqual([f['intitule'] for f in self.client.get('/formations/').json()], ['Word'])
+        connecter_existant(self.client, self.camille)
+        self.assertEqual([f['intitule'] for f in self.client.get('/formations/').json()], ['Excel'])
+
+    def test_404_formation_introuvable_pour_la_formation_d_un_autre_compte(self):
+        pk = self.sienne['id']
+        appels = [
+            self.client.get(f'/formations/{pk}/'),
+            self.client.put(f'/formations/{pk}/', {'action': 'brouillon', 'modalite': 'PRESENTIEL', 'intitule': 'Pirate'}, content_type='application/json'),
+            self.client.delete(f'/formations/{pk}/'),
+            self.client.patch(f'/formations/{pk}/archiver/', {}, content_type='application/json'),
+            self.client.patch(f'/formations/{pk}/restaurer/', {}, content_type='application/json'),
+            self.client.post(f'/formations/{pk}/publier/', {}, content_type='application/json'),
+            self.client.post(f'/formations/{pk}/retirer-publication/', {}, content_type='application/json'),
+            self.client.post(f'/formations/{pk}/sessions/', {'date_debut': '2027-02-08', 'date_fin': '2027-02-08'},
+                             content_type='application/json'),
+        ]
+        for r in appels:
+            self.assertEqual((r.status_code, r.json()), (404, {'code': 'FORMATION_INTROUVABLE', 'detail': 'Formation introuvable'}))
+        f = Formation.objects.get(pk=pk)  # rien n'a changé
+        self.assertEqual((f.intitule, f.statut, f.version, f.sessions.count()), ('Excel', 'BROUILLON', 1, 0))
+
+    def test_meme_message_pour_une_formation_qui_n_existe_pas(self):
+        r = self.client.get('/formations/999999/')
+        self.assertEqual((r.status_code, r.json()['detail']), (404, 'Formation introuvable'))
+
+    def test_401_si_personne_n_est_connecte(self):
+        self.client.logout()
+        for r in (self.client.get('/formations/'), self.client.get(f'/formations/{self.sienne["id"]}/'),
+                  self.client.post('/formations/', {'action': 'brouillon', 'modalite': 'PRESENTIEL', 'intitule': 'X'}, content_type='application/json'),
+                  self.client.get('/sessions/')):
+            self.assertEqual((r.status_code, r.json()['code']), (401, 'NON_CONNECTE'))
+
+    def test_les_formations_d_avant_la_regle_ne_sont_plus_visibles(self):
+        Formation.objects.create(reference='FOR-2025-001', intitule='Ancienne')  # sans propriétaire
+        self.assertEqual([f['intitule'] for f in self.client.get('/formations/').json()], [])
+        self.assertTrue(Formation.objects.filter(intitule='Ancienne').exists())  # rien n'est supprimé
+
+    def test_aucune_formation_visible_sans_compte(self):
+        self.assertFalse(formations_visibles(None).exists())
+
+    def test_la_reference_reste_unique_entre_les_comptes(self):
+        r = self.client.post('/formations/', {'action': 'brouillon', 'modalite': 'PRESENTIEL', 'intitule': 'Word'}, content_type='application/json')
+        self.assertEqual(r.json()['reference'], f'FOR-{ANNEE}-002')
 
 
 class ChargerDemoTests(TestCase):

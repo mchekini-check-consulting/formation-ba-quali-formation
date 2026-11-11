@@ -19,6 +19,13 @@ describe('service Sessions', () => {
     })
   })
 
+  it('envoie le cookie de connexion : le backend ne renvoie que les données du compte', async () => {
+    const fetch = installerFauxBackend()
+    await api.listerSessions()
+    await api.creerSession(FORM, [4], [1])
+    expect(fetch.mock.calls.map(([, options]) => options.credentials)).toEqual(['include', 'include'])
+  })
+
   it('envoie le lien pour une classe virtuelle', async () => {
     const fetch = installerFauxBackend()
     await api.creerSession({ ...FORM, modalite: 'CLASSE_VIRTUELLE', lien: ' https://visio ' }, [4], [1])

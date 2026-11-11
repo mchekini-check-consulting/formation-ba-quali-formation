@@ -39,6 +39,13 @@ class ErreurMetier(APIException):
         self.details = details
 
 
+class FormationIntrouvable(ErreurMetier):
+    """404 : formation inexistante ou appartenant à un autre compte (sans dire laquelle des deux)."""
+
+    def __init__(self):
+        super().__init__('FORMATION_INTROUVABLE', 'Formation introuvable', 404)
+
+
 def _prochaine_reference():
     # RG03 : FOR-AAAA-NNN, numéro suivant pour l'année en cours
     annee = timezone.localdate().year
@@ -69,14 +76,23 @@ def _statut_demande(donnees, nb_sequences, action, forcer):
     return Statut.INCOMPLETE if manque else Statut.VALIDEE
 
 
+def formations_visibles(utilisateur):
+    """Formations que ce compte voit et modifie : celles qu'il a créées ; aucune si personne n'est connecté.
+    Seul endroit qui décide « qui voit quoi » : le partage entre comptes d'un même organisme (US à venir)
+    ne changera que ce filtre."""
+    if utilisateur is None:
+        return Formation.objects.none()
+    return Formation.objects.filter(proprietaire=utilisateur)
+
+
 def _meme_intitule(intitule):
     # Majuscules et espaces en trop ignorés : « Excel  avancé » = « excel avancé »
     return ' '.join(intitule.split()).casefold()
 
 
-def _verifier_intitule_unique(formation, donnees):
-    """SCRUM-20 : une autre formation de l'organisme porte déjà cet intitulé (la formation modifiée est exclue)."""
-    autres = Formation.objects.filter(organisme=donnees['organisme'])
+def _verifier_intitule_unique(formation, donnees, utilisateur):
+    """SCRUM-20 : une autre formation du compte porte déjà cet intitulé (la formation modifiée est exclue)."""
+    autres = formations_visibles(utilisateur)
     if formation is not None:
         autres = autres.exclude(pk=formation.pk)
     cherche = _meme_intitule(donnees['intitule'])
@@ -123,7 +139,8 @@ class FormationService:
         action « brouillon » : seul l'intitulé est obligatoire (RG02) ;
         action « valider » : intitulé, durée > 0 et modalité obligatoires (RG01), puis Validée si tous les
         blocs sont complets (RG13), sinon refus sauf `forcer` qui l'enregistre Incomplète (RG14, RG15).
-        Même intitulé qu'une autre formation de l'organisme : refus sauf `doublon_accepte` (SCRUM-20).
+        Même intitulé qu'une autre formation du compte : refus sauf `doublon_accepte` (SCRUM-20).
+        Une nouvelle formation appartient au compte `utilisateur` qui la crée.
         Une formation archivée ne se modifie pas : il faut d'abord la restaurer (SCRUM-23).
         """
         if formation is not None and formation.statut == Statut.ARCHIVEE:
@@ -134,12 +151,12 @@ class FormationService:
 
         statut = _statut_demande(donnees, len(sequences), action, forcer)
         if not doublon_accepte:
-            _verifier_intitule_unique(formation, donnees)
+            _verifier_intitule_unique(formation, donnees, utilisateur)
 
         with transaction.atomic():
             nouvelle = formation is None
             if nouvelle:
-                formation = Formation()
+                formation = Formation(proprietaire=utilisateur)
             else:
                 formation.version += 1  # RG04
             for champ, valeur in donnees.items():
@@ -222,8 +239,10 @@ formation_service = FormationService()
 class SessionService:
     """Règles de gestion de Sessions et planning (SCRUM-25)."""
 
-    def lister_sessions(self):
-        return Session.objects.select_related('formation').prefetch_related('formateurs', 'apprenants')
+    def lister_sessions(self, utilisateur):
+        # Seulement les sessions des formations du compte
+        return (Session.objects.filter(formation__in=formations_visibles(utilisateur))
+                .select_related('formation').prefetch_related('formateurs', 'apprenants'))
 
     def lister_formateurs(self):
         return Formateur.objects.all()
@@ -239,9 +258,11 @@ class SessionService:
         """Enregistre un apprenant (SCRUM-27) ; il est ensuite proposé à l'étape 3 de « Nouvelle session »."""
         return Apprenant.objects.create(prenom=prenom, nom=nom, email=email)
 
-    def creer_session(self, formateurs, apprenants, **donnees):
-        """Crée une session « Prévue » avec ses formateurs et ses apprenants.
+    def creer_session(self, utilisateur, formateurs, apprenants, **donnees):
+        """Crée une session « Prévue » avec ses formateurs et ses apprenants, sur une formation du compte.
         Le nombre d'apprenants n'est pas comparé au nombre de places (pas encore demandé)."""
+        if not formations_visibles(utilisateur).filter(pk=donnees['formation'].pk).exists():
+            raise FormationIntrouvable()
         if donnees['date_fin'] < donnees['date_debut']:
             raise ErreurMetier('DATES_INVALIDES', 'La date de fin doit être postérieure ou égale à la date de début.')
         if not formateurs:
