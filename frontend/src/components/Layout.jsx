@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
+import { compteConnecte, initiales } from '../compte/serviceCompte'
 import Icone from './Icone'
 import { ToastProvider } from './Toast'
 import { FONCTIONNALITES } from '../pages/fonctionnalites'
@@ -17,6 +18,14 @@ function Layout() {
   // Un clic sur un lien du menu referme le menu (téléphone)
   const fermerMenu = () => setMenuOuvert(false)
   const menuBtnRef = useRef(null)
+  // Compte connecté (GET /auth/moi) : initiales dans l'avatar ; null si personne n'est connecté
+  const [compte, setCompte] = useState(null)
+
+  useEffect(() => {
+    let actif = true
+    compteConnecte().then((c) => { if (actif) setCompte(c) })
+    return () => { actif = false }
+  }, [])
 
   // Menu dépliable sur téléphone : un clic en dehors le referme
   useEffect(() => {
@@ -61,7 +70,7 @@ function Layout() {
             </button>
             <div className="topbar-droite">
               <div className="icone-btn" title="Notifications"><Icone nom="notifications" taille={20} /><span className="pastille"></span></div>
-              <div className="avatar" title="Nassiba B. — Responsable de centre">NB</div>
+              {compte && <div className="avatar" title={compte.email}>{initiales(compte.email)}</div>}
             </div>
           </div>
 

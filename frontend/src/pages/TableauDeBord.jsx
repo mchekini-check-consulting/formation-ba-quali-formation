@@ -8,7 +8,7 @@ function TableauDeBord() {
   return (
     <>
       <div className="entete">
-        <h1>Bonjour Nassiba</h1>
+        <h1>Bienvenue dans Quali-formation</h1>
       </div>
       {compteCree && <output className="cpt-bienvenue">Votre compte a été créé. Bienvenue sur Quali-formation !</output>}
       {connecte && <output className="cpt-bienvenue">Vous êtes connecté. Bienvenue sur Quali-formation !</output>}

@@ -71,3 +71,11 @@ export async function compteConnecte() {
     return null
   }
 }
+
+// Initiales de l'avatar, tirées de l'e-mail (le compte n'a pas encore de prénom ni de nom) :
+// « prenom.nom@… » -> « PN » (séparateurs . _ - +), sinon les deux premières lettres : « nassiba@… » -> « NA »
+export function initiales(email) {
+  const parties = email.split('@')[0].split(/[._+-]+/).filter(Boolean)
+  const lettres = parties.length > 1 ? parties[0][0] + parties[1][0] : (parties[0] || '').slice(0, 2)
+  return lettres.toUpperCase()
+}
