@@ -73,3 +73,30 @@ describe('règles de l’étape 1', () => {
     expect(verifierInformations({ ...FORM, duree: '0', places: '2,5' })).toEqual({ duree: 'Indiquez une durée supérieure à 0.', places: 'Indiquez un nombre entier supérieur à 0.' })
   })
 })
+
+describe('service Sessions : fiche et modification (SCRUM-36)', () => {
+  it('lit la fiche d’une session (GET /sessions/<id>/)', async () => {
+    const fetch = installerFauxBackend()
+    const fiche = await api.lireSession(1)
+    expect(fetch.mock.calls[0][0]).toBe('/api/sessions/1/')
+    expect(fiche.formateurs.map((p) => p.nom)).toEqual(['Dubois'])
+  })
+
+  it('envoie la modification en PUT, au même format que la création', async () => {
+    const fetch = installerFauxBackend()
+    await api.modifierSession(1, FORM, [4], [1])
+    const [url, options] = fetch.mock.calls[0]
+    expect([url, options.method, options.credentials]).toEqual(['/api/sessions/1/', 'PUT', 'include'])
+    expect(JSON.parse(options.body)).toMatchObject({ formation: 2, duree_heures: '21.5', lieu: 'Lyon', formateurs: [4], apprenants: [1] })
+  })
+
+  it('pré-remplit le formulaire à partir de la session', () => {
+    expect(api.versFormulaire({
+      formation: 1, date_debut: '2026-11-18', date_fin: '2026-11-19', heure_debut: '09:30:00', heure_fin: '17:00:00', duree_heures: '14.50',
+      nombre_places: 8, modalite: 'PRESENTIEL', lieu: 'Lyon', lien_classe_virtuelle: '',
+    })).toEqual({ formation: '1', debut: '2026-11-18', fin: '2026-11-19', heureDebut: '09:30', heureFin: '17:00', duree: '14.5', places: '8', modalite: 'PRESENTIEL', lieu: 'Lyon', lien: '' })
+    // Session enregistrée avant SCRUM-25 : heures, durée et places vides
+    expect(api.versFormulaire({ formation: 1, date_debut: '2026-11-18', date_fin: '2026-11-19', heure_debut: null, heure_fin: null, duree_heures: null,
+      nombre_places: null, modalite: 'PRESENTIEL', lieu: '', lien_classe_virtuelle: '' })).toMatchObject({ heureDebut: '', heureFin: '', duree: '', places: '' })
+  })
+})

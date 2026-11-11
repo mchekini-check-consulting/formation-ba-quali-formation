@@ -1,13 +1,15 @@
 import { Link } from 'react-router-dom'
 
 // Échec du chargement d'une page : le message, avec « Se connecter » si personne n'est connecté (API : 401 NON_CONNECTE)
-// et « Retour aux formations » si la formation est introuvable (inexistante ou créée par un autre compte : 404)
+// et « Retour aux formations » si la formation est introuvable (inexistante ou créée par un autre compte : 404),
+// « Retour aux sessions » si la session est introuvable (SCRUM-36)
 function ErreurChargement({ erreur }) {
   return (
     <p className="chargement" role="alert">
       {erreur.message}
       {erreur.code === 'NON_CONNECTE' && <>{' '}<Link to="/se-connecter">Se connecter</Link></>}
       {erreur.code === 'INTROUVABLE' && <>{' '}<Link to="/formations">Retour aux formations</Link></>}
+      {erreur.code === 'SESSION_INTROUVABLE' && <>{' '}<Link to="/sessions">Retour aux sessions</Link></>}
     </p>
   )
 }

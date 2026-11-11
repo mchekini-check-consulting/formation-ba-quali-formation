@@ -8,6 +8,8 @@ import FormationForm from './pages/FormationForm'
 import FormationsListe from './pages/FormationsListe'
 import Items from './pages/Items'
 import NouvelleSession from './pages/NouvelleSession'
+import FicheSession from './pages/FicheSession'
+import ModifierSession from './pages/ModifierSession'
 import SessionsPlanning from './pages/SessionsPlanning'
 import LandingPage from './landing/LandingPage'
 
@@ -30,6 +32,9 @@ export const routes = [
       // Sessions et planning (SCRUM-25)
       { path: '/sessions', element: <SessionsPlanning /> },
       { path: '/sessions/nouvelle', element: <NouvelleSession /> },
+      // Fiche et modification d'une session (SCRUM-36)
+      { path: '/sessions/:id', element: <FicheSession /> },
+      { path: '/sessions/:id/modifier', element: <ModifierSession /> },
       // Écran d'exemple de l'équipe (GET / POST /items)
       { path: '/items', element: <Items /> },
       { path: '*', element: <Navigate to="/" replace /> },

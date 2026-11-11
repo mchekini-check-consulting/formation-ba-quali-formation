@@ -20,6 +20,8 @@ urlpatterns = [
     path('formations/<int:pk>/sessions/', views.sessions),
     # Sessions et planning (SCRUM-25)
     path('sessions/', views.sessions_planning),
+    # Fiche et modification d'une session (SCRUM-36)
+    path('sessions/<int:pk>/', views.session_fiche),
     path('formateurs/', views.formateurs),
     path('apprenants/', views.apprenants),
 ]

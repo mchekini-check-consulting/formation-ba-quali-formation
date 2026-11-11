@@ -165,3 +165,98 @@ class CreationFormateurTests(TestCase):
         self.assertEqual(reponse.status_code, 400)
         self.assertEqual(reponse.json(), {'email': ["Format d'e-mail invalide"]})
         self.assertEqual(Formateur.objects.count(), 4)
+
+
+class FicheEtModificationSessionTests(TestCase):
+    """SCRUM-36 : GET et PUT /sessions/<id>/."""
+
+    def setUp(self):
+        self.compte = connecter(self.client)
+        self.formation = Formation.objects.create(reference='FOR-2026-001', intitule='Excel avancé', duree_heures=14,
+                                                  proprietaire=self.compte)
+        self.sarah = Formateur.objects.get(email='sarah.dubois@exemple.fr')
+        self.julien = Formateur.objects.get(email='julien.lefevre@exemple.fr')
+        self.camille = Apprenant.objects.get(email='camille.martin@acme.fr')
+        self.hugo = Apprenant.objects.get(email='hugo.bernard@acme.fr')
+        self.session = Session.objects.create(formation=self.formation, date_debut='2026-11-18', date_fin='2026-11-19',
+                                              heure_debut='09:00', heure_fin='17:00', duree_heures=14, lieu='Salle Atlas, Lyon',
+                                              nombre_places=8)
+        self.session.formateurs.set([self.sarah])
+        self.session.apprenants.set([self.camille])
+        self.url = f'/sessions/{self.session.pk}/'
+
+    def corps(self, **modif):
+        corps = {
+            'formation': self.formation.pk, 'date_debut': '2026-11-18', 'date_fin': '2026-11-19',
+            'heure_debut': '09:00', 'heure_fin': '17:00', 'duree_heures': '14', 'modalite': 'PRESENTIEL',
+            'lieu': 'Salle Horizon, Lyon', 'nombre_places': 8,
+            'formateurs': [self.sarah.pk], 'apprenants': [self.camille.pk, self.hugo.pk],
+        }
+        corps.update(modif)
+        return corps
+
+    def modifier(self, **modif):
+        return self.client.put(self.url, self.corps(**modif), content_type='application/json')
+
+    def test_fiche_avec_formateurs_et_apprenants_detailles(self):
+        reponse = self.client.get(self.url)
+        self.assertEqual(reponse.status_code, 200)
+        json = reponse.json()
+        self.assertEqual((json['formation_intitule'], json['statut'], json['lieu']), ('Excel avancé', 'PREVUE', 'Salle Atlas, Lyon'))
+        self.assertEqual([f['nom'] for f in json['formateurs']], ['Dubois'])
+        self.assertEqual(json['apprenants'][0]['email'], 'camille.martin@acme.fr')
+        self.assertEqual(json['nombre_apprenants'], 1)
+
+    def test_fiche_introuvable(self):
+        reponse = self.client.get('/sessions/999999/')
+        self.assertEqual((reponse.status_code, reponse.json()['code']), (404, 'SESSION_INTROUVABLE'))
+
+    def test_fiche_d_un_autre_compte_introuvable(self):
+        connecter(self.client, 'autre@organisme.fr')
+        self.assertEqual(self.client.get(self.url).status_code, 404)
+        self.assertEqual(self.modifier().status_code, 404)
+        self.assertEqual(Session.objects.get().lieu, 'Salle Atlas, Lyon')
+
+    def test_fiche_reservee_a_un_compte_connecte(self):
+        self.client.logout()
+        self.assertEqual(self.client.get(self.url).status_code, 401)
+
+    def test_modifie_informations_formateurs_et_apprenants(self):
+        reponse = self.modifier(formateurs=[self.julien.pk])
+        self.assertEqual(reponse.status_code, 200)
+        self.assertEqual(reponse.json()['lieu'], 'Salle Horizon, Lyon')
+        self.assertEqual(reponse.json()['nombre_apprenants'], 2)
+        session = Session.objects.get()
+        self.assertEqual(session.lieu, 'Salle Horizon, Lyon')
+        self.assertEqual(list(session.formateurs.all()), [self.julien])
+        self.assertEqual(set(session.apprenants.all()), {self.camille, self.hugo})
+        self.assertEqual(session.statut, Session.Statut.PREVUE)
+
+    def test_passe_en_classe_virtuelle(self):
+        reponse = self.modifier(modalite='CLASSE_VIRTUELLE', lieu='', lien_classe_virtuelle='https://visio.exemple.fr/abc')
+        self.assertEqual(reponse.status_code, 200)
+        self.assertEqual(Session.objects.get().lien_classe_virtuelle, 'https://visio.exemple.fr/abc')
+
+    def test_refuse_un_champ_vide(self):
+        reponse = self.modifier(lieu=' ', nombre_places=None)
+        self.assertEqual(reponse.status_code, 400)
+        self.assertIn('nombre_places', reponse.json())
+        self.assertEqual(Session.objects.get().lieu, 'Salle Atlas, Lyon')
+
+    def test_refuse_une_date_de_fin_avant_le_debut(self):
+        reponse = self.modifier(date_fin='2026-11-17')
+        self.assertEqual((reponse.status_code, reponse.json()['code']), (400, 'DATES_INVALIDES'))
+        self.assertEqual(str(Session.objects.get().date_fin), '2026-11-19')
+
+    def test_refuse_sans_formateur_ou_sans_apprenant(self):
+        self.assertEqual(self.modifier(formateurs=[]).json()['detail'], 'Une session doit avoir au moins un formateur')
+        self.assertEqual(self.modifier(apprenants=[]).json()['detail'], 'Une session doit avoir au moins un apprenant')
+        session = Session.objects.get()
+        self.assertEqual(list(session.formateurs.all()), [self.sarah])
+        self.assertEqual(list(session.apprenants.all()), [self.camille])
+
+    def test_refuse_une_formation_d_un_autre_compte(self):
+        autre = Formation.objects.create(reference='FOR-2026-099', intitule='Autre', duree_heures=7)
+        reponse = self.modifier(formation=autre.pk)
+        self.assertEqual(reponse.status_code, 404)
+        self.assertEqual(Session.objects.get().formation, self.formation)

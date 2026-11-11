@@ -23,11 +23,27 @@ export const repondre = (status, corps) => ({ ok: status < 400, status, json: as
 
 // reponsePost(corps) : réponse du POST /sessions/ (par défaut 201 avec la session créée)
 // reponsePersonne(corps) : réponse du POST /formateurs/ ou /apprenants/ (par défaut 201, ajouté à la liste)
-export function installerFauxBackend({ sessions = [SESSION_EXCEL], reponsePost, reponsePersonne } = {}) {
+// reponsePut(corps) : réponse du PUT /sessions/<id>/ (SCRUM-36, par défaut 200 avec la fiche modifiée)
+export function installerFauxBackend({ sessions = [SESSION_EXCEL], reponsePost, reponsePersonne, reponsePut } = {}) {
   const liste = [...sessions]
   const personnes = { '/formateurs/': [...FORMATEURS], '/apprenants/': [...APPRENANTS] }
+  // Fiche (GET /sessions/<id>/) : formateurs et apprenants détaillés
+  const detailler = (ids, chemin) => ids.map((id) => personnes[chemin].find((p) => p.id === id)).filter(Boolean)
+  const fiche = (s) => ({ ...s, formateurs: detailler(s.formateurs, '/formateurs/'), apprenants: detailler(s.apprenants, '/apprenants/') })
   const fetch = vi.fn(async (url, options) => {
     const chemin = url.replace(/^\/api/, '')
+    const numero = /^\/sessions\/(\d+)\/$/.exec(chemin)
+    if (numero) {
+      const i = liste.findIndex((x) => x.id === Number(numero[1]))
+      if (i < 0) return repondre(404, { code: 'SESSION_INTROUVABLE', detail: 'Session introuvable' })
+      if (options?.method === 'PUT') {
+        const corps = JSON.parse(options.body)
+        if (reponsePut) return reponsePut(corps)
+        const f = FORMATIONS.find((x) => x.id === corps.formation)
+        liste[i] = { ...liste[i], ...corps, formation_intitule: f.intitule, nombre_apprenants: corps.apprenants.length }
+      }
+      return repondre(200, fiche(liste[i]))
+    }
     if (options?.method === 'POST' && personnes[chemin]) {
       const corps = JSON.parse(options.body)
       if (reponsePersonne) return reponsePersonne(corps)

@@ -13,6 +13,7 @@ from quali_formation.serializers import (
     ItemSerializer,
     PersonneCreationSerializer,
     SessionCreationSerializer,
+    SessionFicheSerializer,
     SessionPlanningSerializer,
     SessionSerializer,
 )
@@ -185,6 +186,23 @@ def sessions_planning(request, utilisateur):
         session = session_service.lister_sessions(utilisateur).get(pk=session.pk)
         return Response(SessionPlanningSerializer(session).data, status=status.HTTP_201_CREATED)
     return Response(SessionPlanningSerializer(session_service.lister_sessions(utilisateur), many=True).data)
+
+
+@api_view(["GET", "PUT"])
+@_connexion_requise
+def session_fiche(request, utilisateur, pk):
+    """SCRUM-36. GET : la fiche de la session (formateurs et apprenants détaillés).
+    PUT : modification (200 ; 400 si une donnée est invalide, sans formateur ou sans apprenant ; 404 si introuvable)."""
+    try:
+        session = session_service.trouver_session(utilisateur, pk)
+        if request.method == 'PUT':
+            entree = SessionCreationSerializer(data=request.data)
+            entree.is_valid(raise_exception=True)
+            session_service.modifier_session(utilisateur, session, **entree.validated_data)
+            session = session_service.trouver_session(utilisateur, pk)
+    except ErreurMetier as e:
+        return _erreur(e)
+    return Response(SessionFicheSerializer(session).data)
 
 
 def _personnes(request, lister, creer, serializer):

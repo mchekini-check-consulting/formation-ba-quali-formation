@@ -2,43 +2,15 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import ErreurChargement from '../components/ErreurChargement'
 import Icone from '../components/Icone'
-import {
-  creerSession, dateFr, heureFr, initiales, listerApprenants, listerFormateurs, listerFormations,
-} from '../sessions/serviceApi'
-import { CLASSE_VIRTUELLE, erreurServeur, MSG_APPRENANT, MSG_FORMATEUR, PRESENTIEL, verifierInformations } from '../sessions/regles'
+import { BlocInformations, ListePersonnes } from '../sessions/FormulaireSession'
+import { basculerDans, compteur, useSaisieSession } from '../sessions/saisieSession'
+import { creerSession, dateFr, heureFr, listerApprenants, listerFormateurs, listerFormations } from '../sessions/serviceApi'
+import { erreurServeur, MSG_APPRENANT, MSG_FORMATEUR, PRESENTIEL, verifierInformations } from '../sessions/regles'
 import '../sessions/sessions.css'
 
 // Formulaire « Nouvelle session » (SCRUM-25), en 3 étapes : informations, formateur(s), apprenant(s).
 const ETAPES = ['Informations', 'Formateur(s)', 'Apprenant(s)']
 const VIDE = { formation: '', debut: '', fin: '', heureDebut: '09:00', heureFin: '17:00', duree: '', places: '10', modalite: PRESENTIEL, lieu: '', lien: '' }
-function Champ({ id, label, erreur, aide, children }) {
-  return (
-    <div className="field">
-      <label className="lbl" htmlFor={id}>{label} <span className="req" aria-hidden="true">*</span></label>
-      {children}
-      {aide && !erreur && <span className="ns-aide">{aide}</span>}
-      {erreur && <span className="errtxt" id={`${id}-err`}>{erreur}</span>}
-    </div>
-  )
-}
-
-// Liste à cocher des formateurs ou des apprenants
-function ListePersonnes({ titre, personnes, choisis, onBasculer, detail }) {
-  return (
-    <ul className="ns-personnes" aria-label={titre}>
-      {personnes.map((p) => (
-        <li key={p.id} className={choisis.includes(p.id) ? 'on' : ''}>
-          <label>
-            <input type="checkbox" checked={choisis.includes(p.id)} onChange={() => onBasculer(p.id)} />
-            <span className="ns-avatar" aria-hidden="true">{initiales(p)}</span>
-            <span className="ns-nom"><b>{p.prenom} {p.nom}</b><span>{detail(p)}</span></span>
-          </label>
-        </li>
-      ))}
-      {personnes.length === 0 && <li className="ns-vide">Aucune personne enregistrée pour le moment.</li>}
-    </ul>
-  )
-}
 
 // Bandeau des 3 étapes : étape en cours, étapes faites (coche)
 function Etapes({ etape }) {
@@ -60,53 +32,12 @@ function Etapes({ etape }) {
   )
 }
 
-// Étape 1 : informations de la session
-function EtapeInformations({ s, erreurs, saisie, formations, changer }) {
-  const presentiel = s.modalite === PRESENTIEL
-  return (
-    <>
-      <h2>Informations de la session</h2>
-      <p className="sub">Les champs marqués <span className="req">*</span> sont obligatoires.</p>
-      <div className="ns-grille">
-        <div className="ns-plein">
-          <Champ id="ns-formation" label="Formation" erreur={erreurs.formation}>
-            <select {...saisie('formation')}>
-              <option value="">Choisir une formation</option>
-              {formations.map((f) => <option key={f.id} value={f.id}>{f.intitule}</option>)}
-            </select>
-          </Champ>
-        </div>
-        <Champ id="ns-debut" label="Date de début" erreur={erreurs.debut}><input type="date" {...saisie('debut')} /></Champ>
-        <Champ id="ns-fin" label="Date de fin" erreur={erreurs.fin}><input type="date" {...saisie('fin')} /></Champ>
-        <Champ id="ns-heureDebut" label="Heure de début" erreur={erreurs.heureDebut}><input type="time" {...saisie('heureDebut')} /></Champ>
-        <Champ id="ns-heureFin" label="Heure de fin" erreur={erreurs.heureFin}><input type="time" {...saisie('heureFin')} /></Champ>
-        <Champ id="ns-duree" label="Durée (heures)" erreur={erreurs.duree} aide="Reprise automatiquement de la formation choisie."><input inputMode="decimal" {...saisie('duree')} /></Champ>
-        <Champ id="ns-places" label="Nombre de places" erreur={erreurs.places}><input inputMode="numeric" {...saisie('places')} /></Champ>
-      </div>
-      <fieldset className="ns-modalite">
-        <legend className="lbl">Modalité <span className="req" aria-hidden="true">*</span></legend>
-        <div className="radios">
-          <label className="radio"><input type="radio" name="modalite" checked={presentiel} onChange={() => changer('modalite', PRESENTIEL)} />Présentiel</label>
-          <label className="radio"><input type="radio" name="modalite" checked={!presentiel} onChange={() => changer('modalite', CLASSE_VIRTUELLE)} />Classe virtuelle</label>
-        </div>
-      </fieldset>
-      {presentiel
-        ? <Champ id="ns-lieu" label="Lieu" erreur={erreurs.lieu}><input placeholder="Adresse ou salle" {...saisie('lieu')} /></Champ>
-        : <Champ id="ns-lien" label="Lien de la classe virtuelle" erreur={erreurs.lien}><input type="url" placeholder="https://…" {...saisie('lien')} /></Champ>}
-    </>
-  )
-}
-
-// Libellé « N apprenant(s) sélectionné(s) »
-const compteur = (n) => (n > 1 ? `${n} apprenants sélectionnés` : `${n} apprenant sélectionné`)
-
 function NouvelleSession() {
   const navigate = useNavigate()
   const [listes, setListes] = useState(null) // { formations, formateurs, apprenants }
   const [erreurChargement, setErreurChargement] = useState(null)
   const [etape, setEtape] = useState(1)
-  const [s, setS] = useState(VIDE)
-  const [erreurs, setErreurs] = useState({})
+  const { s, erreurs, setErreurs, changer, saisie } = useSaisieSession(VIDE, listes?.formations || [])
   const [formateurs, setFormateurs] = useState([])
   const [apprenants, setApprenants] = useState([])
   const [erreurEtape, setErreurEtape] = useState(null)
@@ -119,19 +50,7 @@ function NouvelleSession() {
   }, [])
 
   const annuler = () => navigate('/sessions')
-  const changer = (k, v) => {
-    const suite = { ...s, [k]: v }
-    // La durée de la formation choisie est reprise, puis reste modifiable
-    if (k === 'formation') suite.duree = listes.formations.find((f) => String(f.id) === v)?.duree || ''
-    setS(suite)
-    if (erreurs[k]) setErreurs({ ...erreurs, [k]: undefined })
-  }
-  const saisie = (k) => ({
-    id: `ns-${k}`, value: s[k], onChange: (e) => changer(k, e.target.value),
-    className: `inp${erreurs[k] ? ' err' : ''}`, 'aria-invalid': erreurs[k] ? true : undefined,
-    'aria-describedby': erreurs[k] ? `ns-${k}-err` : undefined,
-  })
-  const basculer = (liste, setListe) => (id) => { setErreurEtape(null); setListe(liste.includes(id) ? liste.filter((x) => x !== id) : [...liste, id]) }
+  const basculer = (liste, setListe) => (id) => { setErreurEtape(null); setListe(basculerDans(liste, id)) }
   const allerA = (n) => { setErreurEtape(null); setEtape(n) }
 
   const suivant = () => {
@@ -181,7 +100,7 @@ function NouvelleSession() {
       <Etapes etape={etape} />
 
       <section className="card ns-carte">
-        {etape === 1 && <EtapeInformations s={s} erreurs={erreurs} saisie={saisie} formations={listes.formations} changer={changer} />}
+        {etape === 1 && <BlocInformations s={s} erreurs={erreurs} saisie={saisie} formations={listes.formations} changer={changer} />}
 
         {etape === 2 && (
           <>

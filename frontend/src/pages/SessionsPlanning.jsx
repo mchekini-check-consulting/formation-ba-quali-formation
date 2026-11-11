@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import ErreurChargement from '../components/ErreurChargement'
 import Icone from '../components/Icone'
 import { MenuPartiesPrenantes, PanneauPartiePrenante } from '../sessions/PartiesPrenantes'
@@ -8,6 +8,7 @@ import { jour, listerSessions, MODALITES, moisCourt, periode, STATUTS } from '..
 import '../sessions/sessions.css'
 
 // Page Sessions et planning (SCRUM-25) : liste des sessions et bouton « Nouvelle session ».
+// Un clic sur une session ouvre sa fiche (SCRUM-36).
 // « Parties prenantes » : création d'un formateur (SCRUM-26) ou d'un apprenant (SCRUM-27) dans un panneau latéral.
 // Après une création, le formulaire revient ici avec le message de confirmation (state.message).
 function SessionsPlanning() {
@@ -48,14 +49,14 @@ function SessionsPlanning() {
       {sessions?.length > 0 && (
         <ul className="sp-liste" aria-label="Sessions">
           {sessions.map((s) => (
-            <li key={s.id} className={`sp-ligne${s.id === nouvelleId ? ' nouvelle' : ''}`}>
+            <li key={s.id}><Link to={`/sessions/${s.id}`} className={`sp-ligne${s.id === nouvelleId ? ' nouvelle' : ''}`}>
               <span className="sp-date"><small>{moisCourt(s.date_debut)}</small><b>{jour(s.date_debut)}</b></span>
               <span className="sp-titre"><b>{s.formation_intitule}</b><span>{periode(s)}</span></span>
               <span className="sp-col">{MODALITES[s.modalite]}</span>
               <span className="sp-col">{s.nombre_places ? `${s.nombre_apprenants} / ${s.nombre_places}` : s.nombre_apprenants} apprenants</span>
               <span className="sp-statut">{STATUTS[s.statut] || s.statut}</span>
               <span className="sp-chev" aria-hidden="true"><Icone nom="chev" taille={18} /></span>
-            </li>
+            </Link></li>
           ))}
         </ul>
       )}
