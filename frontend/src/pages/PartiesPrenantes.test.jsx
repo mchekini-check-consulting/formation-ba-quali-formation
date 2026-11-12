@@ -26,6 +26,11 @@ async function allerEtape2() {
   fireEvent.change(screen.getByLabelText(/^Formation/), { target: { value: '2' } })
   saisir('Date de début', '2026-11-18')
   saisir('Date de fin', '2026-11-20')
+  saisir('Heure de début', '09:00')
+  saisir('Heure de fin', '17:00')
+  saisir('Durée', '21')
+  saisir('Nombre de places', '10')
+  fireEvent.click(screen.getByRole('radio', { name: 'Présentiel' }))
   saisir('Lieu', 'Lyon')
   fireEvent.click(bouton('Suivant'))
 }

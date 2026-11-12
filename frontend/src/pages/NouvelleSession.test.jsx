@@ -24,6 +24,11 @@ function remplirEtape1() {
   fireEvent.change(screen.getByLabelText(/^Formation/), { target: { value: '2' } })
   saisir('Date de début', '2026-11-18')
   saisir('Date de fin', '2026-11-20')
+  saisir('Heure de début', '09:00')
+  saisir('Heure de fin', '17:00')
+  saisir('Durée', '21')
+  saisir('Nombre de places', '10')
+  fireEvent.click(screen.getByRole('radio', { name: 'Présentiel' }))
   saisir('Lieu', 'Lyon, salle 2')
 }
 async function allerEtape3() {
@@ -78,14 +83,16 @@ describe('Nouvelle session (SCRUM-25)', () => {
   it('CA2 : un champ obligatoire vide reste sur l’étape 1 et chaque champ manquant est signalé', async () => {
     installerFauxBackend()
     await ouvrirFormulaire()
-    saisir('Nombre de places', '')
     fireEvent.click(bouton('Suivant'))
     expect(titreEtape()).toBe('Informations de la session')
-    for (const label of ['Formation', 'Date de début', 'Date de fin', 'Durée', 'Nombre de places', 'Lieu']) {
+    for (const label of ['Formation', 'Date de début', 'Date de fin', 'Heure de début', 'Heure de fin', 'Durée', 'Nombre de places']) {
       expect(screen.getByLabelText(new RegExp(`^${label}`)).getAttribute('aria-invalid'), label).toBe('true')
     }
-    expect(screen.getAllByText('Ce champ est obligatoire.')).toHaveLength(6)
-    // Corriger un champ retire son erreur
+    expect(screen.getByRole('radio', { name: 'Présentiel' }).getAttribute('aria-invalid')).toBe('true')
+    expect(screen.getAllByText('Ce champ est obligatoire.')).toHaveLength(8)
+    // Corriger un champ retire son erreur ; la modalité choisie fait apparaître le lieu
+    fireEvent.click(screen.getByRole('radio', { name: 'Présentiel' }))
+    expect(screen.getByRole('radio', { name: 'Présentiel' }).getAttribute('aria-invalid')).toBeNull()
     saisir('Lieu', 'Lyon')
     expect(screen.getByLabelText(/^Lieu/).getAttribute('aria-invalid')).toBeNull()
   })
@@ -100,13 +107,20 @@ describe('Nouvelle session (SCRUM-25)', () => {
     expect(titreEtape()).toBe('Informations de la session')
   })
 
-  it('reprend la durée de la formation choisie, modifiable', async () => {
+  it('tous les champs s’affichent vides à l’ouverture, même après le choix de la formation', async () => {
     installerFauxBackend()
     await ouvrirFormulaire()
+    for (const label of ['Formation', 'Date de début', 'Date de fin', 'Heure de début', 'Heure de fin', 'Durée', 'Nombre de places']) {
+      const champ = screen.getByLabelText(new RegExp(`^${label}`))
+      expect(champ.value, label).toBe('')
+      expect(champ.getAttribute('autocomplete'), label).toBe('off')
+    }
+    for (const radio of screen.getAllByRole('radio')) expect(radio.checked).toBe(false)
+    expect(screen.queryByLabelText(/^Lieu/)).toBeNull()
+    expect(screen.queryByLabelText(/^Lien de la classe virtuelle/)).toBeNull()
+    // La durée n'est plus reprise de la formation choisie
     fireEvent.change(screen.getByLabelText(/^Formation/), { target: { value: '1' } })
-    expect(screen.getByLabelText(/^Durée/).value).toBe('14')
-    saisir('Durée', '12')
-    expect(screen.getByLabelText(/^Durée/).value).toBe('12')
+    expect(screen.getByLabelText(/^Durée/).value).toBe('')
   })
 
   it('demande le lien pour une classe virtuelle', async () => {

@@ -44,7 +44,6 @@
 .ns-carte .sub.ns-large{max-width:none}
 .ns-grille{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
 .ns-plein{grid-column:1/-1}
-.ns-aide{font-size:13px;color:var(--ink-3)}
 .ns-modalite{border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
 .ns-modalite .radio{border-radius:10px}
 .ns-titre3{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}

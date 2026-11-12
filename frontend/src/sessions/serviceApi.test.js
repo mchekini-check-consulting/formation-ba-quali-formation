@@ -65,6 +65,8 @@ describe('règles de l’étape 1', () => {
     const e = verifierInformations({ formation: '', debut: '', fin: '', heureDebut: '', heureFin: '', duree: '', places: '', modalite: 'PRESENTIEL', lieu: ' ', lien: '' })
     expect(Object.keys(e).sort()).toEqual(['debut', 'duree', 'fin', 'formation', 'heureDebut', 'heureFin', 'lieu', 'places'])
     expect(verifierInformations({ ...FORM, modalite: 'CLASSE_VIRTUELLE', lien: '' })).toEqual({ lien: 'Ce champ est obligatoire.' })
+    // Sans modalité choisie : seule la modalité est signalée, ni le lieu ni le lien
+    expect(verifierInformations({ ...FORM, modalite: '', lieu: '', lien: '' })).toEqual({ modalite: 'Ce champ est obligatoire.' })
   })
 
   it('refuse une date de fin avant le début, une durée ou des places invalides', () => {
