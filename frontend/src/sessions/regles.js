@@ -8,10 +8,13 @@ export const MSG_FORMATEUR = 'Une session doit avoir au moins un formateur'
 export const MSG_APPRENANT = 'Une session doit avoir au moins un apprenant'
 
 // Étape 1 : tous les champs obligatoires, date de fin ≥ date de début
+// (le lieu ou le lien n'est demandé qu'une fois la modalité choisie)
 export function verifierInformations(s) {
-  const lieuOuLien = s.modalite === PRESENTIEL ? 'lieu' : 'lien'
+  const champs = ['formation', 'debut', 'fin', 'heureDebut', 'heureFin', 'duree', 'places', 'modalite']
+  if (s.modalite === PRESENTIEL) champs.push('lieu')
+  if (s.modalite === CLASSE_VIRTUELLE) champs.push('lien')
   const erreurs = {}
-  for (const k of ['formation', 'debut', 'fin', 'heureDebut', 'heureFin', 'duree', 'places', 'modalite', lieuOuLien]) {
+  for (const k of champs) {
     if (!String(s[k]).trim()) erreurs[k] = OBLIGATOIRE
   }
   if (!erreurs.duree && !(Number(s.duree.replaceAll(',', '.')) > 0)) erreurs.duree = 'Indiquez une durée supérieure à 0.'

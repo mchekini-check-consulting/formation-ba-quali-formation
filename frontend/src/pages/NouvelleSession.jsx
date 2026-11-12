@@ -9,14 +9,14 @@ import { CLASSE_VIRTUELLE, erreurServeur, MSG_APPRENANT, MSG_FORMATEUR, PRESENTI
 import '../sessions/sessions.css'
 
 // Formulaire « Nouvelle session » (SCRUM-25), en 3 étapes : informations, formateur(s), apprenant(s).
+// Tous les champs s'affichent vides à l'ouverture : aucune valeur proposée, ni par l'écran ni par le navigateur.
 const ETAPES = ['Informations', 'Formateur(s)', 'Apprenant(s)']
-const VIDE = { formation: '', debut: '', fin: '', heureDebut: '09:00', heureFin: '17:00', duree: '', places: '10', modalite: PRESENTIEL, lieu: '', lien: '' }
-function Champ({ id, label, erreur, aide, children }) {
+const VIDE = { formation: '', debut: '', fin: '', heureDebut: '', heureFin: '', duree: '', places: '', modalite: '', lieu: '', lien: '' }
+function Champ({ id, label, erreur, children }) {
   return (
     <div className="field">
       <label className="lbl" htmlFor={id}>{label} <span className="req" aria-hidden="true">*</span></label>
       {children}
-      {aide && !erreur && <span className="ns-aide">{aide}</span>}
       {erreur && <span className="errtxt" id={`${id}-err`}>{erreur}</span>}
     </div>
   )
@@ -62,7 +62,10 @@ function Etapes({ etape }) {
 
 // Étape 1 : informations de la session
 function EtapeInformations({ s, erreurs, saisie, formations, changer }) {
-  const presentiel = s.modalite === PRESENTIEL
+  const radio = (valeur) => ({
+    type: 'radio', name: 'modalite', checked: s.modalite === valeur, onChange: () => changer('modalite', valeur),
+    'aria-invalid': erreurs.modalite ? true : undefined, 'aria-describedby': erreurs.modalite ? 'ns-modalite-err' : undefined,
+  })
   return (
     <>
       <h2>Informations de la session</h2>
@@ -80,19 +83,20 @@ function EtapeInformations({ s, erreurs, saisie, formations, changer }) {
         <Champ id="ns-fin" label="Date de fin" erreur={erreurs.fin}><input type="date" {...saisie('fin')} /></Champ>
         <Champ id="ns-heureDebut" label="Heure de début" erreur={erreurs.heureDebut}><input type="time" {...saisie('heureDebut')} /></Champ>
         <Champ id="ns-heureFin" label="Heure de fin" erreur={erreurs.heureFin}><input type="time" {...saisie('heureFin')} /></Champ>
-        <Champ id="ns-duree" label="Durée (heures)" erreur={erreurs.duree} aide="Reprise automatiquement de la formation choisie."><input inputMode="decimal" {...saisie('duree')} /></Champ>
+        <Champ id="ns-duree" label="Durée (heures)" erreur={erreurs.duree}><input inputMode="decimal" {...saisie('duree')} /></Champ>
         <Champ id="ns-places" label="Nombre de places" erreur={erreurs.places}><input inputMode="numeric" {...saisie('places')} /></Champ>
       </div>
       <fieldset className="ns-modalite">
         <legend className="lbl">Modalité <span className="req" aria-hidden="true">*</span></legend>
         <div className="radios">
-          <label className="radio"><input type="radio" name="modalite" checked={presentiel} onChange={() => changer('modalite', PRESENTIEL)} />Présentiel</label>
-          <label className="radio"><input type="radio" name="modalite" checked={!presentiel} onChange={() => changer('modalite', CLASSE_VIRTUELLE)} />Classe virtuelle</label>
+          <label className="radio"><input {...radio(PRESENTIEL)} />Présentiel</label>
+          <label className="radio"><input {...radio(CLASSE_VIRTUELLE)} />Classe virtuelle</label>
         </div>
+        {erreurs.modalite && <span className="errtxt" id="ns-modalite-err">{erreurs.modalite}</span>}
       </fieldset>
-      {presentiel
-        ? <Champ id="ns-lieu" label="Lieu" erreur={erreurs.lieu}><input placeholder="Adresse ou salle" {...saisie('lieu')} /></Champ>
-        : <Champ id="ns-lien" label="Lien de la classe virtuelle" erreur={erreurs.lien}><input type="url" placeholder="https://…" {...saisie('lien')} /></Champ>}
+      {/* Le lieu ou le lien n'apparaît qu'une fois la modalité choisie */}
+      {s.modalite === PRESENTIEL && <Champ id="ns-lieu" label="Lieu" erreur={erreurs.lieu}><input placeholder="Adresse ou salle" {...saisie('lieu')} /></Champ>}
+      {s.modalite === CLASSE_VIRTUELLE && <Champ id="ns-lien" label="Lien de la classe virtuelle" erreur={erreurs.lien}><input type="url" placeholder="https://…" {...saisie('lien')} /></Champ>}
     </>
   )
 }
@@ -120,14 +124,11 @@ function NouvelleSession() {
 
   const annuler = () => navigate('/sessions')
   const changer = (k, v) => {
-    const suite = { ...s, [k]: v }
-    // La durée de la formation choisie est reprise, puis reste modifiable
-    if (k === 'formation') suite.duree = listes.formations.find((f) => String(f.id) === v)?.duree || ''
-    setS(suite)
+    setS({ ...s, [k]: v })
     if (erreurs[k]) setErreurs({ ...erreurs, [k]: undefined })
   }
   const saisie = (k) => ({
-    id: `ns-${k}`, value: s[k], onChange: (e) => changer(k, e.target.value),
+    id: `ns-${k}`, value: s[k], autoComplete: 'off', onChange: (e) => changer(k, e.target.value),
     className: `inp${erreurs[k] ? ' err' : ''}`, 'aria-invalid': erreurs[k] ? true : undefined,
     'aria-describedby': erreurs[k] ? `ns-${k}-err` : undefined,
   })
