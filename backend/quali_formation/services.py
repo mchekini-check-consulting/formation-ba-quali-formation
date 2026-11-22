@@ -250,25 +250,28 @@ class SessionService:
     def lister_apprenants(self):
         return Apprenant.objects.all()
 
-    def creer_formateur(self, prenom, nom, email):
+    def creer_formateur(self, prenom, nom, email, entreprise=''):
         """Enregistre un formateur (SCRUM-26) ; il est ensuite proposé à l'étape 2 de « Nouvelle session »."""
-        return Formateur.objects.create(prenom=prenom, nom=nom, email=email)
+        return Formateur.objects.create(prenom=prenom, nom=nom, email=email, entreprise=entreprise)
 
-    def creer_apprenant(self, prenom, nom, email):
+    def creer_apprenant(self, prenom, nom, email, entreprise=''):
         """Enregistre un apprenant (SCRUM-27) ; il est ensuite proposé à l'étape 3 de « Nouvelle session »."""
-        return Apprenant.objects.create(prenom=prenom, nom=nom, email=email)
+        return Apprenant.objects.create(prenom=prenom, nom=nom, email=email, entreprise=entreprise)
 
     def creer_session(self, utilisateur, formateurs, apprenants, **donnees):
-        """Crée une session « Prévue » avec ses formateurs et ses apprenants, sur une formation du compte.
-        Le nombre d'apprenants n'est pas comparé au nombre de places (pas encore demandé)."""
+        """Crée une session « Prévue » avec ses formateurs et ses apprenants, sur une formation du compte,
+        sans dépasser le nombre de places (SCRUM-166)."""
         if not formations_visibles(utilisateur).filter(pk=donnees['formation'].pk).exists():
             raise FormationIntrouvable()
         if donnees['date_fin'] < donnees['date_debut']:
             raise ErreurMetier('DATES_INVALIDES', 'La date de fin doit être postérieure ou égale à la date de début.')
         if not formateurs:
-            raise ErreurMetier('FORMATEUR_REQUIS', 'Une session doit avoir au moins un formateur')
+            raise ErreurMetier('FORMATEUR_REQUIS', 'Une session doit avoir au moins un formateur.')
         if not apprenants:
-            raise ErreurMetier('APPRENANT_REQUIS', 'Une session doit avoir au moins un apprenant')
+            raise ErreurMetier('APPRENANT_REQUIS', 'Une session doit avoir au moins un apprenant.')
+        if len(apprenants) > donnees['nombre_places']:
+            raise ErreurMetier('TROP_APPRENANTS',
+                               f"Trop d’apprenants : {len(apprenants)} cochés pour {donnees['nombre_places']} places.")
         with transaction.atomic():
             session = Session.objects.create(statut=Session.Statut.PREVUE, **donnees)
             session.formateurs.set(formateurs)

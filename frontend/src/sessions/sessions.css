@@ -28,43 +28,49 @@
 }
 
 /* ---- Formulaire ---- */
-.ns-retour{display:inline-flex;align-items:center;gap:6px;color:var(--brand-text);font-weight:600;font-size:15px;text-decoration:none;align-self:flex-start}
-.ns-retour:hover{text-decoration:underline}
-.ns-etapes{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-.ns-etapes li{display:flex;align-items:center;gap:14px;padding:14px 16px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
-.ns-etapes li.active{border:1.5px solid var(--brand-line);background:var(--brand-soft)}
-.ns-etapes small{display:block;font-size:12px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em}
-.ns-etapes b{font-size:15px}
-.ns-num{display:grid;place-items:center;flex-shrink:0;width:30px;height:30px;border-radius:50%;background:var(--surface-2);color:var(--ink-3);font-weight:700;font-size:14px}
-.ns-etapes li.active .ns-num{background:var(--brand-text);color:#fff}
-.ns-etapes li.faite .ns-num{background:var(--brand-soft);color:var(--brand-text)}
-.ns-carte{padding:28px;display:flex;flex-direction:column;gap:18px}
-.ns-carte h2{font-size:20px;font-weight:700;margin:0}
-.ns-carte .sub{margin-top:-12px}
-.ns-carte .sub.ns-large{max-width:none}
-.ns-grille{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
-.ns-plein{grid-column:1/-1}
-.ns-modalite{border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
-.ns-modalite .radio{border-radius:10px}
-.ns-titre3{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
-.ns-titre3 .sub{margin-top:4px}
-.ns-compteur{padding:5px 14px;border-radius:999px;background:var(--brand-soft);color:var(--brand-text);font-weight:700;font-size:14px}
-.ns-personnes{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+/* Pop-up « Nouvelle session » (maquettes SCRUM-166, centrée) */
+.pa.ns-popup{width:min(640px,100%);height:auto;max-height:calc(100vh - 32px);border-radius:20px;overflow:hidden}
+.ns-popup .pa-corps{min-height:0}
+.ns-popup .pa-tete h2{font-size:24px;margin:0 0 6px}
+.ns-croix{border:0;border-radius:50%;background:var(--surface-2)}
+.ns-popup .pa-corps{gap:16px}
+.ns-popup h3{font-size:18px;font-weight:700;margin:6px 0 0;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
+.ns-etapes{list-style:none;margin:0 0 4px;padding:0;display:flex;flex-wrap:wrap;gap:8px 18px}
+.ns-etapes li{display:flex;align-items:center;gap:8px;font-size:15px;color:var(--ink-3)}
+.ns-etapes li.active{color:var(--ink);font-weight:700}
+.ns-num{display:grid;place-items:center;flex-shrink:0;width:28px;height:28px;border-radius:50%;background:var(--surface-2);color:var(--ink-3);font-weight:700;font-size:13px}
+.ns-etapes li.active .ns-num{background:var(--brand);color:var(--brand-ink)}
+.ns-etapes li.faite .ns-num{background:var(--brand-soft);color:var(--brand)}
+.ns-grille{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.ns-choix{border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.ns-choix-haut{display:flex;align-items:center;gap:12px;padding:10px 12px;border-bottom:1px solid var(--line)}
+.ns-recherche{position:relative;flex:1;min-width:0;display:flex;align-items:center}
+.ns-recherche .inp{height:42px;border-width:1px;border-radius:10px;padding-right:40px}
+.ns-recherche input::-webkit-search-cancel-button{display:none}
+.ns-effacer{position:absolute;right:8px;display:grid;place-items:center;width:28px;height:28px;border:0;border-radius:50%;background:none;color:var(--info);cursor:pointer}
+.ns-compteur{flex-shrink:0;color:var(--brand-text);font-weight:700;font-size:14px}
+.ns-personnes{list-style:none;margin:0;padding:0;max-height:330px;overflow:auto}
 .ns-personnes li+li{border-top:1px solid var(--line)}
 .ns-personnes li.on{background:var(--brand-soft)}
-.ns-personnes label{display:flex;align-items:center;gap:14px;padding:12px 16px;cursor:pointer}
-.ns-personnes input{width:20px;height:20px;accent-color:var(--brand-text);flex-shrink:0}
-.ns-avatar{display:grid;place-items:center;flex-shrink:0;width:38px;height:38px;border-radius:50%;background:var(--warn-soft);color:var(--warn);font-weight:700;font-size:14px}
-.ns-personnes[aria-label="Apprenants"] .ns-avatar{background:var(--brand-soft);color:var(--brand-text)}
+.ns-personnes label{display:flex;align-items:center;gap:14px;padding:10px 16px;cursor:pointer}
+.ns-personnes input{width:20px;height:20px;margin-left:auto;accent-color:var(--brand);flex-shrink:0}
+.ns-avatar{display:grid;place-items:center;flex-shrink:0;width:40px;height:40px;border-radius:50%;font-weight:700;font-size:13px}
+.ns-av0{background:var(--brand-soft);color:var(--brand-text)}
+.ns-av1{background:var(--info-soft);color:var(--info)}
+.ns-av2{background:var(--warn-soft);color:var(--warn)}
+.ns-av3{background:var(--todo-soft);color:var(--todo)}
+.ns-av4{background:var(--ok-soft);color:var(--ok)}
 .ns-nom{display:flex;flex-direction:column;min-width:0}
-.ns-nom span{font-size:14px;color:var(--ink-3)}
+.ns-nom span{font-size:14px;color:var(--ink-3);overflow-wrap:anywhere}
 .ns-vide{padding:16px;color:var(--ink-3)}
+.ns-places{font-size:16px;font-weight:500;color:var(--ink-3)}
+.ns-places.depasse{color:var(--danger)}
 .ns-erreur{margin:0}
-.ns-pied{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-top:18px;border-top:1px solid var(--line)}
-.ns-pied-droite{display:flex;gap:10px}
-@media (max-width:760px){
-  .ns-etapes,.ns-grille{grid-template-columns:1fr}
-  .ns-carte{padding:18px}
+.ns-info{margin:0;font-size:14px;color:var(--ink-3)}
+.ns-aucune{display:flex;flex-direction:column;align-items:flex-start;gap:12px}
+.ns-aucune .sub{margin:0}
+@media (max-width:560px){
+  .ns-grille{grid-template-columns:1fr}
 }
 
 /* ---- Parties prenantes (SCRUM-27) ---- */
