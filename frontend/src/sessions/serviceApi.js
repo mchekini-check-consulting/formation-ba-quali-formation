@@ -1,7 +1,7 @@
 // Sessions et planning (SCRUM-25) : appels à l'API Django (/sessions/, /formateurs/, /apprenants/, /formations/).
 // Adresse du backend : apiBase() (src/api.js), passerelle de l'environnement ou /api en local.
 import { apiBase } from '../api'
-import { PRESENTIEL } from './regles'
+import { demandeLieu, demandeLien } from './regles'
 
 // `credentials: 'include'` : cookie de connexion (SCRUM-16), le backend ne renvoie que les sessions et formations du compte
 // Erreur renvoyée à l'écran : `code` (règle métier du backend) et `champs` (champs refusés)
@@ -34,18 +34,19 @@ const creerPersonne = (chemin) => (p) => appel(chemin, { prenom: p.prenom.trim()
 export const creerFormateur = creerPersonne('/formateurs/')
 export const creerApprenant = creerPersonne('/apprenants/')
 
-// Formations proposées dans le formulaire : identifiant, intitulé et durée (reprise dans la session)
+// Formations proposées dans le formulaire : identifiant, intitulé, durée et modalité (reprises dans la session, SCRUM-166)
 export async function listerFormations() {
-  return (await appel('/formations/')).map((f) => ({ id: f.id, intitule: f.intitule, duree: f.duree_heures === null ? '' : String(Number(f.duree_heures)) }))
+  return (await appel('/formations/')).map((f) => ({
+    id: f.id, intitule: f.intitule, duree: f.duree_heures === null ? '' : String(Number(f.duree_heures)), modalite: f.modalite || '',
+  }))
 }
 
 // s : valeurs du formulaire (chaînes), formateurs et apprenants : identifiants cochés
 export function creerSession(s, formateurs, apprenants) {
-  const presentiel = s.modalite === PRESENTIEL
   return appel('/sessions/', {
-    formation: Number(s.formation), date_debut: s.debut, date_fin: s.fin, heure_debut: s.heureDebut, heure_fin: s.heureFin,
+    formation: Number(s.formation), date_debut: s.debut, date_fin: s.fin,
     duree_heures: s.duree.replaceAll(',', '.'), modalite: s.modalite,
-    lieu: presentiel ? s.lieu.trim() : '', lien_classe_virtuelle: presentiel ? '' : s.lien.trim(),
+    lieu: demandeLieu(s.modalite) ? s.lieu.trim() : '', lien_classe_virtuelle: demandeLien(s.modalite) ? s.lien.trim() : '',
     nombre_places: Number(s.places), formateurs, apprenants,
   })
 }
@@ -64,12 +65,12 @@ const MOIS = ['JANV.', 'FÉVR.', 'MARS', 'AVR.', 'MAI', 'JUIN', 'JUIL.', 'AOÛT'
 export const moisCourt = (iso) => MOIS[Number(iso.slice(5, 7)) - 1]
 export const jour = (iso) => String(Number(iso.slice(8, 10)))
 
-// « Du 18/11/2026 au 20/11/2026 · 09 h – 17 h »
+// « Du 18/11/2026 au 20/11/2026 · 09 h – 17 h » (heures : seulement pour les sessions créées avant SCRUM-166)
 export function periode({ date_debut, date_fin, heure_debut, heure_fin }) {
   const heures = heure_debut && heure_fin ? ` · ${heureFr(heure_debut)} – ${heureFr(heure_fin)}` : ''
   return `Du ${dateFr(date_debut)} au ${dateFr(date_fin)}${heures}`
 }
 
-export const MODALITES = { PRESENTIEL: 'Présentiel', CLASSE_VIRTUELLE: 'Classe virtuelle' }
+export const MODALITES = { PRESENTIEL: 'Présentiel', DISTANCIEL: 'Distanciel', MIXTE: 'Mixte' }
 export const STATUTS = { PREVUE: 'Prévue' }
 export const initiales = (p) => `${p.prenom[0] || ''}${p.nom[0] || ''}`.toUpperCase()

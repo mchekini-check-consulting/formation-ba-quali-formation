@@ -2,17 +2,19 @@
 import { vi } from 'vitest'
 
 export const FORMATIONS = [
-  { id: 1, intitule: 'Excel avancé', duree_heures: '14.00' },
-  { id: 2, intitule: 'Management d’équipe — les fondamentaux', duree_heures: '21.00' },
-  { id: 3, intitule: 'Anglais professionnel', duree_heures: null },
+  { id: 1, intitule: 'Excel avancé', duree_heures: '14.00', modalite: 'DISTANCIEL' },
+  { id: 2, intitule: 'Management d’équipe — les fondamentaux', duree_heures: '21.00', modalite: 'PRESENTIEL' },
+  { id: 3, intitule: 'Anglais professionnel', duree_heures: null, modalite: 'MIXTE' },
 ]
 export const FORMATEURS = [
-  { id: 1, prenom: 'Sarah', nom: 'Dubois', email: 'sarah.dubois@exemple.fr', specialites: 'Management, bureautique' },
-  { id: 4, prenom: 'Julien', nom: 'Lefèvre', email: 'julien.lefevre@exemple.fr', specialites: 'Management' },
+  { id: 1, prenom: 'Sarah', nom: 'Dubois', email: 'sarah.dubois@exemple.fr', specialites: 'Management, bureautique', entreprise: '' },
+  { id: 4, prenom: 'Julien', nom: 'Lefèvre', email: 'julien.lefevre@exemple.fr', specialites: 'Management', entreprise: 'Cap Conseil' },
 ]
 export const APPRENANTS = [
-  { id: 1, prenom: 'Camille', nom: 'Martin', email: 'camille.martin@acme.fr' },
-  { id: 2, prenom: 'Hugo', nom: 'Bernard', email: 'hugo.bernard@acme.fr' },
+  { id: 1, prenom: 'Camille', nom: 'Martin', email: 'camille.martin@acme.fr', entreprise: 'Acme' },
+  { id: 2, prenom: 'Hugo', nom: 'Bernard', email: 'hugo.bernard@acme.fr', entreprise: 'Acme' },
+  { id: 3, prenom: 'Léa', nom: 'Moreau', email: 'lea.moreau@gmail.com', entreprise: '' },
+  { id: 5, prenom: 'Yanis', nom: 'Petit', email: 'yanis.petit@marine.fr', entreprise: 'Globex' },
 ]
 export const SESSION_EXCEL = {
   id: 1, formation: 1, formation_intitule: 'Excel avancé', date_debut: '2026-11-18', date_fin: '2026-11-19', heure_debut: '09:00:00', heure_fin: '17:00:00',
@@ -23,7 +25,7 @@ export const repondre = (status, corps) => ({ ok: status < 400, status, json: as
 
 // reponsePost(corps) : réponse du POST /sessions/ (par défaut 201 avec la session créée)
 // reponsePersonne(corps) : réponse du POST /formateurs/ ou /apprenants/ (par défaut 201, ajouté à la liste)
-export function installerFauxBackend({ sessions = [SESSION_EXCEL], reponsePost, reponsePersonne } = {}) {
+export function installerFauxBackend({ sessions = [SESSION_EXCEL], formations = FORMATIONS, reponsePost, reponsePersonne } = {}) {
   const liste = [...sessions]
   const personnes = { '/formateurs/': [...FORMATEURS], '/apprenants/': [...APPRENANTS] }
   const fetch = vi.fn(async (url, options) => {
@@ -43,7 +45,7 @@ export function installerFauxBackend({ sessions = [SESSION_EXCEL], reponsePost, 
       liste.push(creee)
       return repondre(201, creee)
     }
-    const donnees = { '/sessions/': liste, ...personnes, '/formations/': FORMATIONS }[chemin]
+    const donnees = { '/sessions/': liste, ...personnes, '/formations/': formations }[chemin]
     return donnees ? repondre(200, donnees) : repondre(404, {})
   })
   vi.stubGlobal('fetch', fetch)

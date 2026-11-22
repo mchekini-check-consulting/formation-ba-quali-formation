@@ -22,15 +22,13 @@ function remplir({ prenom = 'Camille', nom = 'Leroy', email = 'camille.leroy@exe
 // Remplit l'étape 1 de « Nouvelle session » et passe à l'étape suivante
 async function allerEtape2() {
   fireEvent.click(bouton('Nouvelle session'))
-  await screen.findByRole('heading', { name: 'Informations de la session' })
+  await screen.findByRole('heading', { name: 'Informations' })
   fireEvent.change(screen.getByLabelText(/^Formation/), { target: { value: '2' } })
   saisir('Date de début', '2026-11-18')
   saisir('Date de fin', '2026-11-20')
-  saisir('Heure de début', '09:00')
-  saisir('Heure de fin', '17:00')
   saisir('Durée', '21')
   saisir('Nombre de places', '10')
-  fireEvent.click(screen.getByRole('radio', { name: 'Présentiel' }))
+  fireEvent.change(screen.getByLabelText(/^Modalité/), { target: { value: 'PRESENTIEL' } })
   saisir('Lieu', 'Lyon')
   fireEvent.click(bouton('Suivant'))
 }

@@ -95,13 +95,13 @@ class FormationEcritureSerializer(serializers.Serializer):
 class FormateurSerializer(serializers.ModelSerializer):
     class Meta:
         model = Formateur
-        fields = ('id', 'prenom', 'nom', 'email', 'specialites')
+        fields = ('id', 'prenom', 'nom', 'email', 'specialites', 'entreprise')
 
 
 class ApprenantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Apprenant
-        fields = ('id', 'prenom', 'nom', 'email')
+        fields = ('id', 'prenom', 'nom', 'email', 'entreprise')
 
 
 class PersonneCreationSerializer(serializers.Serializer):
@@ -112,6 +112,8 @@ class PersonneCreationSerializer(serializers.Serializer):
     nom = serializers.CharField(max_length=100, error_messages={'blank': 'Indiquez le nom.', 'required': 'Indiquez le nom.'})
     email = serializers.EmailField(max_length=255, error_messages={
         'blank': "Indiquez l'e-mail.", 'required': "Indiquez l'e-mail.", 'invalid': "Format d'e-mail invalide"})
+    # SCRUM-166 : facultative, vide = « Individuel »
+    entreprise = serializers.CharField(max_length=255, required=False, allow_blank=True, default='')
 
 
 class SessionPlanningSerializer(serializers.ModelSerializer):
@@ -130,15 +132,22 @@ class SessionPlanningSerializer(serializers.ModelSerializer):
         return len(session.apprenants.all())  # apprenants préchargés par la vue
 
 
+# Champs obligatoires selon la modalité de la session (SCRUM-166)
+CHAMPS_MODALITE = {
+    Session.Modalite.PRESENTIEL: ('lieu',),
+    Session.Modalite.DISTANCIEL: ('lien_classe_virtuelle',),
+    Session.Modalite.MIXTE: ('lieu', 'lien_classe_virtuelle'),
+}
+
+
 class SessionCreationSerializer(serializers.Serializer):
-    """Écriture : étape 1 (tous les champs obligatoires), formateurs (étape 2) et apprenants (étape 3).
+    """Écriture : étape 1 (tous les champs obligatoires, plus d'heures depuis SCRUM-166), formateurs (étape 2)
+    et apprenants (étape 3).
     Les listes vides sont acceptées ici : la règle « au moins un » est dans le service (message dédié)."""
 
     formation = serializers.PrimaryKeyRelatedField(queryset=Formation.objects.all())
     date_debut = serializers.DateField()
     date_fin = serializers.DateField()
-    heure_debut = serializers.TimeField()
-    heure_fin = serializers.TimeField()
     duree_heures = serializers.DecimalField(max_digits=7, decimal_places=2, min_value=Decimal('0.01'))
     modalite = serializers.ChoiceField(choices=Session.Modalite.choices)
     lieu = serializers.CharField(max_length=255, required=False, allow_blank=True, default='')
@@ -148,9 +157,12 @@ class SessionCreationSerializer(serializers.Serializer):
     apprenants = serializers.PrimaryKeyRelatedField(queryset=Apprenant.objects.all(), many=True, required=False, default=list)
 
     def validate(self, attrs):
-        # Lieu (présentiel) ou lien de classe virtuelle : celui qui correspond à la modalité est obligatoire
-        champ = 'lieu' if attrs['modalite'] == Session.Modalite.PRESENTIEL else 'lien_classe_virtuelle'
-        attrs[champ] = attrs[champ].strip()
-        if not attrs[champ]:
-            raise serializers.ValidationError({champ: ['Ce champ est obligatoire.']})
+        # SCRUM-166 : présentiel -> lieu ; distanciel -> lien de classe virtuelle ; mixte -> les deux
+        erreurs = {}
+        for champ in CHAMPS_MODALITE[attrs['modalite']]:
+            attrs[champ] = attrs[champ].strip()
+            if not attrs[champ]:
+                erreurs[champ] = ['Ce champ est obligatoire.']
+        if erreurs:
+            raise serializers.ValidationError(erreurs)
         return attrs

@@ -30,7 +30,7 @@ export const routes = [
       { path: '/formations/:id', element: <FormationDetail /> },
       // Sessions et planning (SCRUM-25)
       { path: '/sessions', element: <SessionsPlanning /> },
-      { path: '/sessions/nouvelle', element: <NouvelleSession /> },
+      { path: '/sessions/nouvelle', element: <><SessionsPlanning key="sous-panneau" /><NouvelleSession /></> }, // panneau par-dessus la liste (SCRUM-166) ; key : liste rechargée à la fermeture
       // Fonctionnalités du menu ou du profil pas encore développées (SCRUM-19)
       { path: '/bientot-disponible/:code', element: <BientotDisponible /> },
       // Écran d'exemple de l'équipe (GET / POST /items)

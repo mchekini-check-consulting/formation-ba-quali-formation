@@ -2,16 +2,23 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import ErreurChargement from '../components/ErreurChargement'
 import Icone from '../components/Icone'
+import Modal from '../components/Modal'
 import {
-  creerSession, dateFr, heureFr, initiales, listerApprenants, listerFormateurs, listerFormations,
+  creerSession, dateFr, initiales, listerApprenants, listerFormateurs, listerFormations,
 } from '../sessions/serviceApi'
-import { CLASSE_VIRTUELLE, erreurServeur, MSG_APPRENANT, MSG_FORMATEUR, PRESENTIEL, verifierInformations } from '../sessions/regles'
+import {
+  demandeLieu, demandeLien, erreurServeur, filtrerPersonnes, MODALITES_SESSION, MSG_APPRENANT, PRESENTIEL, MSG_FORMATEUR, msgTropApprenants,
+  verifierInformations,
+} from '../sessions/regles'
 import '../sessions/sessions.css'
 
-// Formulaire « Nouvelle session » (SCRUM-25), en 3 étapes : informations, formateur(s), apprenant(s).
-// Tous les champs s'affichent vides à l'ouverture : aucune valeur proposée, ni par l'écran ni par le navigateur.
-const ETAPES = ['Informations', 'Formateur(s)', 'Apprenant(s)']
-const VIDE = { formation: '', debut: '', fin: '', heureDebut: '', heureFin: '', duree: '', places: '', modalite: '', lieu: '', lien: '' }
+// Pop-up « Nouvelle session » (SCRUM-25, évolution SCRUM-166 et ses maquettes), ouverte par-dessus Sessions et planning,
+// en 3 étapes : informations, formateurs, apprenants.
+// Champs vides à l'ouverture, sauf la modalité (Présentiel, comme la maquette) ; le choix de la formation reprend sa durée
+// et sa modalité (modifiables).
+// Pas d'heure de début ni de fin : seules les heures d'envoi des documents sont gérées (plan d'envoi).
+const ETAPES = ['Informations', 'Formateurs', 'Apprenants']
+const VIDE = { formation: '', debut: '', fin: '', duree: '', places: '', modalite: PRESENTIEL, lieu: '', lien: '' }
 function Champ({ id, label, erreur, children }) {
   return (
     <div className="field">
@@ -22,25 +29,46 @@ function Champ({ id, label, erreur, children }) {
   )
 }
 
-// Liste à cocher des formateurs ou des apprenants
-function ListePersonnes({ titre, personnes, choisis, onBasculer, detail }) {
+// « N sélectionné(s) »
+const selectionnes = (n) => (n > 1 ? `${n} sélectionnés` : `${n} sélectionné`)
+
+// Liste à cocher des formateurs ou des apprenants : recherche (nom, entreprise, e-mail), personnes cochées en tête.
+// detail(p) : 2e ligne de chaque personne
+function ListePersonnes({ titre, placeholder, personnes, choisis, onBasculer, detail }) {
+  const [recherche, setRecherche] = useState('')
+  const affichees = filtrerPersonnes(personnes, recherche, choisis)
   return (
-    <ul className="ns-personnes" aria-label={titre}>
-      {personnes.map((p) => (
-        <li key={p.id} className={choisis.includes(p.id) ? 'on' : ''}>
-          <label>
-            <input type="checkbox" checked={choisis.includes(p.id)} onChange={() => onBasculer(p.id)} />
-            <span className="ns-avatar" aria-hidden="true">{initiales(p)}</span>
-            <span className="ns-nom"><b>{p.prenom} {p.nom}</b><span>{detail(p)}</span></span>
-          </label>
-        </li>
-      ))}
-      {personnes.length === 0 && <li className="ns-vide">Aucune personne enregistrée pour le moment.</li>}
-    </ul>
+    <div className="ns-choix">
+      <div className="ns-choix-haut">
+        <span className="ns-recherche">
+          <input type="search" className="inp" placeholder={placeholder} aria-label={placeholder}
+            value={recherche} autoComplete="off" onChange={(e) => setRecherche(e.target.value)} />
+          {recherche && (
+            <button type="button" className="ns-effacer" aria-label="Effacer la recherche" onClick={() => setRecherche('')}>
+              <Icone nom="x" taille={16} epaisseur={2.6} />
+            </button>
+          )}
+        </span>
+        <span className="ns-compteur">{selectionnes(choisis.length)}</span>
+      </div>
+      <ul className="ns-personnes" aria-label={titre}>
+        {affichees.map((p) => (
+          <li key={p.id} className={choisis.includes(p.id) ? 'on' : ''}>
+            <label>
+              <span className={`ns-avatar ns-av${p.id % 5}`} aria-hidden="true">{initiales(p)}</span>
+              <span className="ns-nom"><b>{p.prenom} {p.nom}</b><span>{detail(p)}</span></span>
+              <input type="checkbox" checked={choisis.includes(p.id)} onChange={() => onBasculer(p.id)} />
+            </label>
+          </li>
+        ))}
+        {personnes.length === 0 && <li className="ns-vide">Aucune personne enregistrée pour le moment.</li>}
+        {personnes.length > 0 && affichees.length === 0 && <li className="ns-vide">Aucun résultat pour « {recherche.trim()} ».</li>}
+      </ul>
+    </div>
   )
 }
 
-// Bandeau des 3 étapes : étape en cours, étapes faites (coche)
+// Indicateur des 3 étapes : étape en cours, étapes faites (coche)
 function Etapes({ etape }) {
   return (
     <ol className="ns-etapes" aria-label="Étapes">
@@ -52,7 +80,7 @@ function Etapes({ etape }) {
         return (
           <li key={nom} className={etat} aria-current={n === etape ? 'step' : undefined}>
             <span className="ns-num">{faite ? <Icone nom="check" taille={14} epaisseur={2.6} /> : n}</span>
-            <span><small>Étape {n}</small><b>{nom}</b></span>
+            {nom}
           </li>
         )
       })}
@@ -62,47 +90,39 @@ function Etapes({ etape }) {
 
 // Étape 1 : informations de la session
 function EtapeInformations({ s, erreurs, saisie, formations, changer }) {
-  const radio = (valeur) => ({
-    type: 'radio', name: 'modalite', checked: s.modalite === valeur, onChange: () => changer('modalite', valeur),
-    'aria-invalid': erreurs.modalite ? true : undefined, 'aria-describedby': erreurs.modalite ? 'ns-modalite-err' : undefined,
-  })
+  // Le choix de la formation reprend sa durée et sa modalité
+  const choisirFormation = (id) => {
+    const f = formations.find((x) => String(x.id) === id)
+    changer({ formation: id, ...(f?.duree && { duree: f.duree }), ...(f?.modalite && { modalite: f.modalite }) })
+  }
   return (
     <>
-      <h2>Informations de la session</h2>
-      <p className="sub">Les champs marqués <span className="req">*</span> sont obligatoires.</p>
+      <h3>Informations</h3>
+      <Champ id="ns-formation" label="Formation concernée" erreur={erreurs.formation}>
+        <select {...saisie('formation')} onChange={(e) => choisirFormation(e.target.value)}>
+          <option value="">Choisir une formation</option>
+          {formations.map((f) => <option key={f.id} value={f.id}>{f.intitule}</option>)}
+        </select>
+      </Champ>
       <div className="ns-grille">
-        <div className="ns-plein">
-          <Champ id="ns-formation" label="Formation" erreur={erreurs.formation}>
-            <select {...saisie('formation')}>
-              <option value="">Choisir une formation</option>
-              {formations.map((f) => <option key={f.id} value={f.id}>{f.intitule}</option>)}
-            </select>
-          </Champ>
-        </div>
         <Champ id="ns-debut" label="Date de début" erreur={erreurs.debut}><input type="date" {...saisie('debut')} /></Champ>
         <Champ id="ns-fin" label="Date de fin" erreur={erreurs.fin}><input type="date" {...saisie('fin')} /></Champ>
-        <Champ id="ns-heureDebut" label="Heure de début" erreur={erreurs.heureDebut}><input type="time" {...saisie('heureDebut')} /></Champ>
-        <Champ id="ns-heureFin" label="Heure de fin" erreur={erreurs.heureFin}><input type="time" {...saisie('heureFin')} /></Champ>
-        <Champ id="ns-duree" label="Durée (heures)" erreur={erreurs.duree}><input inputMode="decimal" {...saisie('duree')} /></Champ>
-        <Champ id="ns-places" label="Nombre de places" erreur={erreurs.places}><input inputMode="numeric" {...saisie('places')} /></Champ>
+        <Champ id="ns-duree" label="Durée (en heures)" erreur={erreurs.duree}><input inputMode="decimal" {...saisie('duree')} /></Champ>
+        <Champ id="ns-modalite" label="Modalité" erreur={erreurs.modalite}>
+          <select {...saisie('modalite')}>
+            {MODALITES_SESSION.map(([valeur, libelle]) => <option key={valeur} value={valeur}>{libelle}</option>)}
+          </select>
+        </Champ>
       </div>
-      <fieldset className="ns-modalite">
-        <legend className="lbl">Modalité <span className="req" aria-hidden="true">*</span></legend>
-        <div className="radios">
-          <label className="radio"><input {...radio(PRESENTIEL)} />Présentiel</label>
-          <label className="radio"><input {...radio(CLASSE_VIRTUELLE)} />Classe virtuelle</label>
-        </div>
-        {erreurs.modalite && <span className="errtxt" id="ns-modalite-err">{erreurs.modalite}</span>}
-      </fieldset>
-      {/* Le lieu ou le lien n'apparaît qu'une fois la modalité choisie */}
-      {s.modalite === PRESENTIEL && <Champ id="ns-lieu" label="Lieu" erreur={erreurs.lieu}><input placeholder="Adresse ou salle" {...saisie('lieu')} /></Champ>}
-      {s.modalite === CLASSE_VIRTUELLE && <Champ id="ns-lien" label="Lien de la classe virtuelle" erreur={erreurs.lien}><input type="url" placeholder="https://…" {...saisie('lien')} /></Champ>}
+      {/* Libellé adapté à la modalité : lieu (présentiel), lien (distanciel), les deux (mixte) */}
+      {demandeLieu(s.modalite) && <Champ id="ns-lieu" label="Lieu" erreur={erreurs.lieu}><input {...saisie('lieu')} /></Champ>}
+      {demandeLien(s.modalite) && <Champ id="ns-lien" label="Lien de la classe virtuelle" erreur={erreurs.lien}><input type="url" placeholder="https://…" {...saisie('lien')} /></Champ>}
+      <div className="ns-grille">
+        <Champ id="ns-places" label="Nombre de places" erreur={erreurs.places}><input type="number" min="1" step="1" {...saisie('places')} /></Champ>
+      </div>
     </>
   )
 }
-
-// Libellé « N apprenant(s) sélectionné(s) »
-const compteur = (n) => (n > 1 ? `${n} apprenants sélectionnés` : `${n} apprenant sélectionné`)
 
 function NouvelleSession() {
   const navigate = useNavigate()
@@ -122,13 +142,14 @@ function NouvelleSession() {
       .catch(setErreurChargement)
   }, [])
 
-  const annuler = () => navigate('/sessions')
-  const changer = (k, v) => {
-    setS({ ...s, [k]: v })
-    if (erreurs[k]) setErreurs({ ...erreurs, [k]: undefined })
+  const fermer = () => navigate('/sessions')
+  // modif : { champ: valeur, ... } ; l'erreur de chaque champ modifié disparaît
+  const changer = (modif) => {
+    setS({ ...s, ...modif })
+    setErreurs(Object.fromEntries(Object.entries(erreurs).filter(([k]) => !(k in modif))))
   }
   const saisie = (k) => ({
-    id: `ns-${k}`, value: s[k], autoComplete: 'off', onChange: (e) => changer(k, e.target.value),
+    id: `ns-${k}`, value: s[k], autoComplete: 'off', onChange: (e) => changer({ [k]: e.target.value }),
     className: `inp${erreurs[k] ? ' err' : ''}`, 'aria-invalid': erreurs[k] ? true : undefined,
     'aria-describedby': erreurs[k] ? `ns-${k}-err` : undefined,
   })
@@ -147,8 +168,12 @@ function NouvelleSession() {
     }
   }
 
+  const places = Number(s.places)
+  const depasse = apprenants.length > places
+
   const creer = async () => {
     if (apprenants.length === 0) { setErreurEtape(MSG_APPRENANT); return }
+    if (depasse || envoi) return // blocage : le message « Trop d'apprenants » est déjà affiché
     setEnvoi(true)
     try {
       const session = await creerSession(s, formateurs, apprenants)
@@ -164,57 +189,70 @@ function NouvelleSession() {
     }
   }
 
-  const entete = (
-    <>
-      <Link to="/sessions" className="ns-retour"><Icone nom="back" taille={16} />Sessions et planning</Link>
-      <div className="page-head"><h1>Nouvelle session</h1></div>
-    </>
-  )
+  const aucuneFormation = listes?.formations.length === 0
+  const erreurAffichee = erreurEtape || (etape === 3 && depasse ? msgTropApprenants(apprenants.length, places) : null)
+
+  let corps
   if (!listes) {
-    return <div className="wrap">{entete}{erreurChargement ? <ErreurChargement erreur={erreurChargement} /> : <p className="chargement">Chargement…</p>}</div>
-  }
-
-  const resume = `Du ${dateFr(s.debut)} au ${dateFr(s.fin)} · ${heureFr(s.heureDebut)} – ${heureFr(s.heureFin)}`
-
-  return (
-    <div className="wrap">
-      {entete}
-      <Etapes etape={etape} />
-
-      <section className="card ns-carte">
+    corps = erreurChargement ? <ErreurChargement erreur={erreurChargement} /> : <p className="chargement">Chargement…</p>
+  } else if (aucuneFormation) {
+    corps = (
+      <div className="ns-aucune">
+        <h3>Aucune formation pour l'instant</h3>
+        <p className="sub">Une session se rattache à une formation : créez d'abord une formation, puis revenez planifier sa session.</p>
+        <Link to="/formations/nouvelle" className="btn btn-primary">Créer une formation</Link>
+      </div>
+    )
+  } else {
+    corps = (
+      <>
+        <Etapes etape={etape} />
         {etape === 1 && <EtapeInformations s={s} erreurs={erreurs} saisie={saisie} formations={listes.formations} changer={changer} />}
 
         {etape === 2 && (
           <>
-            <h2>Formateur(s) <span className="req">*</span></h2>
-            <p className="sub ns-large">{resume} — au moins un formateur est nécessaire.</p>
-            <ListePersonnes titre="Formateurs" personnes={listes.formateurs} choisis={formateurs} onBasculer={basculer(formateurs, setFormateurs)} detail={(p) => p.specialites} />
+            <h3>Formateur(s) <span className="req">*</span></h3>
+            <ListePersonnes titre="Formateurs" placeholder="Rechercher un formateur" personnes={listes.formateurs} choisis={formateurs}
+              onBasculer={basculer(formateurs, setFormateurs)} detail={(p) => p.email} />
           </>
         )}
 
         {etape === 3 && (
           <>
-            <div className="ns-titre3">
-              <div><h2>Apprenant(s) <span className="req">*</span></h2><p className="sub">Au moins un apprenant est nécessaire pour créer la session.</p></div>
-              <span className="ns-compteur">{compteur(apprenants.length)}</span>
-            </div>
-            <ListePersonnes titre="Apprenants" personnes={listes.apprenants} choisis={apprenants} onBasculer={basculer(apprenants, setApprenants)} detail={(p) => p.email} />
+            <h3>Apprenant(s) <span className="req">*</span> <span className={`ns-places${depasse ? ' depasse' : ''}`}>· {apprenants.length} / {places} places</span></h3>
+            <ListePersonnes titre="Apprenants" placeholder="Rechercher un apprenant ou une entreprise" personnes={listes.apprenants} choisis={apprenants}
+              onBasculer={basculer(apprenants, setApprenants)} detail={(p) => `${p.entreprise || 'Individuel'} · ${p.email}`} />
           </>
         )}
 
-        {erreurEtape && <p className="errtxt ns-erreur" role="alert">{erreurEtape}</p>}
+        {erreurAffichee && <p className="errtxt ns-erreur" role="alert">{erreurAffichee}</p>}
+        {etape === 3 && <p className="ns-info">Un apprenant ou un formateur absent de la liste ? Déclarez-le dans « Parties prenantes ».</p>}
+      </>
+    )
+  }
 
-        <div className="ns-pied">
-          <button type="button" className="btn btn-line" onClick={annuler}>Annuler</button>
-          <span className="ns-pied-droite">
-            {etape > 1 && <button type="button" className="btn btn-line" onClick={() => allerA(etape - 1)}>Précédent</button>}
-            {etape < 3
-              ? <button type="button" className="btn btn-primary" onClick={suivant}>Suivant</button>
-              : <button type="button" className="btn btn-primary" onClick={creer} disabled={envoi}>Créer la session</button>}
-          </span>
+  const formulaire = listes && !aucuneFormation
+  return (
+    <Modal onFermer={fermer}>
+      <dialog open className="pa ns-popup" aria-modal="true" aria-labelledby="ns-titre">
+        <div className="pa-tete">
+          <div>
+            <h2 id="ns-titre">Nouvelle session</h2>
+            <p className="sub">Les champs marqués d’un astérisque sont obligatoires.</p>
+          </div>
+          <button type="button" className="pa-croix ns-croix" aria-label="Fermer" onClick={fermer}><Icone nom="x" taille={18} /></button>
         </div>
-      </section>
-    </div>
+        <div className="pa-corps">{corps}</div>
+        <div className="pa-pied">
+          {(!formulaire || etape === 1)
+            ? <button type="button" className="btn btn-line" onClick={fermer}>Annuler</button>
+            : <button type="button" className="btn btn-line" onClick={() => allerA(etape - 1)}>Précédent</button>}
+          {formulaire && (etape < 3
+            ? <button type="button" className="btn btn-primary" onClick={suivant}>Suivant</button>
+            : <button type="button" className="btn btn-primary" onClick={creer} disabled={envoi}>Créer la session</button>)}
+        </div>
+      </dialog>
+    </Modal>
   )
 }
 

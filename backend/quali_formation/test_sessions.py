@@ -17,7 +17,7 @@ class SessionsPlanningTests(TestCase):
     def corps(self, **modif):
         corps = {
             'formation': self.formation.pk, 'date_debut': '2026-11-18', 'date_fin': '2026-11-20',
-            'heure_debut': '09:00', 'heure_fin': '17:00', 'duree_heures': '21', 'modalite': 'PRESENTIEL',
+            'duree_heures': '21', 'modalite': 'PRESENTIEL',
             'lieu': ' Lyon, salle 2 ', 'nombre_places': 10,
             'formateurs': [self.formateur.pk], 'apprenants': [a.pk for a in self.apprenants],
         }
@@ -34,10 +34,12 @@ class SessionsPlanningTests(TestCase):
     def test_liste_les_formateurs_et_les_apprenants(self):
         formateurs = self.client.get('/formateurs/').json()
         self.assertEqual(len(formateurs), 4)
-        self.assertEqual(set(formateurs[0]), {'id', 'prenom', 'nom', 'email', 'specialites'})
+        self.assertEqual(set(formateurs[0]), {'id', 'prenom', 'nom', 'email', 'specialites', 'entreprise'})
         apprenants = self.client.get('/apprenants/').json()
         self.assertEqual(len(apprenants), 8)
-        self.assertEqual(set(apprenants[0]), {'id', 'prenom', 'nom', 'email'})
+        self.assertEqual(set(apprenants[0]), {'id', 'prenom', 'nom', 'email', 'entreprise'})
+        # Apprenants d'exemple rattachés à l'entreprise Acme (migration 0009)
+        self.assertEqual({a['entreprise'] for a in apprenants}, {'Acme'})
 
     def test_cree_une_session_prevue_avec_formateurs_et_apprenants(self):
         reponse = self.poster()
@@ -50,7 +52,9 @@ class SessionsPlanningTests(TestCase):
         session = Session.objects.get(pk=json['id'])
         self.assertEqual(list(session.formateurs.all()), [self.formateur])
         self.assertEqual(session.apprenants.count(), 2)
-        self.assertEqual(str(session.heure_debut), '09:00:00')
+        # SCRUM-166 : plus d'heures de début ni de fin
+        self.assertIsNone(session.heure_debut)
+        self.assertIsNone(json['heure_fin'])
 
     def test_la_session_creee_apparait_dans_la_liste(self):
         self.poster()
@@ -58,15 +62,34 @@ class SessionsPlanningTests(TestCase):
         self.assertEqual(len(liste), 1)
         self.assertEqual(liste[0]['formateurs'], [self.formateur.pk])
 
-    def test_classe_virtuelle_demande_le_lien(self):
-        reponse = self.poster(modalite='CLASSE_VIRTUELLE', lieu='')
+    def test_distanciel_demande_le_lien(self):
+        reponse = self.poster(modalite='DISTANCIEL', lieu='')
         self.assertEqual(reponse.status_code, 400)
-        self.assertIn('lien_classe_virtuelle', reponse.json())
-        reponse = self.poster(modalite='CLASSE_VIRTUELLE', lieu='', lien_classe_virtuelle='https://visio.exemple.fr/abc')
+        self.assertEqual(set(reponse.json()), {'lien_classe_virtuelle'})
+        reponse = self.poster(modalite='DISTANCIEL', lieu='', lien_classe_virtuelle='https://visio.exemple.fr/abc')
         self.assertEqual(reponse.status_code, 201)
 
+    def test_mixte_demande_le_lieu_et_le_lien(self):
+        reponse = self.poster(modalite='MIXTE', lieu=' ')
+        self.assertEqual(reponse.status_code, 400)
+        self.assertEqual(set(reponse.json()), {'lieu', 'lien_classe_virtuelle'})
+        reponse = self.poster(modalite='MIXTE', lien_classe_virtuelle='https://visio.exemple.fr/abc')
+        self.assertEqual(reponse.status_code, 201)
+        self.assertEqual(reponse.json()['modalite'], 'MIXTE')
+
+    def test_refuse_l_ancienne_modalite_classe_virtuelle(self):
+        reponse = self.poster(modalite='CLASSE_VIRTUELLE', lien_classe_virtuelle='https://visio.exemple.fr/abc')
+        self.assertEqual(reponse.status_code, 400)
+        self.assertIn('modalite', reponse.json())
+
+    def test_les_heures_ne_sont_plus_demandees(self):
+        # Envoyées par un ancien écran : ignorées
+        reponse = self.poster(heure_debut='09:00', heure_fin='17:00')
+        self.assertEqual(reponse.status_code, 201)
+        self.assertIsNone(reponse.json()['heure_debut'])
+
     def test_refuse_un_champ_obligatoire_manquant(self):
-        for champ in ('formation', 'date_debut', 'date_fin', 'heure_debut', 'heure_fin', 'duree_heures', 'modalite', 'nombre_places'):
+        for champ in ('formation', 'date_debut', 'date_fin', 'duree_heures', 'modalite', 'nombre_places'):
             corps = self.corps()
             del corps[champ]
             reponse = self.client.post('/sessions/', corps, content_type='application/json')
@@ -86,17 +109,22 @@ class SessionsPlanningTests(TestCase):
     def test_refuse_une_session_sans_formateur(self):
         reponse = self.poster(formateurs=[])
         self.assertEqual(reponse.status_code, 400)
-        self.assertEqual(reponse.json(), {'code': 'FORMATEUR_REQUIS', 'detail': 'Une session doit avoir au moins un formateur'})
+        self.assertEqual(reponse.json(), {'code': 'FORMATEUR_REQUIS', 'detail': 'Une session doit avoir au moins un formateur.'})
 
     def test_refuse_une_session_sans_apprenant(self):
         reponse = self.poster(apprenants=[])
         self.assertEqual(reponse.status_code, 400)
-        self.assertEqual(reponse.json()['detail'], 'Une session doit avoir au moins un apprenant')
+        self.assertEqual(reponse.json()['detail'], 'Une session doit avoir au moins un apprenant.')
         self.assertFalse(Session.objects.exists())
 
-    def test_ne_controle_pas_le_nombre_de_places(self):
+    def test_refuse_plus_d_apprenants_que_de_places(self):
         reponse = self.poster(nombre_places=1)
-        self.assertEqual(reponse.status_code, 201)
+        self.assertEqual(reponse.status_code, 400)
+        self.assertEqual(reponse.json(), {'code': 'TROP_APPRENANTS', 'detail': 'Trop d’apprenants : 2 cochés pour 1 places.'})
+        self.assertFalse(Session.objects.exists())
+
+    def test_accepte_autant_d_apprenants_que_de_places(self):
+        self.assertEqual(self.poster(nombre_places=2).status_code, 201)
 
     def test_refuse_un_formateur_inconnu(self):
         self.assertEqual(self.poster(formateurs=[999999]).status_code, 400)
@@ -134,6 +162,10 @@ class CreationApprenantTests(TestCase):
         self.assertEqual(reponse.json(), {'prenom': ['Indiquez le prénom.'], 'nom': ['Indiquez le nom.'], 'email': ["Indiquez l'e-mail."]})
         self.assertEqual(Apprenant.objects.count(), 8)
 
+    def test_enregistre_l_entreprise(self):
+        reponse = self.poster(prenom='Lucas', nom='Girard', email='lucas.girard@globex.fr', entreprise=' Globex ')
+        self.assertEqual((reponse.status_code, reponse.json()['entreprise']), (201, 'Globex'))
+
     def test_refuse_un_email_invalide(self):
         reponse = self.poster(prenom='Lucas', nom='Girard', email='lucas.girard')
         self.assertEqual(reponse.status_code, 400)
@@ -150,7 +182,7 @@ class CreationFormateurTests(TestCase):
         reponse = self.poster(prenom=' Camille ', nom=' Leroy ', email='camille.leroy@exemple.fr')
         self.assertEqual(reponse.status_code, 201)
         self.assertEqual(reponse.json(), {'id': reponse.json()['id'], 'prenom': 'Camille', 'nom': 'Leroy',
-                                          'email': 'camille.leroy@exemple.fr', 'specialites': ''})
+                                          'email': 'camille.leroy@exemple.fr', 'specialites': '', 'entreprise': ''})
         # Il est proposé à l'étape 2 de « Nouvelle session »
         self.assertIn('camille.leroy@exemple.fr', [f['email'] for f in self.client.get('/formateurs/').json()])
 

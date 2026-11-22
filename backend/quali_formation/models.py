@@ -94,6 +94,8 @@ class Formateur(models.Model):
     nom = models.CharField(max_length=100)
     email = models.EmailField(max_length=255)
     specialites = models.CharField(max_length=255, blank=True)
+    # SCRUM-166 : vide = « Individuel »
+    entreprise = models.CharField(max_length=255, blank=True, default='')
 
     class Meta:
         db_table = 'formateur'
@@ -109,6 +111,8 @@ class Apprenant(models.Model):
     prenom = models.CharField(max_length=100)
     nom = models.CharField(max_length=100)
     email = models.EmailField(max_length=255)
+    # SCRUM-166 : vide = « Individuel »
+    entreprise = models.CharField(max_length=255, blank=True, default='')
 
     class Meta:
         db_table = 'apprenant'
@@ -121,9 +125,8 @@ class Apprenant(models.Model):
 class Session(models.Model):
     """Une session de la formation (RG38, SCRUM-25)."""
 
-    class Modalite(models.TextChoices):
-        PRESENTIEL = Formation.Modalite.PRESENTIEL.value, Formation.Modalite.PRESENTIEL.label
-        CLASSE_VIRTUELLE = 'CLASSE_VIRTUELLE', 'Classe virtuelle'
+    # SCRUM-166 : mêmes modalités que la formation (les sessions « Classe virtuelle » sont devenues « Distanciel »)
+    Modalite = Formation.Modalite
 
     class Statut(models.TextChoices):
         PREVUE = 'PREVUE', 'Prévue'
@@ -131,7 +134,7 @@ class Session(models.Model):
     formation = models.ForeignKey(Formation, on_delete=models.CASCADE, related_name='sessions')
     date_debut = models.DateField()
     date_fin = models.DateField()
-    # Champs ajoutés par SCRUM-25 : facultatifs pour les sessions déjà enregistrées
+    # Champs ajoutés par SCRUM-25, plus demandés depuis SCRUM-166 (conservés pour les sessions déjà enregistrées)
     heure_debut = models.TimeField(null=True, blank=True)
     heure_fin = models.TimeField(null=True, blank=True)
     duree_heures = models.DecimalField(max_digits=7, decimal_places=2, null=True, blank=True)
