@@ -4,7 +4,8 @@ export const FONCTIONNALITES = [
   { code: 'tableau-de-bord', icone: 'tableau', titre: 'Tableau de bord', lien: '/tableau-de-bord' },
   { code: 'formations', icone: 'formations', titre: 'Formations et programmes', lien: '/formations' },
   { code: 'sessions', icone: 'sessions', titre: 'Sessions et planning', lien: '/sessions' },
-  { code: 'documents', icone: 'documents', titre: 'Documents' },
+  // Modèles de documents (SCRUM-210) : remplace l'entrée « Documents »
+  { code: 'modeles', icone: 'documents', titre: 'Modèles', lien: '/modeles' },
   { code: 'emargement', icone: 'emargement', titre: 'Émargement' },
   { code: 'e-learning', icone: 'elearning', titre: 'E-learning' },
   { code: 'evaluations', icone: 'evaluations', titre: 'Évaluations et satisfaction' },

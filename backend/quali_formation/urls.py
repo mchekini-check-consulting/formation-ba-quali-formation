@@ -24,4 +24,6 @@ urlpatterns = [
     path('sessions/', views.sessions_planning),
     path('formateurs/', views.formateurs),
     path('apprenants/', views.apprenants),
+    # Modèles par dossiers (SCRUM-210)
+    path('modeles/resume', views.modeles_resume),
 ]

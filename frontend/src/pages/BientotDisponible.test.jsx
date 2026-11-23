@@ -22,7 +22,7 @@ describe('Menu latéral', () => {
     afficher()
     const liens = [...menu().querySelectorAll('a')]
     expect(liens.map((a) => a.textContent)).toEqual([
-      'Tableau de bord', 'Formations et programmes', 'Sessions et planning', 'Documents', 'Émargement',
+      'Tableau de bord', 'Formations et programmes', 'Sessions et planning', 'Modèles', 'Émargement',
       'E-learning', 'Évaluations et satisfaction', 'Signature électronique', 'Qualiopi',
     ])
     expect(menu().querySelector('[aria-disabled]')).toBeNull()
@@ -38,7 +38,7 @@ describe('Menu latéral', () => {
 
   it('CA4 : une fonctionnalité pas encore développée ouvre la page « Bientôt disponible »', async () => {
     const router = afficher()
-    for (const [titre, code] of [['Documents', 'documents'], ['Évaluations et satisfaction', 'evaluations'], ['Qualiopi', 'qualiopi']]) {
+    for (const [titre, code] of [['Émargement', 'emargement'], ['Évaluations et satisfaction', 'evaluations'], ['Qualiopi', 'qualiopi']]) {
       fireEvent.click(screen.getByRole('link', { name: titre }))
       expect(router.state.location.pathname).toBe(`/bientot-disponible/${code}`)
       expect(await screen.findByRole('heading', { level: 1, name: titre })).toBeTruthy()

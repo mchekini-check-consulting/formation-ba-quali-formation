@@ -25,6 +25,7 @@ from quali_formation.services import (
     formation_service,
     formations_visibles,
     item_service,
+    modele_service,
     session_service,
 )
 
@@ -214,6 +215,17 @@ def formateurs(request):
 def apprenants(request):
     """Apprenants (création : SCRUM-27)."""
     return _personnes(request, session_service.lister_apprenants, session_service.creer_apprenant, ApprenantSerializer)
+
+
+
+# ---- Modèles (épic SCRUM-125) ----
+
+@api_view(["GET"])
+@log_metier("controller", champs=["resultat.nb_formations"])
+@_connexion_requise
+def modeles_resume(request, utilisateur):
+    """SCRUM-210 : GET /modeles/resume -> {nb_modeles, nb_formations} du compte connecté ; 401 NON_CONNECTE."""
+    return Response(modele_service.resume(utilisateur))
 
 
 # ---- Créer un compte (SCRUM-15) et se connecter (SCRUM-16) ----
