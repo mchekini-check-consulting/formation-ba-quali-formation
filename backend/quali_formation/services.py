@@ -8,7 +8,7 @@ from django.utils import timezone
 from rest_framework.exceptions import APIException
 
 from quali_formation.blocs import blocs_manquants
-from quali_formation.logging.loggable import loggable
+from quali_formation.logging.log_metier import log_metier
 from quali_formation.models import (
     Apprenant,
     Formateur,
@@ -28,7 +28,7 @@ Action = FormationHistorique.Action
 
 class ErreurMetier(APIException):
     """Règle de gestion non respectée ; `code` permet au frontend d'ouvrir la bonne pop-up.
-    Erreur « client » (4xx) : les journaux (@loggable) la classent en avertissement, pas en panne."""
+    Erreur « client » (4xx) : les journaux (@log_metier) la classent en avertissement, pas en panne."""
 
     def __init__(self, code, message, statut_http=400, **details):
         super().__init__(message)
@@ -129,10 +129,10 @@ def _enregistrer_avec_reference(formation):
     raise ErreurMetier('REFERENCE', "Impossible d'attribuer une référence, réessayez.", 409)
 
 
-@loggable
 class FormationService:
-    """Règles de gestion du module Formations (couche service, journalisée par @loggable)."""
+    """Règles de gestion du module Formations (couche service, logs métier par @log_metier)."""
 
+    @log_metier("service", champs=["action", "forcer", "doublon_accepte", "resultat.statut"])
     def enregistrer(self, formation, donnees, action, forcer=False, doublon_accepte=False, utilisateur=None):
         """Crée (formation=None) ou modifie une formation.
 
@@ -172,6 +172,7 @@ class FormationService:
         return formation
 
 
+    @log_metier("service", champs=["formation.id", "formation.statut"])
     def archiver(self, formation, utilisateur=None):
         # SCRUM-23 : la formation quitte « Toutes » pour le filtre « Archivées »
         formation.statut = Statut.ARCHIVEE
@@ -181,6 +182,7 @@ class FormationService:
         return formation
 
 
+    @log_metier("service", champs=["formation.id", "formation.statut"])
     def restaurer(self, formation, utilisateur=None):
         # SCRUM-23 : retour en brouillon (et donc « À publier », RG28)
         if formation.statut != Statut.ARCHIVEE:
@@ -193,6 +195,7 @@ class FormationService:
         return formation
 
 
+    @log_metier("service", champs=["formation.id", "formation.statut"])
     def supprimer(self, formation, utilisateur=None):
         # SCRUM-23 : une formation qui a des sessions doit d'abord être archivée
         if formation.sessions.exists() and formation.statut != Statut.ARCHIVEE:
@@ -202,6 +205,7 @@ class FormationService:
             formation.delete()
 
 
+    @log_metier("service", champs=["formation.id", "formation.statut"])
     def publier(self, formation, confirmer=False):
         # RG24 : un brouillon ne peut pas être publié
         if formation.statut not in (Statut.VALIDEE, Statut.INCOMPLETE):
@@ -217,12 +221,14 @@ class FormationService:
         return formation
 
 
+    @log_metier("service", champs=["formation.id", "formation.statut"])
     def retirer_publication(self, formation):
         formation.publication = Publication.A_PUBLIER
         formation.save()
         return formation
 
 
+    @log_metier("service", champs=["formation.id"])
     def ajouter_session(self, formation, date_debut, date_fin, lieu='', nombre_places=None):
         if formation.statut == Statut.ARCHIVEE:  # SCRUM-23
             raise ErreurMetier('ARCHIVEE', 'Une formation archivée ne reçoit plus de nouvelle session.', 409)
@@ -235,29 +241,34 @@ class FormationService:
 formation_service = FormationService()
 
 
-@loggable
 class SessionService:
     """Règles de gestion de Sessions et planning (SCRUM-25)."""
 
+    @log_metier("service", champs=["resultat.taille"])
     def lister_sessions(self, utilisateur):
         # Seulement les sessions des formations du compte
         return (Session.objects.filter(formation__in=formations_visibles(utilisateur))
                 .select_related('formation').prefetch_related('formateurs', 'apprenants'))
 
+    @log_metier("service", champs=["resultat.taille"])
     def lister_formateurs(self):
         return Formateur.objects.all()
 
+    @log_metier("service", champs=["resultat.taille"])
     def lister_apprenants(self):
         return Apprenant.objects.all()
 
+    @log_metier("service", champs=["resultat.id"])
     def creer_formateur(self, prenom, nom, email, entreprise=''):
         """Enregistre un formateur (SCRUM-26) ; il est ensuite proposé à l'étape 2 de « Nouvelle session »."""
         return Formateur.objects.create(prenom=prenom, nom=nom, email=email, entreprise=entreprise)
 
+    @log_metier("service", champs=["resultat.id"])
     def creer_apprenant(self, prenom, nom, email, entreprise=''):
         """Enregistre un apprenant (SCRUM-27) ; il est ensuite proposé à l'étape 3 de « Nouvelle session »."""
         return Apprenant.objects.create(prenom=prenom, nom=nom, email=email, entreprise=entreprise)
 
+    @log_metier("service", champs=["donnees.modalite", "formateurs.taille", "apprenants.taille"])
     def creer_session(self, utilisateur, formateurs, apprenants, **donnees):
         """Crée une session « Prévue » avec ses formateurs et ses apprenants, sur une formation du compte,
         sans dépasser le nombre de places (SCRUM-166)."""
@@ -282,7 +293,6 @@ class SessionService:
 session_service = SessionService()
 
 
-@loggable
 class ItemService:
     def list_items(self):
         return Item.objects.all()
@@ -311,7 +321,7 @@ REGLES_MOT_DE_PASSE = (
 
 class DonneesInvalides(APIException):
     """Une ou plusieurs informations du formulaire sont invalides : liste de {champ, code, message}.
-    Erreur « client » (400) : journalisée en avertissement par @loggable."""
+    Erreur « client » (400) : journalisée en avertissement par @log_metier."""
 
     status_code = 400
 
@@ -357,11 +367,11 @@ def _erreurs_inscription(email, mot_de_passe, confirmation, cgu_acceptees):
     return [e for e in erreurs if e]
 
 
-@loggable
 class CompteService:
     """Création du compte d'un organisme de formation (SCRUM-15) et connexion (SCRUM-16). Ni l'e-mail ni le mot de passe ne sont journalisés :
-    @loggable ne trace que la méthode, et les messages d'erreur ne reprennent aucune donnée saisie."""
+    @log_metier n'écrit que le numéro du compte (resultat.id), et les messages d'erreur ne reprennent aucune donnée saisie."""
 
+    @log_metier("service", champs=["resultat.id"])
     def creer_compte(self, email, mot_de_passe, confirmation, cgu_acceptees):
         email = str(email or '').strip().lower()  # RG-CC-02 : majuscules et espaces autour ignorés
         mot_de_passe = str(mot_de_passe or '')
@@ -379,6 +389,7 @@ class CompteService:
         except IntegrityError:  # deux inscriptions simultanées avec la même adresse
             raise deja from None
 
+    @log_metier("service", champs=["resultat.id"])
     def connecter(self, email, mot_de_passe):
         """SCRUM-16 « Se connecter » : renvoie l'utilisateur dont l'e-mail (majuscules et espaces ignorés, comme
         à la création) et le mot de passe (comparé au hash) correspondent."""

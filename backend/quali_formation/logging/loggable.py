@@ -8,7 +8,10 @@ logger = logging.getLogger("quali_formation.service")
 
 
 def error_fields(exc: Exception) -> dict:
-    return {"error": type(exc).__name__, "errorMessage": str(exc)}
+    """Type de l'erreur, et code métier fixe (ex. INTITULE_EXISTANT) : jamais son message, qui peut contenir
+    une valeur saisie (ex. message de la base pour un e-mail en double)."""
+    code = getattr(exc, "code", None)
+    return {"error": type(exc).__name__, **({"errorCode": code} if isinstance(code, str) else {})}
 
 
 def loggable(cls):
