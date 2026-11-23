@@ -9,7 +9,8 @@ _DEFAULT_RECORD_ATTRS = set(logging.makeLogRecord({}).__dict__) | {"message"}
 
 
 class JsonFormatter(logging.Formatter):
-    """Une ligne JSON par log sur stdout : time/level/msg + champs extra."""
+    """Une ligne JSON par log sur stdout : time/level/msg + champs extra. Pour une exception, seulement son
+    type (champ error) : son message et sa trace peuvent contenir des données personnelles ou des valeurs SQL."""
 
     def format(self, record: logging.LogRecord) -> str:
         payload = {
@@ -22,6 +23,6 @@ class JsonFormatter(logging.Formatter):
         for key, value in record.__dict__.items():
             if key not in _DEFAULT_RECORD_ATTRS:
                 payload[key] = value
-        if record.exc_info:
-            payload["exc_info"] = self.formatException(record.exc_info)
+        if record.exc_info and record.exc_info[0]:
+            payload.setdefault("error", record.exc_info[0].__name__)
         return json.dumps(payload, default=str)

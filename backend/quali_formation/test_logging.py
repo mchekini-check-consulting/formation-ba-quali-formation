@@ -8,7 +8,7 @@ from django.test import RequestFactory, SimpleTestCase
 from quali_formation.logging import db
 from quali_formation.logging.formatter import JsonFormatter
 from quali_formation.logging.loggable import loggable
-from quali_formation.logging.middleware import RequestLoggingMiddleware
+from quali_formation.logging.middleware import DEJA_ECRIT, RequestLoggingMiddleware
 
 
 class JsonFormatterTests(SimpleTestCase):
@@ -23,15 +23,17 @@ class JsonFormatterTests(SimpleTestCase):
         self.assertEqual(line["durationMs"], 5)
         self.assertIn("time", line)
 
-    def test_inclut_la_trace_quand_exc_info_est_present(self):
+    def test_exception_type_seulement_sans_message_ni_trace(self):
         logger = logging.getLogger("quali_formation.test.formatter")
         try:
-            raise ValueError("boom")
+            raise ValueError("Key (email)=(marie.dupont@exemple.fr) already exists")
         except ValueError:
             with self.assertLogs(logger, level="ERROR") as captured:
                 logger.exception("échec")
         line = json.loads(JsonFormatter().format(captured.records[0]))
-        self.assertIn("ValueError", line["exc_info"])
+        self.assertEqual(line["error"], "ValueError")
+        self.assertNotIn("exc_info", line)
+        self.assertNotIn("marie.dupont", json.dumps(line))
 
     def test_log_sans_layer_nest_pas_perdu(self):
         logger = logging.getLogger("quali_formation.test.formatter")
@@ -105,3 +107,32 @@ class RequestLoggingMiddlewareTests(SimpleTestCase):
         record = captured.records[0]
         self.assertEqual(record.route, "unmatched")
         self.assertNotIn("42", record.getMessage())
+
+    def test_reussites_et_refus_ne_sont_plus_ecrits(self):
+        for statut in (200, 404):
+            middleware = RequestLoggingMiddleware(lambda request, statut=statut: HttpResponse(status=statut))
+            with self.assertNoLogs("quali_formation.controller"):
+                middleware(RequestFactory().get("/formations/"))
+
+    def test_exception_type_seulement(self):
+        request = RequestFactory().post("/formations/", {"email": "marie.dupont@exemple.fr"})
+
+        def vue(request):
+            middleware.process_exception(request, RuntimeError("marie.dupont@exemple.fr"))
+            return HttpResponse(status=500)
+
+        middleware = RequestLoggingMiddleware(vue)
+        with self.assertLogs("quali_formation.controller", level="ERROR") as captured:
+            middleware(request)
+        record = captured.records[0]
+        self.assertEqual(record.error, "RuntimeError")
+        self.assertEqual(record.httpMethod, "POST")
+        self.assertNotIn("marie.dupont", json.dumps(record.__dict__, default=str))
+
+    def test_pas_de_deuxieme_ligne_si_log_metier_a_ecrit(self):
+        def vue(request):
+            setattr(request, DEJA_ECRIT, True)
+            return HttpResponse(status=500)
+
+        with self.assertNoLogs("quali_formation.controller"):
+            RequestLoggingMiddleware(vue)(RequestFactory().get("/formations/"))
