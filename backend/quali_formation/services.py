@@ -17,6 +17,7 @@ from quali_formation.models import (
     Item,
     Sequence,
     Session,
+    TypeModele,
     Utilisateur,
 )
 from quali_formation.serializers import ItemSerializer
@@ -291,6 +292,19 @@ class SessionService:
 
 
 session_service = SessionService()
+
+
+class ModeleService:
+    """Modèles de documents (épic Modèles SCRUM-125)."""
+
+    def resume(self, utilisateur):
+        """SCRUM-210 : nombre de modèles proposés (RG2 : ceux de TypeModele) et de formations du compte,
+        hors formations archivées (plus de nouveaux documents pour elles)."""
+        formations = formations_visibles(utilisateur).exclude(statut=Formation.Statut.ARCHIVEE)
+        return {'nb_modeles': len(TypeModele), 'nb_formations': formations.count()}
+
+
+modele_service = ModeleService()
 
 
 class ItemService:

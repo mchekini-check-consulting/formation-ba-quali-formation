@@ -197,3 +197,13 @@ class FormationHistorique(models.Model):
 
     def __str__(self):
         return f'{self.reference} : {self.action}'
+
+
+class TypeModele(models.TextChoices):
+    """Modèles de documents proposés (épic Modèles SCRUM-125, RG2 : seulement ces 4 ; les modèles prévus plus
+    tard ne sont pas ajoutés ici tant qu'ils ne sont pas proposés). Liste fixe : pas de table."""
+
+    CONVENTION = 'CONVENTION', 'Convention de formation'
+    CONTRAT = 'CONTRAT', 'Contrat de formation'
+    CONVOCATION = 'CONVOCATION', 'Convocation'
+    ATTESTATION = 'ATTESTATION', 'Attestation de fin de formation'

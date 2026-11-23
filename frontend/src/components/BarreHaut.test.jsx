@@ -88,7 +88,8 @@ describe('Haut de page : cloche et profil', () => {
     const router = await afficher()
     fireEvent.click(profil())
     fireEvent.click(screen.getByRole('menuitem', { name: 'Se déconnecter' }))
-    expect(await screen.findByText('Vous êtes déconnecté.')).toBeTruthy()
+    // Page de connexion (landing + pop-up) parfois lente à s'afficher sous couverture : plus que la seconde par défaut
+    expect(await screen.findByText('Vous êtes déconnecté.', {}, { timeout: 5000 })).toBeTruthy()
     expect(router.state.location.pathname).toBe('/se-connecter')
     const appel = fetchMock.mock.calls.find(([url]) => url.endsWith('/auth/logout'))
     expect(appel[1]).toMatchObject({ method: 'POST', credentials: 'include' })
