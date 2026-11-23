@@ -25,3 +25,7 @@ dist-ssr
 
 # Couverture des tests
 coverage
+
+# Tests end to end (Playwright) : résultats et rapport
+test-results
+playwright-report

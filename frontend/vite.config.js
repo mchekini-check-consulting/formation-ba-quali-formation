@@ -6,10 +6,11 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
-    // Appels au backend en local : /api -> backend lancé sur le poste (src/api.js)
+    // Appels au backend en local : /api -> backend lancé sur le poste (src/api.js) ;
+    // BACKEND_LOCAL : autre backend local, celui des tests end to end (playwright.config.js)
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: process.env.BACKEND_LOCAL || 'http://localhost:8000',
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
     },
