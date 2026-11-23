@@ -33,10 +33,12 @@ l'intégrer dans la branche avant d'envoyer (skill `deploy`).
 - Couches : contrôleur (HTTP) → service (règles métier) → accès aux données.
 - Logs : une ligne JSON par log sur stdout, niveau `LOG_LEVEL`, champ `layer`
   = `controller` / `service` / `db` sur les logs métier (seuls collectés dans
-  le dashboard Grafana « Logs métier »). Plomberie : `backend/quali_formation/logging/` (formatter JSON, middleware, `loggable`, requêtes lentes).
-  Couche service : décorateur de classe `@loggable` (`quali_formation/logging/loggable.py`), sur chaque nouvelle classe de service. Jamais de données
-  personnelles, d'arguments, de corps de requête ni de paramètres SQL dans
-  les logs.
+  le dashboard Grafana « Logs métier »). Plomberie : `backend/quali_formation/logging/` (formatter JSON, `log_metier`, champs, middleware = journal des erreurs 5xx de toutes les requêtes, requêtes lentes).
+  Logs métier activés action par action : décorateur `@log_metier("<couche>", champs=[...])`
+  (`quali_formation/logging/log_metier.py`) sur chaque vue ou méthode de service retenue, avec les champs
+  approuvés par le BA, toujours via le skill `logs-metier` (jamais le `@loggable` de classe, ancien système).
+  Jamais de données personnelles, d'arguments complets, de corps de requête, de message d'erreur brut ni de
+  paramètres SQL dans les logs.
 - Base PostgreSQL : variables injectées par la plateforme (`DATABASE_URL`,
   `SPRING_DATASOURCE_*`, `PG*`) ; valeurs locales par défaut = `compose.yaml`
   du composant.

@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
+from quali_formation.logging.log_metier import log_metier
 from quali_formation.models import Utilisateur
 from quali_formation.serializers import (
     ApprenantSerializer,
@@ -110,6 +111,7 @@ def _enregistrer(request, utilisateur, formation):
 # Formations : réservées au compte connecté (401 sinon), qui ne voit et ne modifie que les siennes (404 sinon)
 
 @api_view(["GET", "POST"])
+@log_metier("controller", champs=["request.data.action", "resultat.statut"])
 @_connexion_requise
 def formations(request, utilisateur):
     """GET : les formations du compte, de la plus récente à la plus ancienne (RG29). POST : création."""
@@ -119,6 +121,7 @@ def formations(request, utilisateur):
 
 
 @api_view(["GET", "PUT", "DELETE"])
+@log_metier("controller", champs=["pk", "request.data.action", "resultat.statut"])
 @_connexion_requise
 def formation(request, utilisateur, pk):
     """GET : la formation ; PUT : modification (200/400/404) ; DELETE : suppression (204, 409 si elle a des sessions)."""
@@ -137,6 +140,7 @@ def formation(request, utilisateur, pk):
 def _action(fonction, methode='POST'):
     """Vue POST (ou PATCH) /api/formations/<id>/<action>/ qui applique une règle et renvoie la formation."""
     @api_view([methode])
+    @log_metier("controller", champs=["pk", "resultat.publication"])
     @_connexion_requise
     def vue(request, utilisateur, pk):
         try:
@@ -155,6 +159,7 @@ restaurer = _action(lambda f, request, u: formation_service.restaurer(f, u), 'PA
 
 
 @api_view(["POST"])
+@log_metier("controller", champs=["pk"])
 @_connexion_requise
 def sessions(request, utilisateur, pk):
     """Ajout d'une session (RG38 : début et fin obligatoires, fin ≥ début)."""
@@ -171,6 +176,7 @@ def sessions(request, utilisateur, pk):
 # ---- Sessions et planning (SCRUM-25) ----
 
 @api_view(["GET", "POST"])
+@log_metier("controller", champs=["request.data.modalite", "request.data.nombre_places", "request.data.apprenants.taille"])
 @_connexion_requise
 def sessions_planning(request, utilisateur):
     """GET : toutes les sessions, par date de début. POST : création d'une session « Prévue »
@@ -197,12 +203,14 @@ def _personnes(request, lister, creer, serializer):
 
 
 @api_view(["GET", "POST"])
+@log_metier("controller", champs=["resultat.id"])
 def formateurs(request):
     """Formateurs (création : SCRUM-26)."""
     return _personnes(request, session_service.lister_formateurs, session_service.creer_formateur, FormateurSerializer)
 
 
 @api_view(["GET", "POST"])
+@log_metier("controller", champs=["resultat.id"])
 def apprenants(request):
     """Apprenants (création : SCRUM-27)."""
     return _personnes(request, session_service.lister_apprenants, session_service.creer_apprenant, ApprenantSerializer)
@@ -218,6 +226,7 @@ def _formulaire_invalide(e):
 
 
 @api_view(["POST"])
+@log_metier("controller", champs=["resultat.id"])
 def inscription(request):
     """POST /auth/register {email, mot_de_passe, confirmation, cgu_acceptees} : création du compte.
     201 compte créé (sans le mot de passe) et connecté : la session d'un compte déjà connecté dans ce navigateur
@@ -251,6 +260,7 @@ def _compte(utilisateur):
 
 
 @api_view(["POST"])
+@log_metier("controller", champs=["resultat.id"])
 def connexion(request):
     """POST /auth/login {email, mot_de_passe} : 200 connecté ({id, email}) et session ouverte ; 400 champ manquant ;
     401 IDENTIFIANTS_INVALIDES (« E-mail ou mot de passe incorrect », sans dire lequel)."""
