@@ -29,7 +29,8 @@ logger = logging.getLogger("quali_formation.metier")
 
 # Au-delà, un appel db est écrit en warn (visible même avec LOG_LEVEL=warn)
 SEUIL_DB_LENT_MS = 200
-_COUCHES = {"controller", "service", "db"}
+CONTROLLER = "controller"
+_COUCHES = {CONTROLLER, "service", "db"}
 REQUETE = "request"
 
 
@@ -49,6 +50,67 @@ def _niveau(statut: int):
     return logger.warning if statut >= 400 else logger.info
 
 
+def _racines(couche, signature, args, kwargs) -> dict:
+    """Valeurs dont partent les chemins des champs approuvés."""
+    if couche == CONTROLLER:
+        # Vue : la requête (1er argument) et les paramètres de l'adresse (kwargs de Django)
+        return {REQUETE: args[0] if args else None, **kwargs}
+    return dict(signature.bind_partial(*args, **kwargs).arguments)
+
+
+def _route(requete) -> str:
+    match = getattr(requete, "resolver_match", None)
+    return match.route if match else "unmatched"
+
+
+def _code_refus(statut, corps):
+    """Refus : code métier fixe de la réponse (ex. NON_CONNECTE), jamais son message."""
+    code = corps.get("code") if statut >= 400 and isinstance(corps, dict) else None
+    return code if isinstance(code, str) else None
+
+
+def _ecrire_vue(champs, duree, valeurs, reponse, exc):
+    requete = valeurs.get(REQUETE)
+    requete = requete if isinstance(requete, HttpRequest | Request) else None
+    statut = _statut_erreur(exc) if exc else getattr(reponse, "status_code", 200)
+    corps = getattr(reponse, "data", None)
+    ligne = {
+        "layer": CONTROLLER,
+        "httpMethod": getattr(requete, "method", None),
+        "route": _route(requete),
+        "status": statut,
+        "durationMs": duree,
+        **extraire(champs, {**valeurs, RESULTAT: corps}),
+    }
+    code = _code_refus(statut, corps)
+    if code:
+        ligne["errorCode"] = code
+    _niveau(statut)(f"{ligne['httpMethod']} {ligne['route']} {statut}", extra=ligne)
+    if requete is not None:
+        # Ligne écrite : le journal des erreurs (middleware.py) n'en ajoute pas une deuxième
+        setattr(getattr(requete, "_request", requete), DEJA_ECRIT, True)
+
+
+def _ecrire_appel(couche, fonction, champs, duree, valeurs, resultat, exc):
+    classe, _, methode = fonction.__qualname__.rpartition(".")
+    ligne = {"layer": couche, "class": classe, "method": methode, "durationMs": duree,
+             **extraire(champs, {**valeurs, RESULTAT: resultat})}
+    if exc is not None:
+        _niveau(_statut_erreur(exc))(f"{fonction.__qualname__} en échec", extra={**ligne, **error_fields(exc)})
+    elif couche == "db" and duree >= SEUIL_DB_LENT_MS:
+        logger.warning(f"{fonction.__qualname__} lent", extra=ligne)
+    else:
+        logger.info(f"{fonction.__qualname__} ok", extra=ligne)
+
+
+def _ecrire(couche, fonction, champs, debut, valeurs, resultat=None, exc=None):
+    duree = round((time.monotonic() - debut) * 1000)
+    if couche == CONTROLLER:
+        _ecrire_vue(champs, duree, valeurs, resultat, exc)
+    else:
+        _ecrire_appel(couche, fonction, champs, duree, valeurs, resultat, exc)
+
+
 def log_metier(couche: str, champs=()):
     if couche not in _COUCHES:
         raise ValueError(f"couche inconnue : {couche} (controller, service ou db)")
@@ -56,62 +118,17 @@ def log_metier(couche: str, champs=()):
     def decorer(fonction):
         signature = inspect.signature(fonction)
         verifier(fonction.__qualname__, champs, [*signature.parameters, RESULTAT])
-        classe, _, methode = fonction.__qualname__.rpartition(".")
-
-        def racines(args, kwargs):
-            if couche == "controller":
-                # Vue : la requête (1er argument) et les paramètres de l'adresse (kwargs de Django)
-                return {REQUETE: args[0] if args else None, **kwargs}
-            return dict(signature.bind_partial(*args, **kwargs).arguments)
-
-        def ecrire(debut, valeurs, resultat=None, exc=None):
-            duree = round((time.monotonic() - debut) * 1000)
-            if couche == "controller":
-                _ecrire_vue(duree, valeurs, resultat, exc)
-                return
-            ligne = {"layer": couche, "class": classe, "method": methode, "durationMs": duree,
-                     **extraire(champs, {**valeurs, RESULTAT: resultat})}
-            if exc is not None:
-                _niveau(_statut_erreur(exc))(f"{fonction.__qualname__} en échec", extra={**ligne, **error_fields(exc)})
-            elif couche == "db" and duree >= SEUIL_DB_LENT_MS:
-                logger.warning(f"{fonction.__qualname__} lent", extra=ligne)
-            else:
-                logger.info(f"{fonction.__qualname__} ok", extra=ligne)
-
-        def _ecrire_vue(duree, valeurs, reponse, exc):
-            requete = valeurs.get(REQUETE)
-            requete = requete if isinstance(requete, HttpRequest | Request) else None
-            statut = _statut_erreur(exc) if exc else getattr(reponse, "status_code", 200)
-            match = getattr(requete, "resolver_match", None)
-            route = match.route if match else "unmatched"
-            corps = getattr(reponse, "data", None)
-            ligne = {
-                "layer": "controller",
-                "httpMethod": getattr(requete, "method", None),
-                "route": route,
-                "status": statut,
-                "durationMs": duree,
-                **extraire(champs, {**valeurs, RESULTAT: corps}),
-            }
-            # Refus : code métier fixe de la réponse (ex. NON_CONNECTE), jamais son message
-            code = corps.get("code") if statut >= 400 and isinstance(corps, dict) else None
-            if isinstance(code, str):
-                ligne["errorCode"] = code
-            _niveau(statut)(f"{ligne['httpMethod']} {route} {statut}", extra=ligne)
-            if requete is not None:
-                # Ligne écrite : le journal des erreurs (middleware.py) n'en ajoute pas une deuxième
-                setattr(getattr(requete, "_request", requete), DEJA_ECRIT, True)
 
         @functools.wraps(fonction)
         def enveloppe(*args, **kwargs):
             debut = time.monotonic()
-            valeurs = racines(args, kwargs)
+            valeurs = _racines(couche, signature, args, kwargs)
             try:
                 resultat = fonction(*args, **kwargs)
             except Exception as exc:
-                ecrire(debut, valeurs, exc=exc)
+                _ecrire(couche, fonction, champs, debut, valeurs, exc=exc)
                 raise
-            ecrire(debut, valeurs, resultat)
+            _ecrire(couche, fonction, champs, debut, valeurs, resultat)
             return resultat
 
         return enveloppe
