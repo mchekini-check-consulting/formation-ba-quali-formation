@@ -11,7 +11,7 @@ import BientotDisponible from './pages/BientotDisponible'
 import NouvelleSession from './pages/NouvelleSession'
 import SessionsPlanning from './pages/SessionsPlanning'
 import LandingPage from './landing/LandingPage'
-import { DossierModeles, ModelesAccueil } from './modeles/Modeles'
+import { DossierModeles, ModeleOuvert, ModelesAccueil, ModelesGeneriques } from './modeles/Modeles'
 
 // Routes de l'application (utilisées par main.jsx et par les tests)
 export const routes = [
@@ -34,7 +34,9 @@ export const routes = [
       { path: '/sessions/nouvelle', element: <><SessionsPlanning key="sous-panneau" /><NouvelleSession /></> }, // panneau par-dessus la liste (SCRUM-166) ; key : liste rechargée à la fermeture
       // Modèles de documents par dossiers (SCRUM-210) : dossiers vides pour l'instant (US suivantes de l'épic)
       { path: '/modeles', element: <ModelesAccueil /> },
-      { path: '/modeles/generiques', element: <DossierModeles titre="Modèles génériques" /> },
+      { path: '/modeles/generiques', element: <ModelesGeneriques /> },
+      // Modèle générique ouvert (SCRUM-211) : texte et variables en étiquettes ; éditeur avec SCRUM-213
+      { path: '/modeles/generiques/:type', element: <ModeleOuvert /> },
       { path: '/modeles/formations', element: <DossierModeles titre="Modèles par formation" /> },
       // Fonctionnalités du menu ou du profil pas encore développées (SCRUM-19)
       { path: '/bientot-disponible/:code', element: <BientotDisponible /> },

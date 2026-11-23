@@ -1,0 +1,464 @@
+[
+  {
+    "code": "session_date_debut",
+    "libelle": "Date de début",
+    "categorie": "Session",
+    "ordre": 1,
+    "exemple": "12/01/2027"
+  },
+  {
+    "code": "session_date_fin",
+    "libelle": "Date de fin",
+    "categorie": "Session",
+    "ordre": 2,
+    "exemple": "13/01/2027"
+  },
+  {
+    "code": "session_horaires",
+    "libelle": "Horaires",
+    "categorie": "Session",
+    "ordre": 3,
+    "exemple": "9h00 – 12h30 et 13h30 – 17h00"
+  },
+  {
+    "code": "session_lieu",
+    "libelle": "Lieu",
+    "categorie": "Session",
+    "ordre": 4,
+    "exemple": "12 rue des Lilas, 69003 Lyon"
+  },
+  {
+    "code": "session_acces",
+    "libelle": "Informations d'accès",
+    "categorie": "Session",
+    "ordre": 5,
+    "exemple": "Métro D, arrêt Garibaldi. Salle B, 2e étage."
+  },
+  {
+    "code": "session_lien",
+    "libelle": "Lien de connexion",
+    "categorie": "Session",
+    "ordre": 6,
+    "exemple": "https://visio.formatech.fr/session-12"
+  },
+  {
+    "code": "session_formateur",
+    "libelle": "Formateur",
+    "categorie": "Session",
+    "ordre": 7,
+    "exemple": "Julien Morel"
+  },
+  {
+    "code": "formateur_qualites",
+    "libelle": "Titres et qualités du formateur",
+    "categorie": "Session",
+    "ordre": 8,
+    "exemple": "consultant en management, 10 ans d'expérience"
+  },
+  {
+    "code": "session_materiel",
+    "libelle": "Matériel à prévoir",
+    "categorie": "Session",
+    "ordre": 9,
+    "exemple": "Un ordinateur portable"
+  },
+  {
+    "code": "session_nb_participants",
+    "libelle": "Nombre de participants",
+    "categorie": "Session",
+    "ordre": 10,
+    "exemple": "3"
+  },
+  {
+    "code": "session_date_questionnaire",
+    "libelle": "Date limite du questionnaire",
+    "categorie": "Session",
+    "ordre": 11,
+    "exemple": "08/01/2027"
+  },
+  {
+    "code": "formation_intitule",
+    "libelle": "Intitulé de la formation",
+    "categorie": "Formation",
+    "ordre": 12,
+    "exemple": "Management d'équipe"
+  },
+  {
+    "code": "formation_nature",
+    "libelle": "Nature de l'action",
+    "categorie": "Formation",
+    "ordre": 13,
+    "exemple": "Action de formation"
+  },
+  {
+    "code": "formation_objectifs",
+    "libelle": "Objectifs",
+    "categorie": "Formation",
+    "ordre": 14,
+    "exemple": "Conduire un entretien individuel ; fixer des objectifs clairs ; gérer un conflit"
+  },
+  {
+    "code": "formation_programme",
+    "libelle": "Programme",
+    "categorie": "Formation",
+    "ordre": 15,
+    "exemple": "Jour 1 : le rôle du manager. Jour 2 : délégation et gestion des conflits."
+  },
+  {
+    "code": "formation_prerequis",
+    "libelle": "Prérequis",
+    "categorie": "Formation",
+    "ordre": 16,
+    "exemple": "Aucun prérequis"
+  },
+  {
+    "code": "formation_duree",
+    "libelle": "Durée",
+    "categorie": "Formation",
+    "ordre": 17,
+    "exemple": "14 heures"
+  },
+  {
+    "code": "formation_modalite",
+    "libelle": "Modalité",
+    "categorie": "Formation",
+    "ordre": 18,
+    "exemple": "Présentiel"
+  },
+  {
+    "code": "formation_part_distance",
+    "libelle": "Part à distance",
+    "categorie": "Formation",
+    "ordre": 19,
+    "exemple": "aucune"
+  },
+  {
+    "code": "formation_assistance_distance",
+    "libelle": "Assistance à distance",
+    "categorie": "Formation",
+    "ordre": 20,
+    "exemple": "sans objet"
+  },
+  {
+    "code": "formation_moyens",
+    "libelle": "Moyens pédagogiques",
+    "categorie": "Formation",
+    "ordre": 21,
+    "exemple": "Salle équipée, vidéoprojecteur, études de cas et mises en situation"
+  },
+  {
+    "code": "formation_evaluation",
+    "libelle": "Modalités d'évaluation",
+    "categorie": "Formation",
+    "ordre": 22,
+    "exemple": "QCM et mise en situation en fin de formation"
+  },
+  {
+    "code": "formation_certification",
+    "libelle": "Certification visée",
+    "categorie": "Formation",
+    "ordre": 23,
+    "exemple": "aucune"
+  },
+  {
+    "code": "apprenant_civilite",
+    "libelle": "Civilité",
+    "categorie": "Apprenant",
+    "ordre": 24,
+    "exemple": "Mme"
+  },
+  {
+    "code": "apprenant_prenom",
+    "libelle": "Prénom",
+    "categorie": "Apprenant",
+    "ordre": 25,
+    "exemple": "Camille"
+  },
+  {
+    "code": "apprenant_nom",
+    "libelle": "Nom",
+    "categorie": "Apprenant",
+    "ordre": 26,
+    "exemple": "Dupont"
+  },
+  {
+    "code": "apprenant_adresse",
+    "libelle": "Adresse de l'apprenant",
+    "categorie": "Apprenant",
+    "ordre": 27,
+    "exemple": "5 rue Victor Hugo, 69003 Lyon"
+  },
+  {
+    "code": "liste_apprenants",
+    "libelle": "Liste des apprenants",
+    "categorie": "Apprenant",
+    "ordre": 28,
+    "exemple": "Camille Dupont (assistante) ; Léa Bernard (cheffe d'équipe) ; Karim Haddad (technicien)"
+  },
+  {
+    "code": "client_nom",
+    "libelle": "Raison sociale du client",
+    "categorie": "Client",
+    "ordre": 29,
+    "exemple": "Atlas SARL"
+  },
+  {
+    "code": "client_adresse",
+    "libelle": "Adresse du client",
+    "categorie": "Client",
+    "ordre": 30,
+    "exemple": "5 avenue Foch, 69006 Lyon"
+  },
+  {
+    "code": "client_siret",
+    "libelle": "SIRET du client",
+    "categorie": "Client",
+    "ordre": 31,
+    "exemple": "987 654 321 00021"
+  },
+  {
+    "code": "client_signataire",
+    "libelle": "Signataire du client",
+    "categorie": "Client",
+    "ordre": 32,
+    "exemple": "Marie Durand"
+  },
+  {
+    "code": "client_signataire_fonction",
+    "libelle": "Fonction du signataire",
+    "categorie": "Client",
+    "ordre": 33,
+    "exemple": "Directrice des ressources humaines"
+  },
+  {
+    "code": "prix_ht_participant",
+    "libelle": "Prix HT par participant",
+    "categorie": "Prix",
+    "ordre": 34,
+    "exemple": "800,00 €"
+  },
+  {
+    "code": "prix_ht",
+    "libelle": "Prix HT total",
+    "categorie": "Prix",
+    "ordre": 35,
+    "exemple": "2 400,00 €"
+  },
+  {
+    "code": "prix_taux_tva",
+    "libelle": "Taux de TVA",
+    "categorie": "Prix",
+    "ordre": 36,
+    "exemple": "20 %"
+  },
+  {
+    "code": "prix_tva",
+    "libelle": "Montant de la TVA",
+    "categorie": "Prix",
+    "ordre": 37,
+    "exemple": "480,00 €"
+  },
+  {
+    "code": "prix_ttc",
+    "libelle": "Prix TTC",
+    "categorie": "Prix",
+    "ordre": 38,
+    "exemple": "2 880,00 €"
+  },
+  {
+    "code": "prix_frais_annexes",
+    "libelle": "Frais annexes",
+    "categorie": "Prix",
+    "ordre": 39,
+    "exemple": "repas non compris"
+  },
+  {
+    "code": "financeur",
+    "libelle": "Financeur",
+    "categorie": "Prix",
+    "ordre": 40,
+    "exemple": "OPCO Atlas"
+  },
+  {
+    "code": "paiement_modalites",
+    "libelle": "Modalités de paiement",
+    "categorie": "Prix",
+    "ordre": 41,
+    "exemple": "Virement à 30 jours"
+  },
+  {
+    "code": "paiement_echeancier",
+    "libelle": "Échéancier",
+    "categorie": "Prix",
+    "ordre": 42,
+    "exemple": "30 % à la fin du délai de rétractation, 70 % à la fin de la formation"
+  },
+  {
+    "code": "paiement_acompte",
+    "libelle": "Montant de l'acompte",
+    "categorie": "Prix",
+    "ordre": 43,
+    "exemple": "240,00 €"
+  },
+  {
+    "code": "heures_suivies",
+    "libelle": "Heures réellement suivies",
+    "categorie": "Fin de formation",
+    "ordre": 44,
+    "exemple": "14 heures"
+  },
+  {
+    "code": "resultats_evaluation",
+    "libelle": "Résultats de l'évaluation",
+    "categorie": "Fin de formation",
+    "ordre": 45,
+    "exemple": "Objectif 1 : acquis. Objectif 2 : acquis. Objectif 3 : en cours d'acquisition."
+  },
+  {
+    "code": "numero_document",
+    "libelle": "Numéro du document",
+    "categorie": "Document",
+    "ordre": 46,
+    "exemple": "CONV-2027-0012"
+  },
+  {
+    "code": "date_document",
+    "libelle": "Date du document",
+    "categorie": "Document",
+    "ordre": 47,
+    "exemple": "21/11/2026"
+  },
+  {
+    "code": "org_nom",
+    "libelle": "Nom de l'organisme",
+    "categorie": "Organisme",
+    "ordre": 48,
+    "exemple": ""
+  },
+  {
+    "code": "org_adresse",
+    "libelle": "Adresse de l'organisme",
+    "categorie": "Organisme",
+    "ordre": 49,
+    "exemple": ""
+  },
+  {
+    "code": "org_siret",
+    "libelle": "SIRET de l'organisme",
+    "categorie": "Organisme",
+    "ordre": 50,
+    "exemple": ""
+  },
+  {
+    "code": "org_nda",
+    "libelle": "N° de déclaration d'activité",
+    "categorie": "Organisme",
+    "ordre": 51,
+    "exemple": ""
+  },
+  {
+    "code": "org_region",
+    "libelle": "Région de l'organisme",
+    "categorie": "Organisme",
+    "ordre": 52,
+    "exemple": "Auvergne-Rhône-Alpes"
+  },
+  {
+    "code": "org_representant",
+    "libelle": "Représentant légal",
+    "categorie": "Organisme",
+    "ordre": 53,
+    "exemple": ""
+  },
+  {
+    "code": "org_representant_fonction",
+    "libelle": "Fonction du représentant",
+    "categorie": "Organisme",
+    "ordre": 54,
+    "exemple": "Gérante"
+  },
+  {
+    "code": "org_ville",
+    "libelle": "Ville de signature",
+    "categorie": "Organisme",
+    "ordre": 55,
+    "exemple": "Lyon"
+  },
+  {
+    "code": "org_telephone",
+    "libelle": "Téléphone de l'organisme",
+    "categorie": "Organisme",
+    "ordre": 56,
+    "exemple": "04 78 12 34 56"
+  },
+  {
+    "code": "org_email",
+    "libelle": "E-mail de contact",
+    "categorie": "Organisme",
+    "ordre": 57,
+    "exemple": "contact@formatech.fr"
+  },
+  {
+    "code": "org_referent_handicap",
+    "libelle": "Référent handicap",
+    "categorie": "Organisme",
+    "ordre": 58,
+    "exemple": "Paul Martin, 06 12 34 56 78"
+  },
+  {
+    "code": "org_contact_stagiaires",
+    "libelle": "Contact stagiaires",
+    "categorie": "Organisme",
+    "ordre": 59,
+    "exemple": "Sarah Benali, 04 78 12 34 50"
+  },
+  {
+    "code": "org_contact_technique",
+    "libelle": "Contact assistance technique",
+    "categorie": "Organisme",
+    "ordre": 60,
+    "exemple": "support@formatech.fr"
+  },
+  {
+    "code": "org_taux_penalites",
+    "libelle": "Taux des pénalités de retard",
+    "categorie": "Organisme",
+    "ordre": 61,
+    "exemple": "3 fois le taux d'intérêt légal"
+  },
+  {
+    "code": "org_mediateur",
+    "libelle": "Médiateur de la consommation",
+    "categorie": "Organisme",
+    "ordre": 62,
+    "exemple": "CM2C, 14 rue Saint-Jean, 75017 Paris"
+  },
+  {
+    "code": "org_tribunal",
+    "libelle": "Ville du tribunal compétent",
+    "categorie": "Organisme",
+    "ordre": 63,
+    "exemple": "Lyon"
+  },
+  {
+    "code": "org_delai_annulation",
+    "libelle": "Délai d'annulation",
+    "categorie": "Organisme",
+    "ordre": 64,
+    "exemple": "10"
+  },
+  {
+    "code": "org_dedit",
+    "libelle": "Montant du dédit",
+    "categorie": "Organisme",
+    "ordre": 65,
+    "exemple": "30 % du prix"
+  },
+  {
+    "code": "org_conditions_abandon",
+    "libelle": "Conditions en cas d'abandon",
+    "categorie": "Organisme",
+    "ordre": 66,
+    "exemple": "seules les heures réellement suivies sont facturées"
+  }
+]
