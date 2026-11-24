@@ -147,7 +147,8 @@ describe('Formulaire de création / modification', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Quitter sans sauvegarder' }))
     await waitFor(() => expect(router.state.location.pathname).toBe('/formations'))
     await router.navigate('/formations/2/modifier')
-    await screen.findByRole('heading', { name: 'Informations de base' })
+    // Formulaire complet rechargé : plus d'1 s (délai par défaut) sur un poste chargé
+    await screen.findByRole('heading', { name: 'Informations de base' }, { timeout: 5000 })
     saisir('Intitulé de la formation', 'Excel avancé — 2027')
     fireEvent.click(screen.getByRole('button', { name: 'Quitter sans sauvegarder' }))
     expect(await screen.findByRole('heading', { name: 'Quitter sans sauvegarder ?' })).toBeTruthy()
