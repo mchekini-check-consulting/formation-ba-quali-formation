@@ -56,7 +56,7 @@ class ModelesGeneriquesApiTests(TestCase):
         connecter(self.client)
         reponse = self.client.get('/modeles/')
         self.assertEqual(reponse.status_code, 200)
-        self.assertEqual([(m['type'], m['statut']) for m in reponse.json()], [
+        self.assertEqual([(m['type'], m['statut']) for m in reponse.json()['modeles']], [
             ('CONVENTION', ORIGINE), ('CONTRAT', ORIGINE), ('CONVOCATION', ORIGINE), ('ATTESTATION', ORIGINE)])
 
     def test_ca2_modele_ouvert_texte_d_origine_et_libelles_des_variables(self):
@@ -109,7 +109,7 @@ class EnregistrerModeleTests(TestCase):
         modele_service.enregistrer(self.compte, 'CONTRAT', '<p>Mon contrat v2</p>')
         self.assertEqual(ModeleOrigine.objects.get(type='CONTRAT').contenu, self.origine)
         self.assertEqual(ModeleGenerique.objects.filter(proprietaire=self.compte, type='CONTRAT').count(), 1)
-        statuts = {m['type']: m['statut'] for m in self.client.get('/modeles/').json()}
+        statuts = {m['type']: m['statut'] for m in self.client.get('/modeles/').json()['modeles']}
         self.assertEqual(statuts, {'CONVENTION': ORIGINE, 'CONTRAT': 'PERSONNALISE', 'CONVOCATION': ORIGINE, 'ATTESTATION': ORIGINE})
 
     def test_type_inconnu_refuse(self):

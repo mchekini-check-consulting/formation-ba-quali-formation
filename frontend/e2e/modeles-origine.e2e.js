@@ -11,11 +11,11 @@ test('un nouveau compte trouve les 4 modèles d’origine et ouvre la convention
 
   // CA1 : les 4 modèles, statut « Modèle d'origine »
   for (const nom of MODELES) {
-    await expect(page.getByRole('link', { name: new RegExp(nom) })).toContainText('Modèle d’origine')
+    await expect(page.getByRole('article', { name: nom })).toContainText('Modèle d’origine')
   }
 
   // CA2 : le texte d'origine, les variables en étiquettes (libellés du dictionnaire, jamais {{code}})
-  await page.getByRole('link', { name: /Convention de formation/ }).click()
+  await page.getByRole('link', { name: 'Convention de formation', exact: true }).click()
   await expect(page).toHaveURL(/\/modeles\/generiques\/convention$/)
   await expect(page.getByRole('navigation', { name: "Fil d'Ariane" })).toHaveText('Modèles › Modèles génériques › Convention de formation')
   const document = page.getByRole('article', { name: 'Document' })
