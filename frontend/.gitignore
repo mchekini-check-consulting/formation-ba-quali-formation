@@ -29,3 +29,5 @@ coverage
 # Tests end to end (Playwright) : résultats et rapport
 test-results
 playwright-report
+# Tests fonctionnels : fichiers générés par bddgen à partir des .feature
+.features-gen

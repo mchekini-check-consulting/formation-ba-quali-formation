@@ -1,14 +1,15 @@
 import { defineConfig, devices } from '@playwright/test'
+import { defineBddProject } from 'playwright-bdd'
 
 // Tests end to end (npm run test:e2e) : un vrai navigateur (Chromium) refait les parcours des utilisateurs
 // sur l'application complète lancée sur le poste — écran (serveur de dev) + backend Django sur une base vide.
+// Deux familles : les parcours écrits en code (e2e/*.e2e.js) et les tests fonctionnels des US, écrits en français
+// (e2e/fonctionnels/*.feature, un fichier par US) ; `bddgen` les traduit en tests avant chaque lancement.
 // Ports à part (5180 et 8100) : les tests tournent même si l'application est déjà lancée en local (5173 et 8000).
 const PORT_ECRAN = 5180
 const PORT_BACKEND = 8100
 
 export default defineConfig({
-  testDir: './e2e',
-  testMatch: '**/*.e2e.js',
   // Une seule base pour tous les tests : chacun crée ses propres comptes (e-mails uniques)
   fullyParallel: true,
   workers: 2,
@@ -23,7 +24,19 @@ export default defineConfig({
     trace: 'retain-on-failure', // en cas d'échec : film de chaque étape dans le rapport
     screenshot: 'only-on-failure',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    { name: 'parcours', testDir: './e2e', testMatch: '**/*.e2e.js', use: { ...devices['Desktop Chrome'] } },
+    {
+      ...defineBddProject({
+        name: 'fonctionnels',
+        language: 'fr',
+        features: 'e2e/fonctionnels/*.feature',
+        steps: 'e2e/fonctionnels/etapes/*.js',
+        missingSteps: 'fail-on-gen', // une phrase sans définition est signalée avant de lancer le navigateur
+      }),
+      use: { ...devices['Desktop Chrome'] },
+    },
+  ],
   webServer: [
     {
       command: `node e2e/demarrer-backend.mjs ${PORT_BACKEND}`,
