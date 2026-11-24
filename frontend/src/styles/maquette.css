@@ -1,13 +1,14 @@
 /* CSS repris tel quel de la maquette validée (docs/quali-formation-dev/maquette-formations.html).
    Retirés : la mise en page .app/.side/.main (gérée par index.css) et les anciennes règles .kpis/.kpi. */
 :root{
-  --bg:#F5F7F8; --surface:#FFFFFF; --surface-2:#F1F4F5; --line:#DDE3E6; --line-strong:#A9B4B9;
-  --ink:#111827; --ink-2:#1F2937; --ink-3:#4B5563;
-  --brand:#0F766E; --brand-ink:#FFFFFF; --brand-soft:#E6F6F3; --brand-line:#9ADFD3; --brand-text:#115E59;
+  /* Textes, fonds et bordures ardoise de la maquette SCRUM-209, appliqués à toute l'application */
+  --bg:#F8FAFC; --surface:#FFFFFF; --surface-2:#F1F5F9; --line:#E2E8F0; --line-strong:#94A3B8;
+  --ink:#0F172A; --ink-2:#334155; --ink-3:#475569;
+  --brand:#0F766E; --brand-ink:#FFFFFF; --brand-soft:#F0FDFA; --brand-line:#9ADFD3; --brand-text:#115E59;
   --ok:#15803D; --ok-soft:#DCFCE7; --warn:#B45309; --warn-soft:#FEF3C7; --warn-line:#F59E0B;
   --info:#1D4ED8; --info-soft:#DBEAFE; --danger:#B91C1C; --danger-soft:#FEE2E2; --danger-line:#FCA5A5;
   --todo:#E11D48; --todo-soft:#FFF1F2; --todo-line:#FDA4AF;
-  --muted-soft:#EEF2F3; --overlay:rgba(14,26,28,.48); --shadow:0 18px 50px rgba(14,26,28,.16);
+  --muted-soft:#F1F5F9; --overlay:rgba(14,26,28,.48); --shadow:0 18px 50px rgba(14,26,28,.16);
   --f-ui:'Inter',ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
@@ -35,7 +36,7 @@ h1,h2,h3{text-wrap:balance;margin:0}
 .wrap{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
 .page-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px}
 .page-head h1{font-size:28px;font-weight:700;letter-spacing:-.02em}
-.sub{color:var(--ink-3);font-size:15px;margin:2px 0 0}
+.sub{color:var(--ink-3);font-size:16px;margin:4px 0 0}
 .crumb{font-size:15px;color:var(--ink-3);display:flex;gap:8px}
 .crumb a{color:var(--brand-text);text-decoration:none}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 18px;border-radius:10px;border:1px solid transparent;font-weight:700;font-size:15px;white-space:nowrap;text-decoration:none}
@@ -194,14 +195,14 @@ button.db-card{cursor:pointer;transition:box-shadow .2s,transform .2s}button.db-
 .fc-top .fc-tag{border:0;box-shadow:0 2px 6px rgba(15,23,42,.12)}
 .fc-top .fc-tag:first-of-type{background:#fff;color:#0F766E}.fc-top .fc-tag:first-of-type svg{color:#0F766E}
 .fc-top .fc-pub.wait{background:#FDF1E3;color:#9A5B13}.fc-top .fc-pub.wait i{background:#E8973A;box-shadow:0 0 0 3px #F8D9B3}
-.fc-top .fc-pub.on{background:#E3F6EE;color:#0B6B4F}.fc-top .fc-pub.on i{background:#10B981;box-shadow:0 0 0 3px #BBEBD5}.fc-tag{position:relative;z-index:1;display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 11px;border-radius:999px;background:#fff;color:#1F2937;font-size:13px;font-weight:600;border:1px solid #D5E0EC}.fc-tag svg{color:#64748B}
+.fc-top .fc-pub.on{background:#E3F6EE;color:#0B6B4F}.fc-top .fc-pub.on i{background:#10B981;box-shadow:0 0 0 3px #BBEBD5}.fc-tag{position:relative;z-index:1;display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 11px;border-radius:999px;background:#fff;color:#334155;font-size:13px;font-weight:600;border:1px solid #D5E0EC}.fc-tag svg{color:#64748B}
 .fc-modal{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--ink-2)}.fc-modal svg{color:var(--ink-3)}
 .fc-pub{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--ink-2)}.fc-pub i{width:8px;height:8px;border-radius:50%;background:#94A3B8}
-.fc-pub.on{color:#047857}.fc-top .fc-pub{color:#1F2937}.fc-pub.on i{background:#10B981;box-shadow:0 0 0 3px #D1FAE5}.fc-pub.wait i{background:#F59E0B;box-shadow:0 0 0 3px #FEF3C7}
+.fc-pub.on{color:#047857}.fc-top .fc-pub{color:#334155}.fc-pub.on i{background:#10B981;box-shadow:0 0 0 3px #D1FAE5}.fc-pub.wait i{background:#F59E0B;box-shadow:0 0 0 3px #FEF3C7}
 .fc-cov{position:relative;margin:0 -18px 6px;height:48px;border-radius:18px 18px 0 0;overflow:hidden}
 .fc-art{display:block;width:100%;height:100%;transition:transform .4s}
 .fcard:hover .fc-art{transform:scale(1.04)}
-.fc-mod3{position:absolute;left:14px;top:50%;transform:translateY(-50%);padding:4px 11px;border-radius:999px;background:rgba(255,255,255,.92);color:#111827;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.fc-mod3{position:absolute;left:14px;top:50%;transform:translateY(-50%);padding:4px 11px;border-radius:999px;background:rgba(255,255,255,.92);color:#0F172A;font-size:13px;font-weight:600;box-shadow:0 2px 8px rgba(0,0,0,.12)}
 .lc-draft-card{--acc5:#94A3B8}.lc-inc-card{--acc5:#F43F5E}.lc-ready-card{--acc5:#10B981}.lc-pub-card{--acc5:#10B981}.lc-arch-card{--acc5:#D4D4D8}
 
 .fc-mod2{font-size:13px;font-weight:600;color:var(--ink-3);padding:3px 10px;border-radius:999px;background:var(--surface-2)}
@@ -237,7 +238,7 @@ button.db-card{cursor:pointer;transition:box-shadow .2s,transform .2s}button.db-
 .cv1{background:linear-gradient(135deg,#14B8A6,#0EA5E9)}.cv2{background:linear-gradient(135deg,#8B5CF6,#EC4899)}.cv3{background:linear-gradient(135deg,#F59E0B,#F97316)}
 .cv4{background:linear-gradient(135deg,#6366F1,#3B82F6)}.cv5{background:linear-gradient(135deg,#10B981,#84CC16)}.cv6{background:linear-gradient(135deg,#F43F5E,#FB923C)}
 .fc-av{width:52px;height:52px;margin-bottom:-22px;border-radius:14px;background:var(--surface);color:var(--ink);display:grid;place-items:center;font-weight:700;font-size:18px;box-shadow:0 6px 16px rgba(15,23,42,.15);border:3px solid var(--surface)}
-.fc-mod{align-self:flex-start;margin-top:12px;padding:3px 10px;border-radius:999px;background:rgba(255,255,255,.88);color:#1F2937;font-size:12.5px;font-weight:600}
+.fc-mod{align-self:flex-start;margin-top:12px;padding:3px 10px;border-radius:999px;background:rgba(255,255,255,.88);color:#334155;font-size:12.5px;font-weight:600}
 .fc-body{padding:32px 18px 8px;display:flex;flex-direction:column;gap:10px;flex:1}
 .fc-body h3{font-size:17px;line-height:1.35;margin:0}
 .fc-t{border:0;background:none;padding:0;text-align:left;font:inherit;color:var(--ink);font-weight:700}

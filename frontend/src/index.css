@@ -1,16 +1,16 @@
-/* Charte Quali-formation (reprise de la maquette Formations) : Inter, vert #0F766E */
+/* Charte Quali-formation : Inter, vert #0F766E ; textes, fonds et bordures ardoise (maquette SCRUM-209) */
 :root{
-  --fond:#F5F7F8;           /* fond de page */
+  --fond:#F8FAFC;           /* fond de page */
   --carte:#FFFFFF;
-  --carte-2:#F1F4F5;        /* survol, fonds secondaires */
-  --bordure:#DDE3E6;
-  --bordure-forte:#A9B4B9;
-  --texte:#111827;
-  --texte-2:#1F2937;
-  --texte-3:#4B5563;
+  --carte-2:#F1F5F9;        /* survol, fonds secondaires */
+  --bordure:#E2E8F0;
+  --bordure-forte:#94A3B8;
+  --texte:#0F172A;          /* titres */
+  --texte-2:#334155;        /* texte courant */
+  --texte-3:#475569;        /* texte secondaire */
   --vert:#0F766E;           /* couleur principale */
   --vert-texte:#115E59;     /* texte vert sur fond clair */
-  --vert-doux:#E6F6F3;
+  --vert-doux:#F0FDFA;
   --vert-bordure:#9ADFD3;
   --sur-vert:#FFFFFF;       /* texte posé sur le vert */
   --ok:#15803D; --ok-doux:#DCFCE7;
@@ -26,6 +26,8 @@
   --rayon-l:18px;
   --ombre:0 1px 2px rgba(14,26,28,.04),0 4px 16px rgba(14,26,28,.04);
   --ombre-forte:0 18px 50px rgba(14,26,28,.16);
+  /* Menu latéral (maquette SCRUM-209) : texte ardoise, titres et entrées « Bientôt » gris clair */
+  --menu-texte:var(--texte-3); --menu-discret:#94A3B8; --menu-badge:var(--carte-2); --menu-actif:var(--vert-doux);
   --police:'Inter',ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
@@ -34,6 +36,7 @@
   --vert:#2BB3A3; --vert-texte:#7FE0D3; --vert-doux:#123A36; --vert-bordure:#1F6F66; --sur-vert:#04211E;
   --ok:#4ADE80; --ok-doux:#123522; --alerte:#FBBF24; --alerte-doux:#3A2A0C; --danger:#FCA5A5; --danger-doux:#3F1515;
   --ombre:0 1px 2px rgba(0,0,0,.3); --ombre-forte:0 18px 50px rgba(0,0,0,.5);
+  --menu-texte:#C3CED2; --menu-discret:#7D8E94; --menu-badge:#1C2B2F; --menu-actif:#123A36;
   color-scheme:dark}}
 :root[data-theme="dark"]{
   --fond:#0C1416; --carte:#121D20; --carte-2:#172427; --bordure:#243337; --bordure-forte:#33464B;
@@ -41,6 +44,7 @@
   --vert:#2BB3A3; --vert-texte:#7FE0D3; --vert-doux:#123A36; --vert-bordure:#1F6F66; --sur-vert:#04211E;
   --ok:#4ADE80; --ok-doux:#123522; --alerte:#FBBF24; --alerte-doux:#3A2A0C; --danger:#FCA5A5; --danger-doux:#3F1515;
   --ombre:0 1px 2px rgba(0,0,0,.3); --ombre-forte:0 18px 50px rgba(0,0,0,.5);
+  --menu-texte:#C3CED2; --menu-discret:#7D8E94; --menu-badge:#1C2B2F; --menu-actif:#123A36;
   color-scheme:dark}
 
 *{box-sizing:border-box;margin:0;padding:0}
@@ -54,7 +58,7 @@ h1,h2,h3{text-wrap:balance}
 svg{flex-shrink:0}
 
 /* ---------- Mise en page ---------- */
-.app{display:grid;grid-template-columns:280px 1fr;min-height:100vh}
+.app{display:grid;grid-template-columns:296px 1fr;min-height:100vh}
 
 /* ---------- Barre latérale ---------- */
 .sidebar{background:var(--carte);border-right:1px solid var(--bordure);padding:22px 14px;display:flex;flex-direction:column;gap:20px;position:sticky;top:0;height:100vh;overflow-y:auto}
@@ -142,11 +146,20 @@ svg{flex-shrink:0}
 .demo-note{text-align:center}
 .reset{font-size:13px;color:var(--texte-3);background:none;border:0;text-decoration:underline;padding:0}
 
-/* Icônes du menu : pastille du même vert que le logo (--vert) */
-.nav-ic{width:30px;height:30px;flex-shrink:0;border-radius:9px;display:grid;place-items:center;color:var(--vert);background:var(--vert-doux);transition:background .15s,color .15s}
-.nav a:hover .nav-ic{background:color-mix(in srgb,var(--vert) 20%,var(--carte))}
-.nav a[aria-current="page"] .nav-ic{background:var(--vert);color:var(--sur-vert)}
-.nav a:has(.nav-ic),.nav .nav-a:has(.nav-ic){padding:7px 10px}
+/* Menu par sections (SCRUM-209, maquette) : texte ardoise d'épaisseur normale, icônes fines, titres de section
+   gris clair, entrée en cours en vert sur fond très pâle, entrées « Bientôt » gris clair et non cliquables */
+.nav{gap:16px}
+.nav-section{display:flex;flex-direction:column;gap:1px}
+.nav-titre{margin:0 0 4px;font-size:10.5px;font-weight:700;letter-spacing:.1em;color:var(--menu-discret)}
+.nav a,.nav .nav-a{gap:12px;padding:9px 12px;font-size:14px;font-weight:400;line-height:1.4;color:var(--menu-texte);white-space:nowrap}
+.nav a svg,.nav .nav-a svg{flex-shrink:0;stroke-width:1.75}
+.nav a[aria-current="page"]{background:var(--menu-actif);color:var(--vert);font-weight:600}
+.nav .nav-bientot{color:var(--menu-discret)}
+.nav-badge{margin-left:auto;font-size:11px;font-weight:600;line-height:1;padding:5px 8px;border-radius:999px;background:var(--menu-badge);color:var(--menu-discret)}
+.nav-bas{gap:4px}
+.nav-compte{display:flex;align-items:center;gap:10px;padding:8px 10px;min-width:0}
+.nav-compte .avatar{width:34px;height:34px;font-size:13px;flex-shrink:0}
+.nav-compte-nom{font-size:14px;font-weight:600;color:var(--texte)}
 
 /* Pop-ups des blocs : toutes de la même taille ; un contenu plus long défile à l'intérieur (.wiz-body) */
 .wiz{height:min(720px,100%)}

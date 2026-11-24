@@ -1,13 +1,27 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
-import { compteConnecte } from '../compte/serviceCompte'
+import { compteConnecte, initiales } from '../compte/serviceCompte'
 import BarreHaut from './BarreHaut'
 import Icone from './Icone'
 import { ToastProvider } from './Toast'
-import { FONCTIONNALITES, lienFonctionnalite } from '../pages/fonctionnalites'
+import { lienBientot, SECTIONS_MENU } from '../pages/fonctionnalites'
 
-// Icône du menu sur une pastille, du même vert que le logo
-const IconeMenu = ({ nom }) => <span className="nav-ic"><Icone nom={nom} taille={17} /></span>
+// Entrée du menu : lien vers sa page, mis en évidence sur la page en cours (CA3) ;
+// « Bientôt » : grisée, non cliquable (CA2)
+function EntreeMenu({ entree, onClick }) {
+  if (entree.bientot) {
+    return (
+      <span className="nav-a nav-bientot" aria-disabled="true">
+        <Icone nom={entree.icone} taille={18} />{entree.titre}<span className="nav-badge">Bientôt</span>
+      </span>
+    )
+  }
+  return (
+    <NavLink to={entree.lien} end={entree.code === 'tableau-de-bord'} onClick={onClick}>
+      <Icone nom={entree.icone} taille={18} />{entree.titre}
+    </NavLink>
+  )
+}
 
 // Barre latérale + barre du haut, communes à toutes les pages
 function Layout() {
@@ -45,22 +59,34 @@ function Layout() {
           {/* Le logo ramène à la landing page */}
           <Link className="logo" to="/" onClick={fermerMenu}><div className="logo-badge"><Icone nom="qualiopi" taille={18} epaisseur={2.2} /></div>Quali-formation</Link>
 
-          {/* SCRUM-19 : tous les éléments sont cliquables ; une fonctionnalité pas encore développée
-              ouvre sa page « Bientôt disponible » */}
+          {/* SCRUM-209 : menu rangé par sections (maquette) */}
           <nav className="nav" aria-label="Menu principal">
-            {FONCTIONNALITES.map((f) => (
-              <NavLink to={lienFonctionnalite(f)} end={f.code === 'tableau-de-bord'} onClick={fermerMenu} key={f.code}>
-                <IconeMenu nom={f.icone} />{f.titre}
-              </NavLink>
+            {SECTIONS_MENU.map((section) => (
+              <div className="nav-section" key={section.titre || 'accueil'}>
+                {section.titre && <p className="nav-titre">{section.titre}</p>}
+                {section.entrees.map((e) => <EntreeMenu entree={e} onClick={fermerMenu} key={e.code} />)}
+              </div>
             ))}
           </nav>
+
+          {/* En bas : Paramètres, puis le compte connecté. Le compte n'a pas encore de nom ni d'organisme : initiales et « Mon compte » ;
+              l'e-mail n'apparaît que dans la liste du profil (SCRUM-19, CA5) */}
+          <div className="nav nav-bas">
+            <NavLink to={lienBientot('parametres')} onClick={fermerMenu}><Icone nom="parametres" taille={18} />Paramètres</NavLink>
+            {compte && (
+              <div className="nav-compte">
+                <span className="avatar" aria-hidden="true">{initiales(compte.email)}</span>
+                <span className="nav-compte-nom">Mon compte</span>
+              </div>
+            )}
+          </div>
         </aside>
 
         {/* ================= CONTENU ================= */}
         <main className="contenu">
           <div className="topbar">
             <button className="menu-btn" ref={menuBtnRef} aria-label="Ouvrir le menu" onClick={() => setMenuOuvert((o) => !o)}>
-              <Icone nom="menu" taille={20} />
+              <Icone nom="menu" taille={18} />
             </button>
             <BarreHaut compte={compte} />
           </div>
