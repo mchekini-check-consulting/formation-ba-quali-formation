@@ -13,7 +13,7 @@ applications:
     # remplace tout jusqu'à la fin de la ligne.
     tag:
       dev: 19d2ada
-      qualif: e660d5c
+      qualif: 19d2ada
       preprod: ""
       prod: ""
     containerPort: 8000
@@ -65,7 +65,7 @@ applications:
     # remplace tout jusqu'à la fin de la ligne.
     tag:
       dev: 623dc65
-      qualif: "1513242"
+      qualif: 623dc65
       preprod: ""
       prod: ""
     containerPort: 8080
