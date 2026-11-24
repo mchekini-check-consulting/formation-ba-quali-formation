@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { PageEnChargement } from '../components/ErreurChargement'
 import Icone from '../components/Icone'
+import { useToast } from '../components/toastContext'
 import { pluriel } from '../formations/catalogue'
 import { DocumentModele } from './DocumentModele'
-import { listerModeles, obtenirModele, resumeModeles, STATUTS } from './serviceApi'
+import { EditeurDocument } from './editeur/EditeurDocument'
+import { enregistrerModele, listerModeles, messageEnregistrement, obtenirModele, resumeModeles, STATUTS } from './serviceApi'
 import '../styles/modeles.css'
 
 // Chargement d'une donnée du backend pour une page : { donnee, erreur } ; `charger` doit être stable (useCallback)
@@ -127,20 +129,61 @@ export function ModelesGeneriques() {
   )
 }
 
-// SCRUM-211 (CA2) : un modèle générique ouvert, le texte et ses variables en étiquettes (éditeur : SCRUM-213)
+// SCRUM-213 (maquettes SCRUM-213-1/2) : le modèle générique dans l'éditeur. RG8 : rien n'est envoyé avant
+// « Enregistrer » ; « ← Retour » quitte sans rien envoyer. RG3 : seul le modèle générique du compte est écrit.
+// Inactifs en attendant leur US : Télécharger en Word (216), Voir le modèle d'origine (217), document Word (215),
+// panneau Variables (214).
+function EditeurModeleGenerique({ modele }) {
+  const toast = useToast()
+  const contenu = useRef(modele.contenu)
+  const [envoi, setEnvoi] = useState(false)
+  const [erreur, setErreur] = useState(null)
+
+  async function enregistrer() {
+    setEnvoi(true)
+    setErreur(null)
+    try {
+      toast(messageEnregistrement(await enregistrerModele(modele.type, contenu.current)))
+    } catch (e) {
+      setErreur(e.message)
+    } finally {
+      setEnvoi(false)
+    }
+  }
+
+  return (
+    <div className="wrap modeles">
+      <FilAriane retour="/modeles/generiques" etapes={[MODELES, GENERIQUES, { libelle: modele.nom }]} />
+      <div className="mod-entete">
+        <h1>{modele.nom}</h1>
+        <p>Modifiez le texte librement. Glissez les variables à droite dans le document : elles seront remplacées par les vraies informations.</p>
+        <div className="mod-actions">
+          <button type="button" className="btn btn-line" disabled title="Bientôt disponible">Télécharger en Word</button>
+          <button type="button" className="btn btn-line" disabled title="Bientôt disponible">Voir le modèle d’origine</button>
+          <button type="button" className="btn btn-primary" onClick={enregistrer} disabled={envoi}>Enregistrer</button>
+        </div>
+        {erreur && <p className="mod-erreur" role="alert">{erreur}</p>}
+      </div>
+      <div className="mod-editeur">
+        <EditeurDocument contenu={modele.contenu} variables={modele.variables} nom={modele.nom}
+          onModification={(html) => { contenu.current = html }} />
+        <aside className="mod-variables" aria-label="Variables">
+          <button type="button" className="mod-word" disabled title="Bientôt disponible">Utiliser mon propre document Word</button>
+          <div className="mod-variables-panneau" aria-disabled="true">
+            <h2>Variables</h2>
+            <p>Glissez une variable dans le document, ou cliquez dessus pour l’insérer à l’endroit du curseur.</p>
+            <p className="mod-bientot">Bientôt disponible</p>
+          </div>
+        </aside>
+      </div>
+    </div>
+  )
+}
+
 export function ModeleOuvert() {
   const { type } = useParams()
   const chargerModele = useCallback(() => obtenirModele(type), [type])
   const { donnee: modele, erreur } = useChargement(chargerModele)
   if (!modele) return <PageEnChargement erreur={erreur} texte="Chargement du modèle…" />
-  return (
-    <div className="wrap modeles">
-      <FilAriane retour="/modeles/generiques" etapes={[MODELES, GENERIQUES, { libelle: modele.nom }]} />
-      <div className="page-head mod-titre">
-        <h1>{modele.nom}</h1>
-        <span className="mod-statut">{STATUTS[modele.statut] || modele.statut}</span>
-      </div>
-      <div className="doc-zone"><DocumentModele contenu={modele.contenu} variables={modele.variables} /></div>
-    </div>
-  )
+  return <EditeurModeleGenerique key={modele.type} modele={modele} />
 }

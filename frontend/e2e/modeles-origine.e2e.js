@@ -18,7 +18,7 @@ test('un nouveau compte trouve les 4 modèles d’origine et ouvre la convention
   await page.getByRole('link', { name: 'Convention de formation', exact: true }).click()
   await expect(page).toHaveURL(/\/modeles\/generiques\/convention$/)
   await expect(page.getByRole('navigation', { name: "Fil d'Ariane" })).toHaveText('Modèles › Modèles génériques › Convention de formation')
-  const document = page.getByRole('article', { name: 'Document' })
+  const document = page.getByRole('textbox', { name: 'Convention de formation' }) // éditeur (SCRUM-213)
   await expect(document.getByRole('heading', { name: 'CONVENTION DE FORMATION PROFESSIONNELLE' })).toBeVisible()
   await expect(document).toContainText('Articles L6353-1 et suivants du Code du travail')
   await expect(document.locator('.doc-variable').first()).toBeVisible()

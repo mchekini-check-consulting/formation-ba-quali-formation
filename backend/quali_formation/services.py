@@ -308,6 +308,17 @@ class ModeleIntrouvable(ErreurMetier):
         super().__init__('MODELE_INTROUVABLE', 'Modèle introuvable', 404)
 
 
+# SCRUM-213 : seule limite technique d'un document enregistré (RG12 : aucun contrôle de son contenu)
+TAILLE_MAX_CONTENU = 1_000_000
+
+
+class ContenuModeleInvalide(ErreurMetier):
+    """400 : le document envoyé n'est pas un texte ou dépasse la taille maximale."""
+
+    def __init__(self, message):
+        super().__init__('CONTENU_INVALIDE', message)
+
+
 # Dictionnaire des variables {{code}} (code, libellé, catégorie...) ; table Variable avec SCRUM-214
 FICHIER_VARIABLES = Path(__file__).resolve().parent / 'donnees_modeles' / 'variables.json'
 VARIABLE = re.compile(r'\{\{\s*([A-Za-z0-9_]+)\s*\}\}')
@@ -368,17 +379,35 @@ class ModeleService:
             raise ModeleIntrouvable()
         return self._decrire(origine, self._modeles_du_compte(utilisateur).get(origine.type), dictionnaire_variables())
 
-    @log_metier("service", champs=["type_modele", "resultat.statut"])
+    @log_metier("service", champs=["utilisateur.id", "type_modele", "resultat.statut"])
     def enregistrer(self, utilisateur, type_modele, contenu):
         """Enregistre le modèle générique du compte, créé à partir du modèle d'origine à la première fois (RG3).
-        RG12 : aucun contrôle ni blocage sur le contenu (mentions légales, variables)."""
+        RG12 : aucun contrôle ni blocage sur le contenu (mentions légales, variables) ; seulement un texte
+        de taille raisonnable."""
         origine = ModeleOrigine.objects.filter(type=str(type_modele).upper()).first()
         if origine is None:
             raise ModeleIntrouvable()
+        if not isinstance(contenu, str):
+            raise ContenuModeleInvalide('Le document envoyé est vide ou illisible.')
+        if len(contenu) > TAILLE_MAX_CONTENU:
+            raise ContenuModeleInvalide('Le document est trop volumineux pour être enregistré.')
         modele, _ = ModeleGenerique.objects.update_or_create(
             proprietaire=utilisateur, type=origine.type,
             defaults={'contenu': contenu, 'statut': ModeleGenerique.Statut.PERSONNALISE})
         return modele
+
+    def formations_utilisant(self, utilisateur, type_modele):
+        """RG6 : (formations qui utilisent le modèle générique de ce type, formations du compte), hors archivées.
+        Tant que les modèles de la formation n'existent pas (SCRUM-219), toutes l'utilisent."""
+        nb_formations = formations_visibles(utilisateur).exclude(statut=Formation.Statut.ARCHIVEE).count()
+        return nb_formations, nb_formations
+
+    def modifier(self, utilisateur, type_modele, contenu):
+        """SCRUM-213 : « Enregistrer » dans l'éditeur. Le modèle enregistré (statut PERSONNALISE) et, pour le
+        message de confirmation, le nombre de formations qui utilisent cette nouvelle version (RG6)."""
+        modele = self.enregistrer(utilisateur, type_modele, contenu)
+        utilisant, total = self.formations_utilisant(utilisateur, modele.type)
+        return {**self.obtenir(utilisateur, modele.type), 'nb_formations_utilisant': utilisant, 'nb_formations': total}
 
     def resume(self, utilisateur):
         """SCRUM-210 : nombre de modèles proposés (RG2 : ceux de TypeModele) et de formations du compte,
