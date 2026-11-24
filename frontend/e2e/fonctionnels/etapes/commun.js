@@ -53,19 +53,25 @@ Given('je n\'ai aucune formation', async ({ page }) => {
 })
 
 Given('je suis sur la page {texte}', async ({ page }, titre) => {
-  const adresses = { 'Sessions et planning': '/sessions', Formations: '/formations' }
+  const adresses = { 'Sessions et planning': '/sessions', Formations: '/formations', 'Parties prenantes': '/parties-prenantes' }
   await page.goto(adresses[titre])
   await expect(page.getByRole('heading', { level: 1, name: titre })).toBeVisible()
 })
 
 // ---- Actions ----
 
-// Bouton, choix d'un menu ou lien portant ce texte
+// Bouton, choix d'un menu ou lien portant ce texte, dans cet ordre de préférence
+// (« Parties prenantes » est à la fois un bouton de Sessions et planning et une entrée du menu latéral)
 When('je clique sur {texte}', async ({ page }, nom) => {
-  await page.getByRole('button', { name: nom, exact: true })
-    .or(page.getByRole('menuitem', { name: nom }))
-    .or(page.getByRole('link', { name: nom, exact: true }))
-    .first().click()
+  const cibles = [
+    page.getByRole('button', { name: nom, exact: true }),
+    page.getByRole('menuitem', { name: nom }),
+    page.getByRole('link', { name: nom, exact: true }),
+  ]
+  await expect(cibles[0].or(cibles[1]).or(cibles[2]).first()).toBeVisible()
+  for (const cible of cibles) {
+    if (await cible.count()) return cible.first().click()
+  }
 })
 
 When('je saisis {texte} dans le champ {texte}', async ({ page }, valeur, libelle) => {

@@ -10,6 +10,7 @@ complète (écran + backend, avec une base vide créée pour l'occasion : dev et
 | `SCRUM-166-creer-une-session-evolution.feature` | Créer une session (évolution, maquettes) |
 | `SCRUM-26-creer-un-formateur.feature` | Créer un formateur (Parties prenantes) |
 | `SCRUM-27-creer-un-apprenant.feature` | Créer un apprenant (Parties prenantes) |
+| `SCRUM-209-reorganiser-le-menu-lateral.feature` | Réorganiser le menu latéral |
 
 ## Quand ils tournent
 
@@ -40,6 +41,7 @@ Fonctionnalité: SCRUM-27 - Créer un apprenant
 - Les textes variables vont entre « » (ou entre "…" s'ils contiennent eux-mêmes des « »).
 - Mots-clés : `Étant donné que` (situation de départ), `Lorsque` (action), `Alors` (résultat attendu),
   `Et que` / `Et` (suite), `Contexte` (début commun à tous les scénarios du fichier).
+- `Plan du Scénario` + `Exemples` : le même scénario rejoué pour chaque ligne du tableau (`<colonne>` dans les phrases).
 - `@fixme` au-dessus d'un scénario : il est écrit mais mis de côté (fonctionnalité pas encore livrée).
 - Une phrase inconnue est signalée avant même d'ouvrir le navigateur : il faut alors lui ajouter une
   définition dans `etapes/` (le demander à Claude : « ajoute la phrase … aux tests fonctionnels »).
@@ -49,7 +51,7 @@ Fonctionnalité: SCRUM-27 - Créer un apprenant
 **Situation de départ**
 - `je suis connecté` · `je me connecte avec un nouveau compte` · `je n'ai aucune formation`
 - `j'ai une formation «Intitulé» de 21 heures en «Présentiel»` (Présentiel, Distanciel ou Mixte)
-- `je suis sur la page «Sessions et planning»` (ou «Formations»)
+- `je suis sur la page «Sessions et planning»` (ou «Formations», «Parties prenantes»)
 - `j'ai ouvert l'étape Formateurs d'une session de 10 places` · `j'ai ouvert l'étape Apprenants d'une session de 10 places`
 
 **Actions**
@@ -59,6 +61,7 @@ Fonctionnalité: SCRUM-27 - Créer un apprenant
 - `je remplis les champs :` suivi d'un tableau `| Libellé | valeur |`
 - `je remplis l'étape Informations avec 10 places`
 - `je coche «Prénom Nom»` · `je décoche «Prénom Nom»` · `je recherche «texte»`
+- `je clique sur l'entrée «Libellé» du menu` (menu latéral, Paramètres compris, même une entrée « Bientôt »)
 
 **Résultats attendus**
 - `la fenêtre «Titre» s'ouvre` · `la fenêtre «Titre» est fermée`
@@ -73,4 +76,8 @@ Fonctionnalité: SCRUM-27 - Créer un apprenant
 - `la ligne de «Prénom Nom» affiche «Texte»` · `seules les personnes contenant «texte» sont affichées`
 - `les personnes cochées sont en tête de la liste dans l'ordre :` suivi d'un tableau de noms
 - `la session «Intitulé» apparaît dans la liste avec le statut «Prévue»` · `aucune session n'est créée`
+- `le menu latéral affiche, dans l'ordre :` suivi d'un tableau `| Section | Entrée |` (section vide = hors section)
+- `le bas du menu affiche «Paramètres» puis «Mon compte»` · `le menu ne propose pas «Libellé»`
+- `l'entrée «Libellé» du menu est grisée avec l'étiquette «Bientôt»` · `l'entrée «Libellé» du menu est mise en évidence`
+- `la page «Titre» s'affiche` · `je suis toujours sur la page «Titre»`
 - `le formateur «e-mail» est enregistré` · `aucun apprenant «e-mail» n'est enregistré` (formateur ou apprenant)

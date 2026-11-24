@@ -10,6 +10,7 @@ import Items from './pages/Items'
 import BientotDisponible from './pages/BientotDisponible'
 import NouvelleSession from './pages/NouvelleSession'
 import SessionsPlanning from './pages/SessionsPlanning'
+import ListePartiesPrenantes from './pages/ListePartiesPrenantes'
 import LandingPage from './landing/LandingPage'
 import { DossierModeles, ModeleOuvert, ModelesAccueil, ModelesGeneriques } from './modeles/Modeles'
 
@@ -33,6 +34,7 @@ export const routes = [
       { path: '/sessions', element: <SessionsPlanning /> },
       { path: '/sessions/nouvelle', element: <><SessionsPlanning key="sous-panneau" /><NouvelleSession /></> }, // panneau par-dessus la liste (SCRUM-166) ; key : liste rechargée à la fermeture
       // Modèles de documents par dossiers (SCRUM-210) : dossiers vides pour l'instant (US suivantes de l'épic)
+      { path: '/parties-prenantes', element: <ListePartiesPrenantes /> }, // SCRUM-209
       { path: '/modeles', element: <ModelesAccueil /> },
       { path: '/modeles/generiques', element: <ModelesGeneriques /> },
       // Modèle générique ouvert (SCRUM-211) : texte et variables en étiquettes ; éditeur avec SCRUM-213

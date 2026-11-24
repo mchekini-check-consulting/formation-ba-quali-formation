@@ -1,23 +1,39 @@
-// Menu latéral (SCRUM-19), dans l'ordre de l'US. Chaque élément est cliquable :
-// `lien` = page disponible ; sinon, la page « Bientôt disponible » de la fonctionnalité (/bientot-disponible/<code>).
-export const FONCTIONNALITES = [
-  { code: 'tableau-de-bord', icone: 'tableau', titre: 'Tableau de bord', lien: '/tableau-de-bord' },
-  { code: 'formations', icone: 'formations', titre: 'Formations et programmes', lien: '/formations' },
-  { code: 'sessions', icone: 'sessions', titre: 'Sessions et planning', lien: '/sessions' },
-  // Modèles de documents (SCRUM-210) : remplace l'entrée « Documents »
-  { code: 'modeles', icone: 'documents', titre: 'Modèles', lien: '/modeles' },
-  { code: 'emargement', icone: 'emargement', titre: 'Émargement' },
-  { code: 'e-learning', icone: 'elearning', titre: 'E-learning' },
-  { code: 'evaluations', icone: 'evaluations', titre: 'Évaluations et satisfaction' },
-  { code: 'signature', icone: 'signature', titre: 'Signature électronique' },
-  { code: 'qualiopi', icone: 'qualiopi', titre: 'Qualiopi' },
+// Menu latéral rangé par sections (SCRUM-209, évolution du menu SCRUM-19), dans l'ordre de la maquette.
+// `lien` : page disponible ; `bientot` : entrée grisée « Bientôt », non cliquable (CA2).
+export const SECTIONS_MENU = [
+  {
+    titre: null,
+    entrees: [{ code: 'tableau-de-bord', icone: 'tableau', titre: 'Tableau de bord', lien: '/tableau-de-bord' }],
+  },
+  {
+    titre: 'Organiser',
+    entrees: [
+      { code: 'formations', icone: 'formations', titre: 'Formations et programmes', lien: '/formations' },
+      { code: 'sessions', icone: 'sessions', titre: 'Sessions et planning', lien: '/sessions' },
+      { code: 'parties-prenantes', icone: 'apprenants', titre: 'Parties prenantes', lien: '/parties-prenantes' },
+      { code: 'e-learning', icone: 'elearning', titre: 'E-learning', bientot: true },
+    ],
+  },
+  {
+    titre: 'Documents',
+    entrees: [
+      { code: 'modeles', icone: 'documents', titre: 'Modèles', lien: '/modeles' }, // SCRUM-210
+      { code: 'signature', icone: 'signature', titre: 'Signature électronique', bientot: true },
+    ],
+  },
+  {
+    titre: 'Qualité',
+    entrees: [{ code: 'qualiopi', icone: 'medaille', titre: 'Qualiopi', bientot: true }],
+  },
 ]
 
-// Pages du menu du profil pas encore développées (SCRUM-19)
+// Toutes les entrées du menu, sans les sections
+export const FONCTIONNALITES = SECTIONS_MENU.flatMap((s) => s.entrees)
+
+// Pages pas encore développées du bas du menu et du menu du profil (SCRUM-19)
 export const PAGES_PROFIL = [
   { code: 'mon-profil', titre: 'Mon profil' },
-  { code: 'parametres', titre: 'Paramètres' },
+  { code: 'parametres', icone: 'parametres', titre: 'Paramètres' },
 ]
 
 export const lienBientot = (code) => `/bientot-disponible/${code}`
-export const lienFonctionnalite = (f) => f.lien || lienBientot(f.code)
