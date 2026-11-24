@@ -49,16 +49,16 @@ describe('Modèles génériques (SCRUM-211)', () => {
     expect(filAriane().textContent).toBe('Modèles › Modèles génériques')
   })
 
-  it('CA2 : un clic ouvre le modèle, son texte d’origine et les variables en étiquettes', async () => {
+  it('CA2 : un clic ouvre le modèle (dans l’éditeur), son texte d’origine et les variables en étiquettes', async () => {
     simulerBackend()
     const router = afficher('/modeles/generiques')
     fireEvent.click(await screen.findByRole('link', { name: 'Convention de formation' }))
     expect(router.state.location.pathname).toBe('/modeles/generiques/convention')
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Convention de formation' })).toBeTruthy()
-    expect(screen.getByText('Modèle d’origine')).toBeTruthy()
     expect(filAriane().textContent).toBe('Modèles › Modèles génériques › Convention de formation')
-    const document = screen.getByRole('article', { name: 'Document' })
+    // SCRUM-213 : le modèle s'ouvre dans l'éditeur, avec le même texte et les mêmes étiquettes
+    const document = screen.getByRole('textbox', { name: 'Convention de formation' })
     expect(within(document).getByRole('heading', { name: 'CONVENTION DE FORMATION PROFESSIONNELLE' })).toBeTruthy()
     expect(document.textContent).toContain('Articles L6353-1 et suivants du Code du travail')
     const etiquettes = [...document.querySelectorAll('.doc-variable')]
@@ -74,7 +74,7 @@ describe('Modèles génériques (SCRUM-211)', () => {
     expect(router.state.location.pathname).toBe('/modeles/generiques')
     cleanup()
     router = afficher('/modeles/generiques/convention')
-    await screen.findByRole('article', { name: 'Document' })
+    await screen.findByRole('textbox', { name: 'Convention de formation' })
     fireEvent.click(within(filAriane()).getByRole('link', { name: 'Modèles génériques' }))
     expect(router.state.location.pathname).toBe('/modeles/generiques')
   })

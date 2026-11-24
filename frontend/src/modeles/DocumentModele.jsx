@@ -8,6 +8,8 @@ const IGNOREES = new Set(['script', 'style', 'iframe', 'object', 'embed', 'templ
 // Classes de mise en page des modèles d'origine : en-tête, emplacement du logo, texte conditionnel
 const CLASSES = { eh: 'doc-entete', 'logo-ph': 'doc-logo', cond: 'doc-cond' }
 const ALIGNEMENTS = new Set(['left', 'center', 'right', 'justify'])
+// Couleur du texte choisie dans l'éditeur (SCRUM-213) : seulement une vraie couleur, jamais une adresse ou une expression
+const COULEUR = /^(#[0-9a-f]{3,8}|rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\))$/i
 const VARIABLE = /\{\{\s*([A-Za-z0-9_]+)\s*\}\}/
 
 // Texte : chaque {{code}} devient une étiquette avec le libellé de la variable (le code si elle est inconnue)
@@ -19,7 +21,7 @@ function texte(contenu, libelles, cle) {
     : m))
 }
 
-// Seuls attributs gardés : les classes connues et l'alignement / la marge haute du texte
+// Seuls attributs gardés : les classes connues, l'alignement, la marge haute et la couleur du texte
 function proprietes(element, cle) {
   const props = { key: cle }
   const classes = [...element.classList].map((c) => CLASSES[c]).filter(Boolean)
@@ -27,6 +29,7 @@ function proprietes(element, cle) {
   const style = {}
   if (ALIGNEMENTS.has(element.style.textAlign)) style.textAlign = element.style.textAlign
   if (/^\d{1,3}px$/.test(element.style.marginTop)) style.marginTop = element.style.marginTop
+  if (COULEUR.test(element.style.color)) style.color = element.style.color
   if (Object.keys(style).length) props.style = style
   return props
 }

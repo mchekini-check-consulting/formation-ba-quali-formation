@@ -236,13 +236,31 @@ def modeles(request, utilisateur):
     return Response(modele_service.lister(utilisateur))
 
 
-@api_view(["GET"])
+@api_view(["GET", "PUT"])
+def modele(request, type_modele):
+    """GET : ouvrir un modèle (SCRUM-211) ; PUT : l'enregistrer depuis l'éditeur (SCRUM-213)."""
+    if request.method == 'PUT':
+        return _modifier_modele(request, type_modele=type_modele)
+    return _ouvrir_modele(request, type_modele=type_modele)
+
+
 @log_metier("controller", champs=["type_modele", "resultat.statut"])
 @_connexion_requise
-def modele(request, utilisateur, type_modele):
-    """SCRUM-211 : GET /modeles/<type> -> le modèle du compte et les libellés de ses variables ; 401, 404."""
+def _ouvrir_modele(request, utilisateur, type_modele):
+    """GET /modeles/<type> -> le modèle du compte et les libellés de ses variables ; 401, 404."""
     try:
         return Response(modele_service.obtenir(utilisateur, type_modele))
+    except ErreurMetier as e:
+        return _erreur(e)
+
+
+@_connexion_requise
+def _modifier_modele(request, utilisateur, type_modele):
+    """PUT /modeles/<type> {contenu} -> le modèle enregistré (PERSONNALISE) et nb_formations_utilisant /
+    nb_formations (RG6) ; 400 CONTENU_INVALIDE, 401, 404. Journalisé par le service (jamais le contenu)."""
+    contenu = request.data.get('contenu') if isinstance(request.data, dict) else None
+    try:
+        return Response(modele_service.modifier(utilisateur, type_modele, contenu))
     except ErreurMetier as e:
         return _erreur(e)
 
