@@ -197,3 +197,55 @@ class FormationHistorique(models.Model):
 
     def __str__(self):
         return f'{self.reference} : {self.action}'
+
+
+class TypeModele(models.TextChoices):
+    """Modèles de documents proposés (épic Modèles SCRUM-125, RG2 : seulement ces 4 ; les modèles prévus plus
+    tard ne sont pas ajoutés ici tant qu'ils ne sont pas proposés). Liste fixe : pas de table."""
+
+    CONVENTION = 'CONVENTION', 'Convention de formation'
+    CONTRAT = 'CONTRAT', 'Contrat de formation'
+    CONVOCATION = 'CONVOCATION', 'Convocation'
+    ATTESTATION = 'ATTESTATION', 'Attestation de fin de formation'
+
+
+class ModeleOrigine(models.Model):
+    """Modèle d'origine fourni par l'application (RG1) : texte de modeles-origine.json chargé tel quel par
+    migration (0011), commun à tous les comptes et jamais modifié (RG3). Variables écrites {{code}}."""
+
+    type = models.CharField(max_length=12, choices=TypeModele.choices, unique=True)
+    nom = models.CharField(max_length=100)
+    contenu = models.TextField()  # HTML
+    version = models.PositiveIntegerField(default=1)
+
+    class Meta:
+        db_table = 'modele_origine'
+        ordering = ('id',)
+
+    def __str__(self):
+        return self.nom
+
+
+class ModeleGenerique(models.Model):
+    """Modèle générique d'un compte, créé à partir du modèle d'origine à la première modification (RG3) ;
+    tant qu'il n'existe pas, le compte utilise le modèle d'origine (statut ORIGINE)."""
+
+    class Statut(models.TextChoices):  # RG4
+        ORIGINE = 'ORIGINE', "Modèle d'origine"
+        PERSONNALISE = 'PERSONNALISE', 'Personnalisé'
+        IMPORTE = 'IMPORTE', 'Mon document'
+
+    proprietaire = models.ForeignKey(Utilisateur, on_delete=models.CASCADE, related_name='modeles_generiques')
+    type = models.CharField(max_length=12, choices=TypeModele.choices)
+    contenu = models.TextField()  # HTML ; aucun contrôle sur le contenu (RG12)
+    statut = models.CharField(max_length=12, choices=Statut.choices, default=Statut.PERSONNALISE)
+    nom_fichier_importe = models.CharField(max_length=255, null=True, blank=True)
+    date_maj = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'modele_generique'
+        constraints = (models.UniqueConstraint(fields=('proprietaire', 'type'), name='modele_generique_compte_type'),)
+
+    def __str__(self):
+        return f'{self.type} ({self.statut})'
+

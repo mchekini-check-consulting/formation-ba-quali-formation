@@ -1,5 +1,10 @@
 """Règles de gestion du module Formations (RG01 à RG38), indépendantes de l'API pour être testées seules."""
 
+import json
+import re
+from functools import cache
+from pathlib import Path
+
 from django.contrib.auth.hashers import check_password, make_password
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
@@ -15,8 +20,11 @@ from quali_formation.models import (
     Formation,
     FormationHistorique,
     Item,
+    ModeleGenerique,
+    ModeleOrigine,
     Sequence,
     Session,
+    TypeModele,
     Utilisateur,
 )
 from quali_formation.serializers import ItemSerializer
@@ -291,6 +299,84 @@ class SessionService:
 
 
 session_service = SessionService()
+
+
+class ModeleIntrouvable(ErreurMetier):
+    """404 : type de modèle inconnu (RG2 : seuls les 4 types de TypeModele existent)."""
+
+    def __init__(self):
+        super().__init__('MODELE_INTROUVABLE', 'Modèle introuvable', 404)
+
+
+# Dictionnaire des variables {{code}} (code, libellé, catégorie...) ; table Variable avec SCRUM-214
+FICHIER_VARIABLES = Path(__file__).resolve().parent / 'donnees_modeles' / 'variables.json'
+VARIABLE = re.compile(r'\{\{\s*([A-Za-z0-9_]+)\s*\}\}')
+
+
+@cache
+def dictionnaire_variables():
+    """{code: libellé} des variables du dictionnaire de données."""
+    return {v['code']: v['libelle'] for v in json.loads(FICHIER_VARIABLES.read_text(encoding='utf-8'))}
+
+
+def variables_du_contenu(contenu):
+    """Codes {{code}} d'un document, dans l'ordre d'apparition, sans doublon."""
+    return list(dict.fromkeys(VARIABLE.findall(contenu)))
+
+
+class ModeleService:
+    """Modèles de documents (épic Modèles SCRUM-125). Le modèle d'origine n'est jamais écrit (RG3) : un compte
+    utilise son modèle générique s'il en a un, sinon le modèle d'origine (statut ORIGINE)."""
+
+    def _modeles_du_compte(self, utilisateur):
+        # Seulement les modèles génériques de ce compte (RGT1)
+        return {m.type: m for m in ModeleGenerique.objects.filter(proprietaire=utilisateur)}
+
+    @staticmethod
+    def _decrire(origine, generique):
+        if generique is None:
+            return {'type': origine.type, 'nom': origine.nom, 'statut': ModeleGenerique.Statut.ORIGINE,
+                    'contenu': origine.contenu}
+        return {'type': origine.type, 'nom': origine.nom, 'statut': generique.statut, 'contenu': generique.contenu}
+
+    def lister(self, utilisateur):
+        """SCRUM-211 : les 4 modèles génériques du compte (RG1, RG2), dans l'ordre de TypeModele."""
+        generiques = self._modeles_du_compte(utilisateur)
+        origines = {m.type: m for m in ModeleOrigine.objects.all()}
+        return [self._decrire(origines[t], generiques.get(t)) for t in TypeModele.values if t in origines]
+
+    def obtenir(self, utilisateur, type_modele):
+        """Un modèle du compte, avec le libellé de chacune de ses variables (étiquettes du document).
+        Une variable absente du dictionnaire garde son code comme libellé : aucun blocage (RG12)."""
+        origine = ModeleOrigine.objects.filter(type=str(type_modele).upper()).first()
+        if origine is None:
+            raise ModeleIntrouvable()
+        modele = self._decrire(origine, self._modeles_du_compte(utilisateur).get(origine.type))
+        dictionnaire = dictionnaire_variables()
+        modele['variables'] = [{'code': c, 'libelle': dictionnaire.get(c, c)}
+                               for c in variables_du_contenu(modele['contenu'])]
+        return modele
+
+    @log_metier("service", champs=["type_modele", "resultat.statut"])
+    def enregistrer(self, utilisateur, type_modele, contenu):
+        """Enregistre le modèle générique du compte, créé à partir du modèle d'origine à la première fois (RG3).
+        RG12 : aucun contrôle ni blocage sur le contenu (mentions légales, variables)."""
+        origine = ModeleOrigine.objects.filter(type=str(type_modele).upper()).first()
+        if origine is None:
+            raise ModeleIntrouvable()
+        modele, _ = ModeleGenerique.objects.update_or_create(
+            proprietaire=utilisateur, type=origine.type,
+            defaults={'contenu': contenu, 'statut': ModeleGenerique.Statut.PERSONNALISE})
+        return modele
+
+    def resume(self, utilisateur):
+        """SCRUM-210 : nombre de modèles proposés (RG2 : ceux de TypeModele) et de formations du compte,
+        hors formations archivées (plus de nouveaux documents pour elles)."""
+        formations = formations_visibles(utilisateur).exclude(statut=Formation.Statut.ARCHIVEE)
+        return {'nb_modeles': len(TypeModele), 'nb_formations': formations.count()}
+
+
+modele_service = ModeleService()
 
 
 class ItemService:

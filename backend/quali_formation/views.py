@@ -25,6 +25,7 @@ from quali_formation.services import (
     formation_service,
     formations_visibles,
     item_service,
+    modele_service,
     session_service,
 )
 
@@ -214,6 +215,35 @@ def formateurs(request):
 def apprenants(request):
     """Apprenants (création : SCRUM-27)."""
     return _personnes(request, session_service.lister_apprenants, session_service.creer_apprenant, ApprenantSerializer)
+
+
+
+# ---- Modèles (épic SCRUM-125) ----
+
+@api_view(["GET"])
+@log_metier("controller", champs=["resultat.nb_formations"])
+@_connexion_requise
+def modeles_resume(request, utilisateur):
+    """SCRUM-210 : GET /modeles/resume -> {nb_modeles, nb_formations} du compte connecté ; 401 NON_CONNECTE."""
+    return Response(modele_service.resume(utilisateur))
+
+
+@api_view(["GET"])
+@_connexion_requise
+def modeles(request, utilisateur):
+    """SCRUM-211 : GET /modeles/ -> les 4 modèles génériques du compte (type, nom, statut, contenu) ; 401."""
+    return Response(modele_service.lister(utilisateur))
+
+
+@api_view(["GET"])
+@log_metier("controller", champs=["type_modele", "resultat.statut"])
+@_connexion_requise
+def modele(request, utilisateur, type_modele):
+    """SCRUM-211 : GET /modeles/<type> -> le modèle du compte et les libellés de ses variables ; 401, 404."""
+    try:
+        return Response(modele_service.obtenir(utilisateur, type_modele))
+    except ErreurMetier as e:
+        return _erreur(e)
 
 
 # ---- Créer un compte (SCRUM-15) et se connecter (SCRUM-16) ----
