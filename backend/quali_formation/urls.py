@@ -26,4 +26,7 @@ urlpatterns = [
     path('apprenants/', views.apprenants),
     # Modèles par dossiers (SCRUM-210)
     path('modeles/resume', views.modeles_resume),
+    # Modèles d'origine et modèles génériques du compte (SCRUM-211)
+    path('modeles/', views.modeles),
+    path('modeles/<str:type_modele>', views.modele),
 ]

@@ -228,6 +228,24 @@ def modeles_resume(request, utilisateur):
     return Response(modele_service.resume(utilisateur))
 
 
+@api_view(["GET"])
+@_connexion_requise
+def modeles(request, utilisateur):
+    """SCRUM-211 : GET /modeles/ -> les 4 modèles génériques du compte (type, nom, statut, contenu) ; 401."""
+    return Response(modele_service.lister(utilisateur))
+
+
+@api_view(["GET"])
+@log_metier("controller", champs=["type_modele", "resultat.statut"])
+@_connexion_requise
+def modele(request, utilisateur, type_modele):
+    """SCRUM-211 : GET /modeles/<type> -> le modèle du compte et les libellés de ses variables ; 401, 404."""
+    try:
+        return Response(modele_service.obtenir(utilisateur, type_modele))
+    except ErreurMetier as e:
+        return _erreur(e)
+
+
 # ---- Créer un compte (SCRUM-15) et se connecter (SCRUM-16) ----
 
 def _formulaire_invalide(e):
