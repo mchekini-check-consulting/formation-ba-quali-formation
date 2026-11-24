@@ -13,7 +13,7 @@ applications:
     # remplace tout jusqu'à la fin de la ligne.
     tag:
       dev: f74c229
-      qualif: 19d2ada
+      qualif: f74c229
       preprod: ""
       prod: ""
     containerPort: 8000
@@ -65,7 +65,7 @@ applications:
     # remplace tout jusqu'à la fin de la ligne.
     tag:
       dev: f74c229
-      qualif: 623dc65
+      qualif: f74c229
       preprod: ""
       prod: ""
     containerPort: 8080
