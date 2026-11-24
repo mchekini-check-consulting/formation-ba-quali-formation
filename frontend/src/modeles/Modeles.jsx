@@ -78,15 +78,50 @@ export function DossierModeles({ titre, children }) {
   )
 }
 
-// SCRUM-211 (CA1) : les 4 modèles génériques du compte et leur statut (cartes complètes : SCRUM-212)
+// SCRUM-212 : carte d'un modèle générique (maquette SCRUM-212-1) : miniature du vrai document (« Ouvrir » au survol),
+// nom avec son repère de couleur, statut (RG4), « Rétablir le modèle d'origine » si modifié (SCRUM-217) et
+// « Dupliquer » (SCRUM-218), visibles mais inactifs tant que ces US ne sont pas faites.
+// RG7 : un clic sur la miniature ou le nom ouvre directement le modèle (éditeur : SCRUM-213).
+function CarteModele({ modele }) {
+  const lien = `/modeles/generiques/${modele.type.toLowerCase()}`
+  return (
+    <article className="mod-modele" aria-label={modele.nom}>
+      <Link className="mod-mini" to={lien} aria-label={`Ouvrir ${modele.nom}`}>
+        <span className="mod-mini-page" aria-hidden="true">
+          <DocumentModele contenu={modele.contenu} variables={modele.variables} />
+        </span>
+        <span className="mod-mini-ouvrir" aria-hidden="true"><Icone nom="oeil" taille={16} /> Ouvrir</span>
+      </Link>
+      <div className="mod-modele-corps">
+        <Link className={`mod-modele-nom mod-type-${modele.type.toLowerCase()}`} to={lien}>{modele.nom}</Link>
+        <span className={`mod-statut-pastille mod-statut-${modele.statut.toLowerCase()}`}>{STATUTS[modele.statut] || modele.statut}</span>
+        <div className="mod-modele-actions">
+          {modele.statut !== 'ORIGINE'
+            && <button type="button" className="mod-retablir" disabled title="Bientôt disponible">Rétablir le modèle d’origine</button>}
+          <button type="button" className="btn btn-line btn-sm" disabled title="Bientôt disponible">Dupliquer</button>
+        </div>
+      </div>
+    </article>
+  )
+}
+
+// SCRUM-211/212 : message orange (RG13, sans bouton) si une information de l'organisme manque, puis les 4 cartes
 export function ModelesGeneriques() {
-  const { donnee: modeles, erreur } = useChargement(chargerListe)
+  const { donnee, erreur } = useChargement(chargerListe)
   return (
     <DossierModeles titre="Modèles génériques">
-      {modeles
-        ? <div className="mod-dossiers">
-            {modeles.map((m) => <Carte key={m.type} lien={`/modeles/generiques/${m.type.toLowerCase()}`} icone="doc" nom={m.nom} info={STATUTS[m.statut] || m.statut} />)}
-          </div>
+      {donnee
+        ? <>
+            {!donnee.parametres_complets && (
+              <p className="mod-parametres">
+                <Icone nom="alert" taille={18} />
+                <span>Pensez à remplir les informations de votre organisme dans <b>Paramètres</b> : elles apparaîtront automatiquement dans vos documents.</span>
+              </p>
+            )}
+            <div className="mod-grille">
+              {donnee.modeles.map((m) => <CarteModele key={m.type} modele={m} />)}
+            </div>
+          </>
         : <PageEnChargement erreur={erreur} texte="Chargement des modèles…" />}
     </DossierModeles>
   )

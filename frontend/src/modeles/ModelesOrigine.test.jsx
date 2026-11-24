@@ -20,7 +20,7 @@ function simulerBackend(reponses = {}) {
   const fetchMock = vi.fn(async (url) => {
     if (url.endsWith('/auth/moi')) return ok({ id: 1, email: 'camille@organisme.fr' })
     for (const [fin, reponse] of Object.entries(reponses)) if (url.endsWith(fin)) return reponse
-    if (url.endsWith('/modeles/')) return ok(LISTE)
+    if (url.endsWith('/modeles/')) return ok({ modeles: LISTE, parametres_complets: false })
     if (url.endsWith('/modeles/CONVENTION') || url.endsWith('/modeles/convention')) {
       return ok({ type: 'CONVENTION', nom: 'Convention de formation', statut: 'ORIGINE', contenu: CONVENTION,
         variables: [{ code: 'org_nom', libelle: 'Nom de l’organisme' }, { code: 'client_nom', libelle: 'Raison sociale du client' }] })
@@ -44,7 +44,7 @@ describe('Modèles génériques (SCRUM-211)', () => {
     simulerBackend()
     afficher('/modeles/generiques')
     for (const nom of ['Convention de formation', 'Contrat de formation', 'Convocation', 'Attestation de fin de formation']) {
-      expect((await screen.findByRole('link', { name: new RegExp(nom) })).textContent).toContain('Modèle d’origine')
+      expect((await screen.findByRole('article', { name: nom })).textContent).toContain('Modèle d’origine')
     }
     expect(filAriane().textContent).toBe('Modèles › Modèles génériques')
   })
@@ -52,7 +52,7 @@ describe('Modèles génériques (SCRUM-211)', () => {
   it('CA2 : un clic ouvre le modèle, son texte d’origine et les variables en étiquettes', async () => {
     simulerBackend()
     const router = afficher('/modeles/generiques')
-    fireEvent.click(await screen.findByRole('link', { name: /Convention de formation/ }))
+    fireEvent.click(await screen.findByRole('link', { name: 'Convention de formation' }))
     expect(router.state.location.pathname).toBe('/modeles/generiques/convention')
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Convention de formation' })).toBeTruthy()
@@ -86,9 +86,9 @@ describe('Modèles génériques (SCRUM-211)', () => {
   })
 
   it('statut d’un modèle modifié : « Personnalisé »', async () => {
-    simulerBackend({ '/modeles/': ok([{ type: 'CONTRAT', nom: 'Contrat de formation', statut: 'PERSONNALISE' }]) })
+    simulerBackend({ '/modeles/': ok({ modeles: [{ type: 'CONTRAT', nom: 'Contrat de formation', statut: 'PERSONNALISE' }], parametres_complets: false }) })
     afficher('/modeles/generiques')
-    expect((await screen.findByRole('link', { name: /Contrat de formation/ })).textContent).toContain('Personnalisé')
+    expect((await screen.findByRole('article', { name: 'Contrat de formation' })).textContent).toContain('Personnalisé')
   })
 })
 

@@ -333,29 +333,40 @@ class ModeleService:
         return {m.type: m for m in ModeleGenerique.objects.filter(proprietaire=utilisateur)}
 
     @staticmethod
-    def _decrire(origine, generique):
+    def _decrire(origine, generique, dictionnaire):
+        """Le modèle du compte, avec le libellé de chacune de ses variables (étiquettes du document).
+        Une variable absente du dictionnaire garde son code comme libellé : aucun blocage (RG12).
+        Jamais modifié : le modèle d'origine, sans date de mise à jour (RG4)."""
         if generique is None:
-            return {'type': origine.type, 'nom': origine.nom, 'statut': ModeleGenerique.Statut.ORIGINE,
-                    'contenu': origine.contenu}
-        return {'type': origine.type, 'nom': origine.nom, 'statut': generique.statut, 'contenu': generique.contenu}
-
-    def lister(self, utilisateur):
-        """SCRUM-211 : les 4 modèles génériques du compte (RG1, RG2), dans l'ordre de TypeModele."""
-        generiques = self._modeles_du_compte(utilisateur)
-        origines = {m.type: m for m in ModeleOrigine.objects.all()}
-        return [self._decrire(origines[t], generiques.get(t)) for t in TypeModele.values if t in origines]
-
-    def obtenir(self, utilisateur, type_modele):
-        """Un modèle du compte, avec le libellé de chacune de ses variables (étiquettes du document).
-        Une variable absente du dictionnaire garde son code comme libellé : aucun blocage (RG12)."""
-        origine = ModeleOrigine.objects.filter(type=str(type_modele).upper()).first()
-        if origine is None:
-            raise ModeleIntrouvable()
-        modele = self._decrire(origine, self._modeles_du_compte(utilisateur).get(origine.type))
-        dictionnaire = dictionnaire_variables()
+            modele = {'type': origine.type, 'nom': origine.nom, 'statut': ModeleGenerique.Statut.ORIGINE,
+                      'contenu': origine.contenu, 'date_maj': None}
+        else:
+            modele = {'type': origine.type, 'nom': origine.nom, 'statut': generique.statut,
+                      'contenu': generique.contenu, 'date_maj': generique.date_maj}
         modele['variables'] = [{'code': c, 'libelle': dictionnaire.get(c, c)}
                                for c in variables_du_contenu(modele['contenu'])]
         return modele
+
+    def parametres_complets(self, utilisateur):
+        """RG13 : vrai quand toutes les informations de l'organisme sont remplies dans Paramètres.
+        Ces informations arrivent avec SCRUM-221 : d'ici là, aucune n'est remplie pour aucun compte."""
+        return False
+
+    def lister(self, utilisateur):
+        """SCRUM-211/212 : les 4 modèles génériques du compte (RG1, RG2), dans l'ordre de TypeModele
+        (contenu pour la miniature), et si le message orange « Pensez à remplir… » est à afficher (RG13)."""
+        generiques = self._modeles_du_compte(utilisateur)
+        origines = {m.type: m for m in ModeleOrigine.objects.all()}
+        dictionnaire = dictionnaire_variables()
+        modeles = [self._decrire(origines[t], generiques.get(t), dictionnaire) for t in TypeModele.values if t in origines]
+        return {'modeles': modeles, 'parametres_complets': self.parametres_complets(utilisateur)}
+
+    def obtenir(self, utilisateur, type_modele):
+        """Un modèle du compte, avec le libellé de chacune de ses variables."""
+        origine = ModeleOrigine.objects.filter(type=str(type_modele).upper()).first()
+        if origine is None:
+            raise ModeleIntrouvable()
+        return self._decrire(origine, self._modeles_du_compte(utilisateur).get(origine.type), dictionnaire_variables())
 
     @log_metier("service", champs=["type_modele", "resultat.statut"])
     def enregistrer(self, utilisateur, type_modele, contenu):

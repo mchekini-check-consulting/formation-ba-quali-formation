@@ -36,3 +36,38 @@
 /* Variable : étiquette bleue avec son libellé (le code reste en info-bulle) */
 .doc-variable{display:inline-block;background:#DBEAFE;color:#1E40AF;border-radius:4px;padding:0 6px;font-size:.92em;font-weight:600;line-height:1.5}
 @media (max-width:760px){.doc-zone{padding:8px}.doc-feuille{padding:20px 16px}}
+
+/* Modèles génériques (SCRUM-212, maquette SCRUM-212-1) : message orange, grille de 4 cartes */
+.mod-parametres{display:flex;align-items:center;gap:10px;margin:0;padding:12px 16px;border:1px solid var(--warn-line);border-radius:10px;background:var(--warn-soft);color:var(--warn);font-size:14px}
+.mod-parametres svg{flex:none}
+.mod-parametres b{font-weight:700}
+.mod-grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
+.mod-modele{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+
+/* Miniature : la première page du vrai document, réduite (feuille A4 de 794 px à 30 %) ; au survol, voile et « Ouvrir » */
+.mod-mini{position:relative;display:block;height:200px;overflow:hidden;background:var(--surface-2);border-bottom:1px solid var(--line)}
+.mod-mini-page{position:absolute;top:18px;left:50%;width:794px;margin-left:-119px;transform:scale(.3);transform-origin:top left;pointer-events:none}
+.mod-mini-page .doc-feuille{margin:0}
+.mod-mini::after{content:"";position:absolute;inset:0;background:rgba(16,24,40,0);transition:background .15s}
+.mod-mini-ouvrir{position:absolute;top:50%;left:50%;z-index:1;display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:999px;background:var(--surface);color:var(--ink);font-weight:600;font-size:14px;box-shadow:0 2px 8px rgba(16,24,40,.15);transform:translate(-50%,-50%);opacity:0;transition:opacity .15s}
+.mod-mini:hover::after,.mod-mini:focus-visible::after{background:rgba(16,24,40,.28)}
+.mod-mini:hover .mod-mini-ouvrir,.mod-mini:focus-visible .mod-mini-ouvrir{opacity:1}
+
+/* Nom avec le repère de couleur du document, statut, puis lien et bouton */
+.mod-modele-corps{display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding:14px 16px 16px;flex:1}
+.mod-modele-nom{display:inline-flex;align-items:center;gap:8px;color:var(--ink);font-weight:600;font-size:15px;text-decoration:none}
+.mod-modele-nom:hover{text-decoration:underline}
+.mod-modele-nom::before{content:"";flex:none;width:10px;height:10px;border-radius:2px;background:var(--repere)}
+.mod-type-convention,.mod-type-contrat{--repere:#9333EA}
+.mod-type-convocation{--repere:#0284C7}
+.mod-type-attestation{--repere:#DB2777}
+/* Statuts (RG4) : gris « Modèle d'origine », bleu « Personnalisé », vert « Mon document » */
+.mod-statut-pastille{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;border-radius:999px;padding:3px 10px;background:var(--muted-soft);color:var(--ink-3)}
+.mod-statut-pastille::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.mod-statut-personnalise{background:var(--info-soft);color:var(--info)}
+.mod-statut-importe{background:var(--ok-soft);color:var(--ok)}
+.mod-modele-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;margin-top:auto;flex-wrap:wrap}
+.mod-modele-actions .btn{margin-left:auto}
+.mod-retablir{padding:0;border:0;background:none;font:inherit;font-size:13.5px;font-weight:600;color:var(--brand-text);text-decoration:underline}
+.mod-retablir:disabled,.mod-modele-actions .btn:disabled{opacity:.55;cursor:not-allowed}
+@media (prefers-reduced-motion:reduce){.mod-mini::after,.mod-mini-ouvrir{transition:none}}
