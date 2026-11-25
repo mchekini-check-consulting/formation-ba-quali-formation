@@ -46,8 +46,8 @@ Fonctionnalité: SCRUM-221 - Renseigner les informations du centre à la premiè
   Scénario: CA3 - SIRET connu : la raison sociale et l'adresse se remplissent et restent modifiables
     Étant donné que la recherche d'entreprises connaît le SIRET «12345678900012» : «HITECH FORMATION», «12 RUE DES LILAS 75011 PARIS»
     Lorsque je saisis «12345678900012» dans le champ «SIRET»
-    Alors le message «Informations trouvées. Vérifiez-les avant d’enregistrer.» s'affiche
-    Et le champ «Raison sociale» contient «HITECH FORMATION»
+    Alors le champ «Raison sociale» contient «HITECH FORMATION»
+    Et le message «Informations trouvées. Vérifiez-les avant d’enregistrer.» ne s'affiche pas
     Et le champ «Adresse» contient «12 RUE DES LILAS 75011 PARIS»
     Et le champ «N° de déclaration» contient «»
     Et le champ «Région du NDA» contient «»
@@ -84,13 +84,25 @@ Fonctionnalité: SCRUM-221 - Renseigner les informations du centre à la premiè
   Scénario: CA5 - N° de déclaration d'activité au mauvais format
     Lorsque je remplis les champs obligatoires pour le centre «HiTech Formation»
     Et que je saisis «117565» dans le champ «N° de déclaration»
-    Et que je clique sur «Enregistrer et accéder à Quali-formation»
+    Et que je clique sur «Enregistrer»
     Alors le message «Le N° de déclaration d’activité doit contenir 11 chiffres» s'affiche sous le champ «N° de déclaration»
     Et aucun centre n'est enregistré
 
+  Scénario: CA8 - Un centre est déjà inscrit avec ce SIRET : rien n'est enregistré
+    Étant donné qu'un centre est déjà inscrit avec le SIRET «11122233300044»
+    Lorsque je saisis «11122233300044» dans le champ «SIRET»
+    Et que je saisis «HiTech Formation» dans le champ «Raison sociale»
+    Et que je saisis «12 rue des Lilas, 75011 Paris» dans le champ «Adresse»
+    Et que je saisis «Marie» dans le champ «Prénom»
+    Et que je saisis «Arnaud» dans le champ «Nom»
+    Et que je clique sur «Enregistrer»
+    Alors le message «Ce centre est déjà inscrit sur Quali-formation. Contactez son gestionnaire.» s'affiche sous le champ «SIRET»
+    Et aucun centre n'est enregistré
+    Et le formulaire «Première connexion» s'affiche
+
   Scénario: CA6 - Formulaire valide : je deviens gestionnaire et Sessions et planning s'affiche
     Lorsque je remplis les champs obligatoires pour le centre «HiTech Formation»
-    Et que je clique sur «Enregistrer et accéder à Quali-formation»
+    Et que je clique sur «Enregistrer»
     Alors la page «Sessions et planning» s'affiche
     Et le bandeau de confirmation affiche "Bienvenue sur Quali-formation !"
     Et je suis le gestionnaire du centre «HiTech Formation»

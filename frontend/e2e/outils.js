@@ -6,6 +6,9 @@ import { expect } from '@playwright/test'
 export const emailUnique = (prefixe = 'e2e') => `${prefixe}.${randomUUID().slice(0, 8)}@organisme-test.fr`
 
 // Mot de passe tiré au hasard, qui respecte les 5 règles (8 caractères, majuscule, minuscule, chiffre, spécial)
+// SIRET tiré au hasard (14 chiffres) : un seul centre par SIRET (SCRUM-221, critère 8)
+export const siretUnique = () => `9${Array.from(randomUUID().replaceAll('-', '').slice(0, 13), (c) => parseInt(c, 16) % 10).join('')}`
+
 export const motDePasse = () => `Aa1!${randomUUID().slice(0, 8)}`
 
 // Compte créé directement par l'API (sans passer par l'écran) ; `requete` = page.request pour être connecté
@@ -21,9 +24,9 @@ export async function creerCompteParApi(requete, email = emailUnique(), mdp = mo
 }
 
 // Formulaire de première connexion (SCRUM-221) enregistré par l'API, avec les seules informations obligatoires
-export async function renseignerCentreParApi(requete, raisonSociale = 'Centre de test') {
+export async function renseignerCentreParApi(requete, raisonSociale = 'Centre de test', siret = siretUnique()) {
   const reponse = await requete.post('/api/organisme/', { data: {
-    raison_sociale: raisonSociale, siret: '12345678900012', adresse: '12 rue des Lilas, 75011 Paris',
+    raison_sociale: raisonSociale, siret, adresse: '12 rue des Lilas, 75011 Paris',
     prenom: 'Marie', nom: 'Arnaud',
   } })
   expect(reponse.status(), await reponse.text()).toBe(201)

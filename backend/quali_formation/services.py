@@ -467,14 +467,23 @@ class DonneesInvalides(APIException):
 
     status_code = 400
 
-    def __init__(self, erreurs):
+    def __init__(self, erreurs, siret=None):
         super().__init__(f'{len(erreurs)} information(s) invalide(s)')
         self.erreurs = erreurs
+        self.siret = siret  # SIRET déjà utilisé par un autre centre (SCRUM-221, critère 8), pour les logs
 
     @property
     def champs(self):
         """Noms des champs refusés (ex. ['siret', 'nom']), sans les valeurs saisies : lisible dans les logs."""
         return [e['champ'] for e in self.erreurs]
+
+    @property
+    def code(self):
+        """Code du log (errorCode) : SIRET_DEJA_UTILISE si le refus vient d'un SIRET déjà inscrit."""
+        return SIRET_DEJA_UTILISE if any(e['code'] == SIRET_DEJA_UTILISE for e in self.erreurs) else None
+
+
+SIRET_DEJA_UTILISE = 'SIRET_DEJA_UTILISE'
 
 
 def _erreur_champ(champ, code, message):
@@ -614,9 +623,10 @@ class OrganismeService:
     """Formulaire de première connexion (SCRUM-221) : crée le centre et fait du compte connecté son gestionnaire.
     Log métier : identifiant de l'utilisateur ; réussite (info) : identifiant du centre créé (resultat.id) et rôle
     attribué ; refus (warn) : noms des champs en erreur (erreur.champs), jamais les valeurs saisies ; erreur technique
-    (error) : son type. Aucune autre donnée saisie n'est journalisée."""
+    (error) : son type ; SIRET déjà inscrit (warn, errorCode SIRET_DEJA_UTILISE) : ce SIRET (erreur.siret). Aucune autre
+    donnée saisie n'est journalisée."""
 
-    @log_metier("service", champs=["utilisateur.id", "utilisateur.role", "resultat.id", "erreur.champs"])
+    @log_metier("service", champs=["utilisateur.id", "utilisateur.role", "resultat.id", "erreur.champs", "erreur.siret"])
     def enregistrer(self, utilisateur, donnees):
         if utilisateur.organisme_id is not None:
             raise ErreurMetier('ORGANISME_DEJA_RENSEIGNE', 'Les informations de votre centre sont déjà enregistrées.', 409)
@@ -625,8 +635,13 @@ class OrganismeService:
         for champ in ('siret', 'numero_declaration_activite'):
             valeurs[champ] = valeurs[champ].replace(' ', '')
         erreurs = _erreurs_organisme(valeurs)
+        # Critère 8 : un seul centre par SIRET (vérifié avec les autres champs : tous les messages d'un coup)
+        deja_utilise = not any(e['champ'] == 'siret' for e in erreurs)             and Organisme.objects.filter(siret=valeurs['siret']).exists()
+        if deja_utilise:
+            erreurs.append(_erreur_champ('siret', SIRET_DEJA_UTILISE,
+                                         'Ce centre est déjà inscrit sur Quali-formation. Contactez son gestionnaire.'))
         if erreurs:
-            raise DonneesInvalides(erreurs)  # rien n'est enregistré
+            raise DonneesInvalides(erreurs, siret=valeurs['siret'] if deja_utilise else None)  # rien n'est enregistré
         # Le centre et le gestionnaire ensemble : si une étape échoue, rien n'est enregistré
         with transaction.atomic():
             organisme = Organisme.objects.create(**{champ: valeurs[champ] for champ, _ in CHAMPS_ORGANISME})

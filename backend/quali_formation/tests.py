@@ -1,3 +1,4 @@
+import itertools
 from datetime import date
 from io import StringIO
 
@@ -30,9 +31,14 @@ VALEURS_COMPLETES = {
     'document': 'Attestation de réalisation', 'satisfaction': ['À chaud (fin de formation)'],
     'resultats_plan': 'Questionnaire à chaud',
 }
-def creer_centre(raison_sociale='Cap Compétences'):
-    """Centre de formation (SCRUM-221) avec ses seules informations obligatoires."""
-    return Organisme.objects.create(raison_sociale=raison_sociale, siret='12345678900012', adresse='12 rue des Lilas, Paris')
+_SIRETS = itertools.count(1)
+
+
+def creer_centre(raison_sociale='Cap Compétences', siret=None):
+    """Centre de formation (SCRUM-221) avec ses seules informations obligatoires. Un SIRET différent par centre
+    (un seul centre par SIRET, critère 8), sauf s'il est donné."""
+    siret = siret or f'900000000{next(_SIRETS):05d}'
+    return Organisme.objects.create(raison_sociale=raison_sociale, siret=siret, adresse='12 rue des Lilas, Paris')
 
 
 def connecter(client, email='camille@organisme.fr', centre=True):

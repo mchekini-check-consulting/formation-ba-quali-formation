@@ -1,6 +1,6 @@
 // Phrases des informations du centre à la première connexion (SCRUM-221)
 import { expect } from '@playwright/test'
-import { emailUnique, motDePasse } from '../../outils'
+import { creerCompteParApi, emailUnique, motDePasse, renseignerCentreParApi, siretUnique } from '../../outils'
 import { champ, donnees, Given, Then, When } from './commun'
 
 // Compte créé depuis l'écran « Créer votre compte » ; son e-mail et son mot de passe sont gardés pour la reconnexion
@@ -115,10 +115,16 @@ Then('la raison sociale est coupée avec « … »', async ({ page }) => {
 // Remplit les champs obligatoires du formulaire avec ceux de la maquette (raison sociale au choix). Le SIRET d'abord,
 // puis on attend le résultat de sa recherche pour qu'il ne remplace pas la raison sociale saisie ensuite.
 When('je remplis les champs obligatoires pour le centre {texte}', async ({ page }, raisonSociale) => {
-  await champ(page, 'SIRET').fill('12345678900012')
+  await champ(page, 'SIRET').fill(siretUnique())
   await expect(page.locator('#pc-siret-info')).toBeVisible()
   await champ(page, 'Raison sociale').fill(raisonSociale)
   await champ(page, 'Adresse').fill('12 rue des Lilas, 75011 Paris')
   await champ(page, 'Prénom').fill('Marie')
   await champ(page, 'Nom').fill('Arnaud')
+})
+
+// Critère 8 : centre inscrit par un autre compte (requête à part : la session du navigateur n'est pas touchée)
+Given('un centre est déjà inscrit avec le SIRET {texte}', async ({ request }, siret) => {
+  await creerCompteParApi(request, emailUnique('autre-centre'), motDePasse(), { centre: false })
+  await renseignerCentreParApi(request, 'Centre déjà inscrit', siret)
 })

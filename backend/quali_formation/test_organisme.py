@@ -67,6 +67,26 @@ class PremiereConnexionTests(TestCase):
                                    'numero_declaration_activite': 'Le N° de déclaration d’activité doit contenir 11 chiffres'})
         self.assertFalse(Organisme.objects.exists())
 
+    def test_siret_deja_inscrit_rien_n_est_enregistre(self):
+        # CA8 : un seul centre par SIRET (espaces ignorés), message sous le champ SIRET
+        creer_centre('Centre existant', siret='12345678900012')
+        erreurs = self.erreurs(self.poster(siret='123 456 789 00012'))
+        self.assertEqual(erreurs, {'siret': 'Ce centre est déjà inscrit sur Quali-formation. Contactez son gestionnaire.'})
+        self.assertEqual(Organisme.objects.count(), 1)
+        self.compte.refresh_from_db()
+        self.assertEqual((self.compte.organisme, self.compte.role), (None, 'UTILISATEUR'))
+
+    def test_siret_deja_inscrit_signale_avec_les_autres_champs(self):
+        creer_centre('Centre existant', siret='12345678900012')
+        reponse = self.poster(nom='')
+        self.assertEqual(self.erreurs(reponse), {
+            'nom': 'Le nom est obligatoire',
+            'siret': 'Ce centre est déjà inscrit sur Quali-formation. Contactez son gestionnaire.'})
+
+    def test_siret_au_mauvais_format_pas_de_recherche_de_doublon(self):
+        creer_centre('Centre existant', siret='12345678900012')
+        self.assertEqual(self.erreurs(self.poster(siret='123')), {'siret': 'Le SIRET doit contenir 14 chiffres'})
+
     def test_texte_trop_long(self):
         self.assertEqual(self.erreurs(self.poster(ville_signature='x' * 101)), {'ville_signature': '100 caractères maximum'})
 
@@ -141,6 +161,17 @@ class LogsEnregistrementTests(TestCase):
         self.assertEqual((ligne.levelname, ligne.error, getattr(ligne, 'erreur.champs')),
                          ('WARNING', 'DonneesInvalides', 'raison_sociale,nom,siret'))
         self.assertFalse(hasattr(ligne, 'resultat.id'))
+
+    def test_siret_deja_utilise_warn_avec_code_et_siret(self):
+        creer_centre('Centre existant', siret='12345678900012')
+        ligne = self.enregistrer()
+        self.assertEqual((ligne.levelname, ligne.errorCode, getattr(ligne, 'erreur.siret'), getattr(ligne, 'erreur.champs')),
+                         ('WARNING', 'SIRET_DEJA_UTILISE', '12345678900012', 'siret'))
+
+    def test_refus_ordinaire_sans_code_ni_siret(self):
+        ligne = self.enregistrer(nom='')
+        self.assertFalse(hasattr(ligne, 'errorCode'))
+        self.assertFalse(hasattr(ligne, 'erreur.siret'))
 
     def test_erreur_technique_ligne(self):
         with mock.patch.object(Organisme.objects, 'create', side_effect=RuntimeError('panne marie.arnaud')), \

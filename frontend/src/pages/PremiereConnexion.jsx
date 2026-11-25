@@ -2,15 +2,15 @@ import { useEffect, useRef, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import Icone from '../components/Icone'
 import {
-  BLOCS, enregistrerCentre, PAGE_APRES_CENTRE, sansEspaces, titreErreurs, verifierCentre, VIDE,
+  BLOCS, CENTRE_DEJA_ENREGISTRE, enregistrerCentre, PAGE_APRES_CENTRE, sansEspaces, titreErreurs, verifierCentre, VIDE,
 } from '../compte/centre'
 import { rechercherEntreprise } from '../entreprises/rechercheEntreprise'
 import { compteConnecte, MSG_BIENVENUE, seDeconnecter } from '../compte/serviceCompte'
 import '../styles/premiere-connexion.css'
 
-// Résultat de la recherche par SIRET, sous le champ (maquettes 02 et 03)
+// Résultat de la recherche par SIRET, sous le champ : seul « non trouvé » a un message (maquette 03) ; trouvé, les
+// champs se remplissent sans message
 const MESSAGES_SIRET = {
-  trouvee: { classe: 'pc-siret-ok', icone: 'check', texte: 'Informations trouvées. Vérifiez-les avant d’enregistrer.' },
   introuvable: { classe: 'pc-siret-ko', icone: 'info', texte: 'Aucune information trouvée, renseignez les champs ci-dessous.' },
 }
 
@@ -109,6 +109,8 @@ function PremiereConnexion() {
       // Critère 6 : le centre est créé, l'utilisateur en est le gestionnaire ; Sessions et planning s'affiche
       await navigate(PAGE_APRES_CENTRE, { replace: true, state: { message: MSG_BIENVENUE } })
     } catch (err) {
+      // Centre déjà enregistré pour ce compte (ex. depuis un autre onglet) : pas de formulaire, Sessions et planning
+      if (err.code === CENTRE_DEJA_ENREGISTRE) return navigate(PAGE_APRES_CENTRE, { replace: true })
       refuser(err.erreurs || {}, err.general || null)
     }
   }
@@ -138,7 +140,6 @@ function PremiereConnexion() {
             <h1 id="pc-titre">Bienvenue ! Présentez-nous votre centre</h1>
             <p className="sub">Ces informations seront reprises automatiquement dans tous vos documents.</p>
           </div>
-          <button type="submit" className="btn btn-primary" disabled={envoi}>Enregistrer</button>
         </div>
 
         {/* Maquette 02 : en cas d'erreur, seul le bandeau rouge s'affiche ; maquette 01 : bandeau vert (juste après la
@@ -195,7 +196,8 @@ function PremiereConnexion() {
 
         <div className="pc-pied">
           <p><span className="req">*</span> Champs obligatoires</p>
-          <button type="submit" className="btn btn-primary" disabled={envoi}>Enregistrer et accéder à Quali-formation</button>
+          {/* Un seul bouton, en bas du formulaire */}
+          <button type="submit" className="btn btn-primary" disabled={envoi}>Enregistrer</button>
         </div>
       </form>
     </div>
