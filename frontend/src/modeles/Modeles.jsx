@@ -107,23 +107,16 @@ function CarteModele({ modele }) {
   )
 }
 
-// SCRUM-211/212 : message orange (RG13, sans bouton) si une information de l'organisme manque, puis les 4 cartes
+// SCRUM-211/212 : les 4 cartes (plus de message orange « Pensez à remplir… » : l'organisme renseigne ses
+// informations à sa première connexion)
 export function ModelesGeneriques() {
   const { donnee, erreur } = useChargement(chargerListe)
   return (
     <DossierModeles titre="Modèles génériques">
       {donnee
-        ? <>
-            {!donnee.parametres_complets && (
-              <p className="mod-parametres">
-                <Icone nom="alert" taille={18} />
-                <span>Pensez à remplir les informations de votre organisme dans <b>Paramètres</b> : elles apparaîtront automatiquement dans vos documents.</span>
-              </p>
-            )}
-            <div className="mod-grille">
-              {donnee.modeles.map((m) => <CarteModele key={m.type} modele={m} />)}
-            </div>
-          </>
+        ? <div className="mod-grille">
+            {donnee.modeles.map((m) => <CarteModele key={m.type} modele={m} />)}
+          </div>
         : <PageEnChargement erreur={erreur} texte="Chargement des modèles…" />}
     </DossierModeles>
   )

@@ -20,7 +20,7 @@ function simulerBackend(reponses = {}) {
   const fetchMock = vi.fn(async (url) => {
     if (url.endsWith('/auth/moi')) return ok({ id: 1, email: 'camille@organisme.fr' })
     for (const [fin, reponse] of Object.entries(reponses)) if (url.endsWith(fin)) return reponse
-    if (url.endsWith('/modeles/')) return ok({ modeles: LISTE, parametres_complets: false })
+    if (url.endsWith('/modeles/')) return ok({ modeles: LISTE })
     if (url.endsWith('/modeles/CONVENTION') || url.endsWith('/modeles/convention')) {
       return ok({ type: 'CONVENTION', nom: 'Convention de formation', statut: 'ORIGINE', contenu: CONVENTION,
         variables: [{ code: 'org_nom', libelle: 'Nom de l’organisme' }, { code: 'client_nom', libelle: 'Raison sociale du client' }] })
@@ -86,7 +86,7 @@ describe('Modèles génériques (SCRUM-211)', () => {
   })
 
   it('statut d’un modèle modifié : « Personnalisé »', async () => {
-    simulerBackend({ '/modeles/': ok({ modeles: [{ type: 'CONTRAT', nom: 'Contrat de formation', statut: 'PERSONNALISE' }], parametres_complets: false }) })
+    simulerBackend({ '/modeles/': ok({ modeles: [{ type: 'CONTRAT', nom: 'Contrat de formation', statut: 'PERSONNALISE' }] }) })
     afficher('/modeles/generiques')
     expect((await screen.findByRole('article', { name: 'Contrat de formation' })).textContent).toContain('Personnalisé')
   })

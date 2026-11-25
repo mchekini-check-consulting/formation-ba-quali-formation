@@ -62,10 +62,9 @@ class ConsulterModelesGeneriquesTests(TestCase):
         connecter_existant(self.client, self.compte)  # retour sur le compte sans modèle modifié
         self.assertEqual({m['statut'] for m in self.lister()['modeles']}, {Statut.ORIGINE})
 
-    def test_ca5_rg13_parametres_de_l_organisme_pas_encore_remplis(self):
-        # Les informations de l'organisme arrivent avec SCRUM-221 : le message orange est toujours affiché
-        self.assertIs(self.lister()['parametres_complets'], False)
-        self.assertIs(modele_service.parametres_complets(self.compte), False)
+    def test_rg13_retiree_plus_d_information_pour_le_message_orange(self):
+        # L'organisme renseigne ses informations à sa première connexion : plus de message « Pensez à remplir… »
+        self.assertEqual(set(self.lister()), {'modeles'})
 
     def test_simple_lecture_sans_log_metier(self):
         with self.assertNoLogs('quali_formation.metier'):

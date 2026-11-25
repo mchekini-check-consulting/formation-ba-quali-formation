@@ -17,13 +17,12 @@ const MODELES = [
   modele('ATTESTATION', 'Attestation de fin de formation'),
 ]
 const NOMS = MODELES.map((m) => m.nom)
-const MESSAGE = 'Pensez à remplir les informations de votre organisme dans Paramètres : elles apparaîtront automatiquement dans vos documents.'
 const ok = (json) => ({ ok: true, status: 200, json: async () => json })
 
-function simulerBackend({ modeles = MODELES, parametresComplets = false } = {}) {
+function simulerBackend({ modeles = MODELES } = {}) {
   vi.stubGlobal('fetch', vi.fn(async (url) => {
     if (url.endsWith('/auth/moi')) return ok({ id: 1, email: 'camille@organisme.fr' })
-    if (url.endsWith('/modeles/')) return ok({ modeles, parametres_complets: parametresComplets })
+    if (url.endsWith('/modeles/')) return ok({ modeles })
     return ok([])
   }))
 }
@@ -87,19 +86,8 @@ describe('Modèles génériques (SCRUM-212)', () => {
     expect(router.state.location.pathname).toBe('/modeles/generiques/attestation')
   })
 
-  it('CA5 (RG13) : message orange sans bouton si une information de l’organisme est vide', async () => {
+  it('RG13 retirée : plus de message orange « Pensez à remplir… » (informations saisies à la première connexion)', async () => {
     simulerBackend()
-    afficher()
-    await carte('Convention de formation')
-    const message = screen.getByText(/Pensez à remplir/).closest('p')
-    expect(message.textContent).toBe(MESSAGE)
-    expect(within(message).getByText('Paramètres').tagName).toBe('B')
-    expect(within(message).queryByRole('button')).toBeNull()
-    expect(within(message).queryByRole('link')).toBeNull()
-  })
-
-  it('CA5 (RG13) : plus de message quand tout est rempli dans Paramètres', async () => {
-    simulerBackend({ parametresComplets: true })
     afficher()
     await carte('Convention de formation')
     expect(screen.queryByText(/Pensez à remplir/)).toBeNull()

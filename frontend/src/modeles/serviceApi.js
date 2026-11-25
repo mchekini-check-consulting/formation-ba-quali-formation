@@ -24,7 +24,7 @@ async function lire(chemin, options = {}) {
 // SCRUM-210 : GET /modeles/resume -> { nb_modeles, nb_formations } du compte connecté
 export const resumeModeles = () => lire('/modeles/resume')
 
-// SCRUM-211/212 : GET /modeles/ -> { modeles: [{ type, nom, statut, contenu, date_maj, variables }], parametres_complets }
+// SCRUM-211/212 : GET /modeles/ -> { modeles: [{ type, nom, statut, contenu, date_maj, variables }] }
 export const listerModeles = () => lire('/modeles/')
 
 // SCRUM-211 : GET /modeles/<type> -> { type, nom, statut, contenu, variables: [{ code, libelle }] }

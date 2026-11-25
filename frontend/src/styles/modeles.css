@@ -37,10 +37,7 @@
 .doc-variable{display:inline-block;background:#DBEAFE;color:#1E40AF;border-radius:4px;padding:0 6px;font-size:.92em;font-weight:600;line-height:1.5}
 @media (max-width:760px){.doc-zone{padding:8px}.doc-feuille{padding:20px 16px}}
 
-/* Modèles génériques (SCRUM-212, maquette SCRUM-212-1) : message orange, grille de 4 cartes */
-.mod-parametres{display:flex;align-items:center;gap:10px;margin:0;padding:12px 16px;border:1px solid var(--warn-line);border-radius:10px;background:var(--warn-soft);color:var(--warn);font-size:14px}
-.mod-parametres svg{flex:none}
-.mod-parametres b{font-weight:700}
+/* Modèles génériques (SCRUM-212, maquette SCRUM-212-1) : grille de 4 cartes */
 .mod-grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px}
 .mod-modele{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
 
