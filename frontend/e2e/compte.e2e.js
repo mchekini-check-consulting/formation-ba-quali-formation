@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 import { creerCompteParApi, emailUnique, motDePasse } from './outils'
 
 test.describe('Créer un compte', () => {
-  test('le responsable crée son compte et arrive connecté sur Sessions et planning', async ({ page }) => {
+  test('le responsable crée son compte, renseigne son centre puis arrive sur Sessions et planning (SCRUM-221)', async ({ page }) => {
     const mdp = motDePasse()
     await page.goto('/creer-un-compte')
     await page.getByLabel('Adresse e-mail').fill(emailUnique('nouveau'))
@@ -15,8 +15,17 @@ test.describe('Créer un compte', () => {
     await page.getByRole('checkbox').check()
     await bouton.click()
 
+    await expect(page).toHaveURL(/\/premiere-connexion$/)
+    await expect(page.getByText('Votre compte a été créé.')).toBeVisible()
+    await page.getByLabel(/^Raison sociale/).fill('HiTech Formation')
+    await page.getByLabel(/^SIRET/).fill('12345678900012')
+    await page.getByLabel(/^Adresse/).fill('12 rue des Lilas, 75011 Paris')
+    await page.getByLabel(/^Prénom/).fill('Marie')
+    await page.getByLabel(/^Nom/).fill('Arnaud')
+    await page.getByRole('button', { name: 'Enregistrer et accéder à Quali-formation' }).click()
+
     await expect(page).toHaveURL(/\/sessions$/)
-    await expect(page.getByText('Votre compte a été créé. Bienvenue sur Quali-formation !')).toBeVisible()
+    await expect(page.getByText('Bienvenue sur Quali-formation !')).toBeVisible()
   })
 
   test('un e-mail déjà utilisé est refusé', async ({ page, request }) => {

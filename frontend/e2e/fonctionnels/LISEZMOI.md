@@ -11,6 +11,7 @@ complète (écran + backend, avec une base vide créée pour l'occasion : dev et
 | `SCRUM-26-creer-un-formateur.feature` | Créer un formateur (Parties prenantes) |
 | `SCRUM-27-creer-un-apprenant.feature` | Créer un apprenant (Parties prenantes) |
 | `SCRUM-209-reorganiser-le-menu-lateral.feature` | Réorganiser le menu latéral |
+| `SCRUM-221-informations-du-centre.feature` | Renseigner les informations du centre à la première connexion |
 
 ## Quand ils tournent
 
@@ -49,7 +50,10 @@ Fonctionnalité: SCRUM-27 - Créer un apprenant
 ## Phrases disponibles
 
 **Situation de départ**
-- `je suis connecté` · `je me connecte avec un nouveau compte` · `je n'ai aucune formation`
+- `je suis connecté` (compte dont le centre est déjà renseigné) · `je me connecte avec un nouveau compte` · `je n'ai aucune formation`
+- `les formateurs et apprenants d'exemple sont enregistrés dans mon centre` (Sarah Dubois, Julien Lefèvre, Camille Martin…)
+- `je viens de créer mon compte` (depuis l'écran « Créer votre compte » : le centre n'est pas encore renseigné)
+- `la recherche d'entreprises connaît le SIRET «12345678900012» : «Raison sociale», «Adresse»` · `la recherche d'entreprises ne répond pas` (sans ces phrases : SIRET jamais trouvé)
 - `j'ai une formation «Intitulé» de 21 heures en «Présentiel»` (Présentiel, Distanciel ou Mixte)
 - `je suis sur la page «Sessions et planning»` (ou «Formations», «Parties prenantes»)
 - `j'ai ouvert l'étape Formateurs d'une session de 10 places` · `j'ai ouvert l'étape Apprenants d'une session de 10 places`
@@ -61,6 +65,8 @@ Fonctionnalité: SCRUM-27 - Créer un apprenant
 - `je remplis les champs :` suivi d'un tableau `| Libellé | valeur |`
 - `je remplis l'étape Informations avec 10 places`
 - `je coche «Prénom Nom»` · `je décoche «Prénom Nom»` · `je recherche «texte»`
+- `j'ouvre l'adresse «/sessions»` · `je me déconnecte` · `je me reconnecte`
+- `je remplis les champs obligatoires pour le centre «Raison sociale»`
 - `je clique sur l'entrée «Libellé» du menu` (menu latéral, Paramètres compris, même une entrée « Bientôt »)
 
 **Résultats attendus**
@@ -80,4 +86,10 @@ Fonctionnalité: SCRUM-27 - Créer un apprenant
 - `le bas du menu affiche «Paramètres» puis «Mon compte»` · `le menu ne propose pas «Libellé»`
 - `l'entrée «Libellé» du menu est grisée avec l'étiquette «Bientôt»` · `l'entrée «Libellé» du menu est mise en évidence`
 - `la page «Titre» s'affiche` · `je suis toujours sur la page «Titre»`
+- `le formulaire «Première connexion» s'affiche` · `… ne s'affiche pas` · `le menu latéral n'est pas affiché`
+- `le champ «E-mail» contient mon e-mail et n'est pas modifiable`
+- `le bandeau vert affiche «Texte»` · `le bandeau rouge affiche «Texte»`
+- `le formulaire contient, dans l'ordre :` suivi d'un tableau `| Bloc | Champ |`
+- `aucun centre n'est enregistré` · `je suis le gestionnaire du centre «Raison sociale»`
+- `le bas du menu affiche la bulle «MA» et «Raison sociale»` · `la raison sociale est coupée avec « … »`
 - `le formateur «e-mail» est enregistré` · `aucun apprenant «e-mail» n'est enregistré` (formateur ou apprenant)

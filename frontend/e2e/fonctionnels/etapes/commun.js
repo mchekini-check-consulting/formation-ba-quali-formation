@@ -3,7 +3,7 @@
 // Les textes entre « » (ou entre "…" quand le texte contient lui-même des « ») sont des paramètres.
 import { expect } from '@playwright/test'
 import { createBdd, defineParameterType } from 'playwright-bdd'
-import { creerCompteParApi } from '../../outils'
+import { creerCompteParApi, creerPersonnesExemplesParApi } from '../../outils'
 
 // Texte entre guillemets français « … », ou entre "…" s'il contient lui-même des guillemets français
 defineParameterType({
@@ -32,8 +32,14 @@ export const normaliser = (texte) => texte.normalize('NFD').replace(/\p{Diacriti
 
 // ---- Contexte ----
 
+// Compte connecté dont le centre est déjà renseigné (SCRUM-221)
 Given('je suis connecté', async ({ page }) => {
   await creerCompteParApi(page.request)
+})
+
+// Les formateurs et apprenants de la maquette SCRUM-25 (Sarah Dubois, Julien Lefèvre, Camille Martin…)
+Given('les formateurs et apprenants d\'exemple sont enregistrés dans mon centre', async ({ page }) => {
+  await creerPersonnesExemplesParApi(page.request)
 })
 
 // Nouveau compte, sans aucune donnée (remplace le compte connecté dans ce navigateur)
@@ -53,7 +59,8 @@ Given('je n\'ai aucune formation', async ({ page }) => {
 })
 
 Given('je suis sur la page {texte}', async ({ page }, titre) => {
-  const adresses = { 'Sessions et planning': '/sessions', Formations: '/formations', 'Parties prenantes': '/parties-prenantes' }
+  const adresses = { 'Sessions et planning': '/sessions', Formations: '/formations', 'Parties prenantes': '/parties-prenantes',
+    'Créer votre compte': '/creer-un-compte' }
   await page.goto(adresses[titre])
   await expect(page.getByRole('heading', { level: 1, name: titre })).toBeVisible()
 })

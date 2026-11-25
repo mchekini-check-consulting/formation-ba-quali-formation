@@ -26,7 +26,8 @@ class SeConnecterTests(TestCase):
     def test_identifiants_corrects_connexion_reussie(self):
         r = self.connecter()
         self.assertEqual(r.status_code, 200, r.content)
-        self.assertEqual(r.json(), {'id': self.compte.id, 'email': EMAIL})
+        self.assertEqual(r.json(), {'id': self.compte.id, 'email': EMAIL, 'prenom': '', 'nom': '', 'role': 'UTILISATEUR',
+                                    'organisme': None})
 
     def test_reponse_sans_mot_de_passe(self):
         r = self.connecter()
@@ -106,7 +107,8 @@ class MemorisationConnexionTests(TestCase):
         self.connecter()
         r = self.client.get('/auth/moi')
         self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.json(), {'id': self.compte.id, 'email': EMAIL})
+        self.assertEqual(r.json(), {'id': self.compte.id, 'email': EMAIL, 'prenom': '', 'nom': '', 'role': 'UTILISATEUR',
+                                    'organisme': None})
 
     def test_cookie_de_session_illisible_par_le_javascript(self):
         r = self.connecter()

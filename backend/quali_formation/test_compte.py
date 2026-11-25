@@ -122,8 +122,11 @@ class CreerCompteTests(TestCase):
     def test_le_compte_cree_est_connecte(self):
         self.assertEqual(self.client.get('/auth/moi').status_code, 401)
         r = self.inscrire()
-        self.assertEqual(self.client.get('/auth/moi').json(), {'id': r.json()['id'], 'email': 'nouveau@organisme.fr'})
-        self.assertEqual(self.client.get('/formations/').json(), [])
+        # SCRUM-221 : centre pas encore renseigné
+        self.assertEqual(self.client.get('/auth/moi').json(), {'id': r.json()['id'], 'email': 'nouveau@organisme.fr',
+                                                               'prenom': '', 'nom': '', 'role': 'UTILISATEUR', 'organisme': None})
+        # SCRUM-221 : sans centre, les formations sont refusées (accès bloqué côté serveur)
+        self.assertEqual(self.client.get('/formations/').status_code, 403)
 
     def test_le_compte_cree_remplace_la_connexion_precedente(self):
         ancien = self.inscrire(email='ancien@organisme.fr')
@@ -132,7 +135,7 @@ class CreerCompteTests(TestCase):
         nouveau = self.inscrire()
         self.assertNotEqual(nouveau.json()['id'], ancien.json()['id'])
         self.assertEqual(self.client.get('/auth/moi').json()['email'], 'nouveau@organisme.fr')
-        self.assertEqual(self.client.get('/formations/').json(), [])  # rien de l'ancien compte
+        self.assertEqual(self.client.get('/formations/').status_code, 403)  # rien de l'ancien compte (SCRUM-221)
 
     def test_une_creation_refusee_ne_change_pas_la_connexion(self):
         self.inscrire(email='ancien@organisme.fr')

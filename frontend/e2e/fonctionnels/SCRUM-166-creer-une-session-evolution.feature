@@ -9,6 +9,7 @@ Fonctionnalité: SCRUM-166 - Créer une session (évolution)
 
   Contexte:
     Étant donné que je suis connecté
+    Et que les formateurs et apprenants d'exemple sont enregistrés dans mon centre
     Et que j'ai une formation «Management d'équipe» de 21 heures en «Présentiel»
     Et que j'ai une formation «Anglais professionnel» de 14 heures en «Distanciel»
     Et que je suis sur la page «Sessions et planning»

@@ -3,7 +3,7 @@
   controller : layer, httpMethod, route (modèle, jamais ses valeurs), status, durationMs
   service/db : layer, class, method, durationMs, error (+ errorCode métier) en cas d'échec
 puis les champs métier approuvés par le BA (champs.py). Racines des chemins : les noms des paramètres de la
-fonction et "resultat" ; pour une vue : "request" (ex. request.data.action), les paramètres de l'adresse
+fonction, "resultat" et, en cas d'échec, "erreur" (l'exception levée : ex. erreur.champs) ; pour une vue : "request" (ex. request.data.action), les paramètres de l'adresse
 (ex. pk) et "resultat" (corps de la réponse).
 
     @log_metier("service", champs=["action", "resultat.statut"])
@@ -21,7 +21,7 @@ from django.core.exceptions import PermissionDenied
 from django.http import Http404, HttpRequest
 from rest_framework.request import Request
 
-from quali_formation.logging.champs import RESULTAT, extraire, verifier
+from quali_formation.logging.champs import ERREUR, RESULTAT, extraire, verifier
 from quali_formation.logging.loggable import error_fields
 from quali_formation.logging.middleware import DEJA_ECRIT
 
@@ -80,7 +80,7 @@ def _ecrire_vue(champs, duree, valeurs, reponse, exc):
         "route": _route(requete),
         "status": statut,
         "durationMs": duree,
-        **extraire(champs, {**valeurs, RESULTAT: corps}),
+        **extraire(champs, {**valeurs, RESULTAT: corps, ERREUR: exc}),
     }
     code = _code_refus(statut, corps)
     if code:
@@ -94,7 +94,7 @@ def _ecrire_vue(champs, duree, valeurs, reponse, exc):
 def _ecrire_appel(couche, fonction, champs, duree, valeurs, resultat, exc):
     classe, _, methode = fonction.__qualname__.rpartition(".")
     ligne = {"layer": couche, "class": classe, "method": methode, "durationMs": duree,
-             **extraire(champs, {**valeurs, RESULTAT: resultat})}
+             **extraire(champs, {**valeurs, RESULTAT: resultat, ERREUR: exc})}
     if exc is not None:
         _niveau(_statut_erreur(exc))(f"{fonction.__qualname__} en échec", extra={**ligne, **error_fields(exc)})
     elif couche == "db" and duree >= SEUIL_DB_LENT_MS:
@@ -117,7 +117,7 @@ def log_metier(couche: str, champs=()):
 
     def decorer(fonction):
         signature = inspect.signature(fonction)
-        verifier(fonction.__qualname__, champs, [*signature.parameters, RESULTAT])
+        verifier(fonction.__qualname__, champs, [*signature.parameters, RESULTAT, ERREUR])
 
         @functools.wraps(fonction)
         def enveloppe(*args, **kwargs):

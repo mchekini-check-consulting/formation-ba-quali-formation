@@ -4,7 +4,13 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
+from quali_formation.entreprises import (
+    ServiceEntreprisesIndisponible,
+    SiretInvalide,
+    recherche_entreprises,
+)
 from quali_formation.logging.log_metier import log_metier
+from quali_formation.logging.middleware import DEJA_ECRIT
 from quali_formation.models import Utilisateur
 from quali_formation.serializers import (
     ApprenantSerializer,
@@ -26,6 +32,7 @@ from quali_formation.services import (
     formations_visibles,
     item_service,
     modele_service,
+    organisme_service,
     session_service,
 )
 
@@ -75,12 +82,17 @@ def _trouver(utilisateur, pk):
 
 def _utilisateur_connecte(request):
     # Compte de la session (SCRUM-16) ; None si personne n'est connecté
-    return Utilisateur.objects.filter(pk=request.session.get(SESSION_UTILISATEUR)).first()
+    return Utilisateur.objects.select_related('organisme').filter(pk=request.session.get(SESSION_UTILISATEUR)).first()
 
 
 def _non_connecte():
     return Response({'code': 'NON_CONNECTE', 'detail': "Vous n'êtes pas connecté."},
                     status=status.HTTP_401_UNAUTHORIZED)
+
+
+def _non_renseigne():
+    return Response({'code': 'ORGANISME_A_RENSEIGNER', 'detail': 'Renseignez d’abord les informations de votre centre.'},
+                    status=status.HTTP_403_FORBIDDEN)
 
 
 def _connexion_requise(vue):
@@ -95,6 +107,8 @@ def _connexion_requise(vue):
 
 
 def _enregistrer(request, utilisateur, formation):
+    if utilisateur.organisme_id is None:  # SCRUM-221 : centre pas encore renseigné
+        return _non_renseigne()
     entree = FormationEcritureSerializer(data=request.data)
     entree.is_valid(raise_exception=True)
     donnees = dict(entree.validated_data)
@@ -194,29 +208,78 @@ def sessions_planning(request, utilisateur):
     return Response(SessionPlanningSerializer(session_service.lister_sessions(utilisateur), many=True).data)
 
 
-def _personnes(request, lister, creer, serializer):
-    """GET : la liste. POST : création ; 201, ou 400 si un champ manque ou si l'e-mail est invalide."""
+def _personnes(request, utilisateur, lister, creer, serializer):
+    """GET : les personnes du centre (SCRUM-221). POST : création dans le centre ; 201, 400 si un champ manque
+    ou si l'e-mail est invalide, 403 ORGANISME_A_RENSEIGNER si le centre n'est pas encore renseigné."""
     if request.method == 'POST':
         entree = PersonneCreationSerializer(data=request.data)
         entree.is_valid(raise_exception=True)
-        return Response(serializer(creer(**entree.validated_data)).data, status=status.HTTP_201_CREATED)
-    return Response(serializer(lister(), many=True).data)
+        try:
+            personne = creer(utilisateur, **entree.validated_data)
+        except ErreurMetier as e:
+            return _erreur(e)
+        return Response(serializer(personne).data, status=status.HTTP_201_CREATED)
+    return Response(serializer(lister(utilisateur), many=True).data)
 
 
 @api_view(["GET", "POST"])
 @log_metier("controller", champs=["resultat.id"])
-def formateurs(request):
-    """Formateurs (création : SCRUM-26)."""
-    return _personnes(request, session_service.lister_formateurs, session_service.creer_formateur, FormateurSerializer)
+@_connexion_requise
+def formateurs(request, utilisateur):
+    """Formateurs du centre (création : SCRUM-26) ; 401 NON_CONNECTE."""
+    return _personnes(request, utilisateur, session_service.lister_formateurs, session_service.creer_formateur,
+                      FormateurSerializer)
 
 
 @api_view(["GET", "POST"])
 @log_metier("controller", champs=["resultat.id"])
-def apprenants(request):
-    """Apprenants (création : SCRUM-27)."""
-    return _personnes(request, session_service.lister_apprenants, session_service.creer_apprenant, ApprenantSerializer)
+@_connexion_requise
+def apprenants(request, utilisateur):
+    """Apprenants du centre (création : SCRUM-27) ; 401 NON_CONNECTE."""
+    return _personnes(request, utilisateur, session_service.lister_apprenants, session_service.creer_apprenant,
+                      ApprenantSerializer)
 
 
+# ---- Informations du centre à la première connexion (SCRUM-221) ----
+
+@api_view(["POST"])
+@log_metier("controller", champs=["resultat.id"])
+@_connexion_requise
+def organisme(request, utilisateur):
+    """POST /organisme/ {siret, raison_sociale, adresse, prenom, nom, …} : crée le centre et fait du compte connecté
+    son gestionnaire, en une seule opération. 201 : le compte connecté (comme GET /auth/moi) ; 400 champs invalides
+    (liste « erreurs ») ; 401 NON_CONNECTE ; 409 ORGANISME_DEJA_RENSEIGNE."""
+    try:
+        organisme_service.enregistrer(utilisateur, request.data)
+    except DonneesInvalides as e:
+        return _formulaire_invalide(e)
+    except ErreurMetier as e:
+        return _erreur(e)
+    return Response(_donnees_compte(utilisateur), status=status.HTTP_201_CREATED)
+
+
+
+@api_view(["GET"])
+@_connexion_requise
+def entreprise(request, utilisateur, siret):
+    """GET /entreprises/<siret>/ : raison sociale et adresse d'un établissement, d'après l'API publique Recherche
+    d'entreprises. Service partagé (SCRUM-221, SCRUM-113) ; log métier écrit par le service (entreprises.py).
+    200 {siret, raison_sociale, adresse} ; 400 SIRET_INVALIDE ; 404 ENTREPRISE_INTROUVABLE ; 503 SERVICE_INDISPONIBLE ;
+    401 NON_CONNECTE."""
+    try:
+        resultat = recherche_entreprises.rechercher(siret, utilisateur)
+    except SiretInvalide:
+        return Response({'code': 'SIRET_INVALIDE', 'detail': 'Le SIRET doit contenir 14 chiffres'},
+                        status=status.HTTP_400_BAD_REQUEST)
+    except ServiceEntreprisesIndisponible:
+        # Panne déjà journalisée par le service (avec son code) : pas de deuxième ligne d'erreur (middleware.py)
+        setattr(request._request, DEJA_ECRIT, True)
+        return Response({'code': 'SERVICE_INDISPONIBLE', 'detail': 'La recherche d’entreprises ne répond pas.'},
+                        status=status.HTTP_503_SERVICE_UNAVAILABLE)
+    if resultat['entreprise'] is None:
+        return Response({'code': 'ENTREPRISE_INTROUVABLE', 'detail': 'Aucune entreprise trouvée pour ce SIRET.'},
+                        status=status.HTTP_404_NOT_FOUND)
+    return Response(resultat['entreprise'])
 
 # ---- Modèles (épic SCRUM-125) ----
 
@@ -304,8 +367,17 @@ def _ouvrir_session(request, utilisateur):
     request.session[SESSION_UTILISATEUR] = utilisateur.id
 
 
+def _donnees_compte(utilisateur):
+    """Le compte connecté ; SCRUM-221 : prénom, nom, rôle et centre (null tant que le formulaire de première
+    connexion n'est pas enregistré : l'écran affiche alors ce formulaire)."""
+    centre = utilisateur.organisme
+    return {'id': utilisateur.id, 'email': utilisateur.email, 'prenom': utilisateur.prenom, 'nom': utilisateur.nom,
+            'role': utilisateur.role,
+            'organisme': {'id': centre.id, 'raison_sociale': centre.raison_sociale} if centre else None}
+
+
 def _compte(utilisateur):
-    return Response({'id': utilisateur.id, 'email': utilisateur.email})
+    return Response(_donnees_compte(utilisateur))
 
 
 @api_view(["POST"])
@@ -325,7 +397,7 @@ def connexion(request):
 
 @api_view(["GET"])
 def moi(request):
-    """GET /auth/moi : le compte connecté ({id, email}), ou 401 NON_CONNECTE."""
+    """GET /auth/moi : le compte connecté ({id, email, prenom, nom, role, organisme}), ou 401 NON_CONNECTE."""
     utilisateur = _utilisateur_connecte(request)
     if utilisateur is None:
         return _non_connecte()

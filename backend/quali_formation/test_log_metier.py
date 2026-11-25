@@ -90,7 +90,28 @@ class Depot:
         return [formule]
 
 
+class Formulaire:
+    @log_metier("service", champs=["erreur.champs", "erreur.niveau"])
+    def enregistrer(self, champs):
+        if champs:
+            exc = ErreurMetier("FORMULAIRE_INVALIDE", "marie.dupont@exemple.fr est invalide", 400)
+            exc.champs, exc.niveau = champs, 2
+            raise exc
+        return {}
+
+
 class LogMetierTests(SimpleTestCase):
+    def test_echec_racine_erreur_sans_message(self):
+        with self.assertLogs("quali_formation.metier", level="INFO") as logs:
+            Formulaire().enregistrer([])
+            with self.assertRaises(ErreurMetier):
+                Formulaire().enregistrer(["siret", "nom"])
+        reussite, echec = logs.records
+        self.assertFalse(hasattr(reussite, "erreur.champs"))
+        self.assertEqual((echec.levelname, getattr(echec, "erreur.champs"), getattr(echec, "erreur.niveau")),
+                         ("WARNING", "siret,nom", "2"))
+        self.assertNotIn("marie.dupont", json.dumps(echec.__dict__, default=str))
+
     def test_service_champs_obligatoires_et_approuves(self):
         with self.assertLogs("quali_formation.metier", level="INFO") as logs:
             Service().calculer("confort", "marie.dupont@exemple.fr")

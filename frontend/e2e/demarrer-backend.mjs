@@ -18,6 +18,9 @@ const env = {
   DATABASE_URL: `sqlite:///${base.replaceAll('\\', '/')}`,
   DJANGO_SETTINGS_MODULE: 'config.settings_e2e', // contrôle de mot de passe rapide (backend/config/settings_e2e.py)
   LOG_LEVEL: 'warn',
+  // Recherche d'entreprises par SIRET (SCRUM-221) : jamais l'API de l'État pendant les tests ; cette adresse fermée
+  // donne « Aucune information trouvée ». Les scénarios « SIRET connu » simulent la réponse dans le navigateur.
+  RECHERCHE_ENTREPRISES_URL: 'http://127.0.0.1:9/search',
 }
 
 // Base vide à chaque lancement, puis création des tables (migrations)

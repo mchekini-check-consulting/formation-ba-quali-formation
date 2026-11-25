@@ -1,0 +1,36 @@
+/* Page « Première connexion » (SCRUM-221, maquettes 01 à 04) : sans menu, formulaire centré en 2 blocs */
+.pc{min-height:100vh;background:var(--bg)}
+.pc-haut{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 24px;background:var(--surface);border-bottom:1px solid var(--line)}
+.pc-compte{margin:0;font-size:14px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pc-lien{border:0;background:none;padding:0;font:inherit;color:var(--ink-3);text-decoration:underline;cursor:pointer}
+.pc-lien:hover{color:var(--ink)}
+.pc-page{max-width:1000px;margin:0 auto;padding:32px 24px 48px;display:flex;flex-direction:column;gap:20px}
+.pc-tete{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px}
+.pc-tete h1{font-size:28px;font-weight:700;letter-spacing:-.02em;margin:10px 0 0}
+.pc-pastille{display:inline-block;padding:3px 12px;border-radius:999px;background:var(--brand-soft);border:1px solid var(--brand-line);color:var(--brand-text);font-size:12.5px;font-weight:700}
+.pc-tete .btn,.pc-pied .btn{border-radius:999px}
+.pc-bandeau{display:flex;gap:10px;align-items:flex-start;margin:0;padding:14px 18px;border-radius:12px;border:1px solid var(--brand-line);background:var(--brand-soft);color:var(--brand-text);font-size:15px}
+.pc-bandeau svg{flex-shrink:0;margin-top:3px}
+.pc-bandeaux{display:flex;flex-direction:column;gap:14px}
+.pc-bandeau-ok{border-color:color-mix(in srgb,var(--ok) 35%,transparent);background:var(--ok-doux);color:var(--ok)}
+.pc-bandeau-erreur{border-color:var(--danger-line);background:var(--danger-soft);color:var(--danger)}
+.pc-bloc{padding:24px}
+.pc-bloc-tete{display:flex;gap:14px;align-items:flex-start;margin-bottom:18px}
+.pc-bloc-tete h2{font-size:19px;font-weight:700;margin:4px 0 2px}
+.pc-bloc-tete .sub{font-size:14.5px;margin:0}
+.pc-bloc-ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;flex-shrink:0;background:var(--brand-soft);color:var(--brand)}
+.pc-groupe+.pc-groupe{margin-top:22px;padding-top:22px;border-top:1px dashed var(--line)}
+.pc-groupe-titre{margin:0 0 12px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.pc-grille{display:grid;grid-template-columns:1fr 1fr;gap:16px 18px}
+.pc-aide{font-size:13px;color:var(--ink-3)}
+/* Résultat de la recherche par SIRET : vert si trouvé (maquette 02), encadré orange sinon (maquette 03) */
+.pc-siret{display:flex;align-items:center;gap:8px;margin:0;font-size:14px;font-weight:600}
+.pc-siret svg{flex-shrink:0}
+.pc-siret-ok{color:var(--ok)}
+.pc-siret-ko{padding:9px 14px;border-radius:10px;border:1px solid color-mix(in srgb,var(--alerte) 35%,transparent);background:var(--alerte-doux);color:var(--alerte)}
+.pc-verrou{position:relative}
+.pc-verrou .inp{background:var(--surface-2);color:var(--ink-3);padding-right:44px}
+.pc-verrou svg{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--ink-3)}
+.pc-pied{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
+.pc-pied p{margin:0;color:var(--ink-3);font-size:14.5px}
+@media (max-width:760px){.pc-grille{grid-template-columns:1fr}.pc-page{padding:20px 16px 32px}.pc-compte{font-size:13px}}

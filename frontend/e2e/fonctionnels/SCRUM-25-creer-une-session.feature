@@ -10,6 +10,7 @@ Fonctionnalité: SCRUM-25 - Créer une session pour une formation
 
   Contexte:
     Étant donné que je suis connecté
+    Et que les formateurs et apprenants d'exemple sont enregistrés dans mon centre
     Et que j'ai une formation «Management d'équipe» de 21 heures en «Présentiel»
     Et que je suis sur la page «Sessions et planning»
 

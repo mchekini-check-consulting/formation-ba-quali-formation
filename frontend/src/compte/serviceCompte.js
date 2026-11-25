@@ -6,7 +6,10 @@ import { apiBase } from '../api'
 // Page d'accueil (SCRUM-19) : Sessions et planning, après la connexion et après la création de compte (RG-CC-09, RG-CX-06)
 export const PAGE_D_ACCUEIL = '/sessions'
 // Messages affichés en arrivant sur la page d'accueil, puis sur la page de connexion après la déconnexion
-export const MSG_COMPTE_CREE = 'Votre compte a été créé. Bienvenue sur Quali-formation !'
+// SCRUM-221 : le message de création est coupé en deux, la 1re partie en haut du formulaire « Première connexion »,
+// la 2de sur Sessions et planning après l'enregistrement du centre
+export const MSG_COMPTE_CREE = 'Votre compte a été créé.'
+export const MSG_BIENVENUE = 'Bienvenue sur Quali-formation !'
 export const MSG_CONNECTE = 'Vous êtes connecté. Bienvenue sur Quali-formation !'
 export const MSG_DECONNECTE = 'Vous êtes déconnecté.'
 

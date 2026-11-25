@@ -20,7 +20,7 @@ Fonctionnalité: SCRUM-209 - Réorganiser le menu latéral
       | Documents | Modèles                  |
       | Documents | Signature électronique   |
       | Qualité   | Qualiopi                 |
-    Et le bas du menu affiche «Paramètres» puis «Mon compte»
+    Et le bas du menu affiche «Paramètres» puis «Centre de test»
     Et le menu ne propose pas «Émargement»
     Et le menu ne propose pas «Évaluations et satisfaction»
 

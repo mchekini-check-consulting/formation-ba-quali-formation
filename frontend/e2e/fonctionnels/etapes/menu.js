@@ -14,8 +14,10 @@ Given('je suis sur la page d\'accueil de l\'application', async ({ page }) => {
 })
 
 When('je clique sur l\'entrée {texte} du menu', async ({ page }, titre) => {
-  // force : une entrée « Bientôt » n'est pas un lien, on clique quand même dessus comme l'utilisateur
-  await entree(page, titre).click({ force: true })
+  const e = entree(page, titre)
+  // Une entrée « Bientôt » n'est pas un lien : on clique quand même dessus (force), comme l'utilisateur.
+  // Un lien : clic normal, qui attend que le menu soit stable (le bas du menu s'affiche une fois le compte chargé)
+  await e.click({ force: await e.evaluate((el) => el.tagName !== 'A') })
 })
 
 // Tableau « Section | Entrée » ; section vide = entrée hors section (Tableau de bord)

@@ -22,6 +22,7 @@ from quali_formation.models import (
     Item,
     ModeleGenerique,
     ModeleOrigine,
+    Organisme,
     Sequence,
     Session,
     TypeModele,
@@ -85,12 +86,20 @@ def _statut_demande(donnees, nb_sequences, action, forcer):
 
 
 def formations_visibles(utilisateur):
-    """Formations que ce compte voit et modifie : celles qu'il a créées ; aucune si personne n'est connecté.
-    Seul endroit qui décide « qui voit quoi » : le partage entre comptes d'un même organisme (US à venir)
-    ne changera que ce filtre."""
-    if utilisateur is None:
+    """Formations que ce compte voit et modifie : celles créées par les comptes de son centre (SCRUM-221) ;
+    aucune si personne n'est connecté ou si le centre n'est pas encore renseigné.
+    Seul endroit qui décide « qui voit quoi » pour les formations (et donc leurs sessions)."""
+    if utilisateur is None or utilisateur.organisme_id is None:
         return Formation.objects.none()
-    return Formation.objects.filter(proprietaire=utilisateur)
+    return Formation.objects.filter(proprietaire__organisme_id=utilisateur.organisme_id)
+
+
+def _organisme_requis(utilisateur):
+    """SCRUM-221 : rien ne se crée tant que le centre n'est pas renseigné (formulaire de première connexion)."""
+    if utilisateur.organisme_id is None:
+        raise ErreurMetier('ORGANISME_A_RENSEIGNER',
+                           'Renseignez d’abord les informations de votre centre.', 403)
+    return utilisateur.organisme
 
 
 def _meme_intitule(intitule):
@@ -259,22 +268,26 @@ class SessionService:
                 .select_related('formation').prefetch_related('formateurs', 'apprenants'))
 
     @log_metier("service", champs=["resultat.taille"])
-    def lister_formateurs(self):
-        return Formateur.objects.all()
+    def lister_formateurs(self, utilisateur):
+        # SCRUM-221 : seulement les formateurs du centre (aucun tant que le centre n'est pas renseigné)
+        return Formateur.objects.filter(organisme_id=utilisateur.organisme_id) if utilisateur.organisme_id else Formateur.objects.none()
 
     @log_metier("service", champs=["resultat.taille"])
-    def lister_apprenants(self):
-        return Apprenant.objects.all()
+    def lister_apprenants(self, utilisateur):
+        # SCRUM-221 : seulement les apprenants du centre
+        return Apprenant.objects.filter(organisme_id=utilisateur.organisme_id) if utilisateur.organisme_id else Apprenant.objects.none()
 
     @log_metier("service", champs=["resultat.id"])
-    def creer_formateur(self, prenom, nom, email, entreprise=''):
-        """Enregistre un formateur (SCRUM-26) ; il est ensuite proposé à l'étape 2 de « Nouvelle session »."""
-        return Formateur.objects.create(prenom=prenom, nom=nom, email=email, entreprise=entreprise)
+    def creer_formateur(self, utilisateur, prenom, nom, email, entreprise=''):
+        """Enregistre un formateur du centre (SCRUM-26) ; il est ensuite proposé à l'étape 2 de « Nouvelle session »."""
+        return Formateur.objects.create(organisme=_organisme_requis(utilisateur), prenom=prenom, nom=nom,
+                                        email=email, entreprise=entreprise)
 
     @log_metier("service", champs=["resultat.id"])
-    def creer_apprenant(self, prenom, nom, email, entreprise=''):
-        """Enregistre un apprenant (SCRUM-27) ; il est ensuite proposé à l'étape 3 de « Nouvelle session »."""
-        return Apprenant.objects.create(prenom=prenom, nom=nom, email=email, entreprise=entreprise)
+    def creer_apprenant(self, utilisateur, prenom, nom, email, entreprise=''):
+        """Enregistre un apprenant du centre (SCRUM-27) ; il est ensuite proposé à l'étape 3 de « Nouvelle session »."""
+        return Apprenant.objects.create(organisme=_organisme_requis(utilisateur), prenom=prenom, nom=nom,
+                                        email=email, entreprise=entreprise)
 
     @log_metier("service", champs=["donnees.modalite", "formateurs.taille", "apprenants.taille"])
     def creer_session(self, utilisateur, formateurs, apprenants, **donnees):
@@ -288,6 +301,9 @@ class SessionService:
             raise ErreurMetier('FORMATEUR_REQUIS', 'Une session doit avoir au moins un formateur.')
         if not apprenants:
             raise ErreurMetier('APPRENANT_REQUIS', 'Une session doit avoir au moins un apprenant.')
+        # SCRUM-221 : formateurs et apprenants du centre seulement
+        if any(p.organisme_id != utilisateur.organisme_id for p in [*formateurs, *apprenants]):
+            raise ErreurMetier('PERSONNE_INTROUVABLE', 'Un formateur ou un apprenant choisi n’existe pas dans votre centre.')
         if len(apprenants) > donnees['nombre_places']:
             raise ErreurMetier('TROP_APPRENANTS',
                                f"Trop d’apprenants : {len(apprenants)} cochés pour {donnees['nombre_places']} places.")
@@ -455,6 +471,11 @@ class DonneesInvalides(APIException):
         super().__init__(f'{len(erreurs)} information(s) invalide(s)')
         self.erreurs = erreurs
 
+    @property
+    def champs(self):
+        """Noms des champs refusés (ex. ['siret', 'nom']), sans les valeurs saisies : lisible dans les logs."""
+        return [e['champ'] for e in self.erreurs]
+
 
 def _erreur_champ(champ, code, message):
     return {'champ': champ, 'code': code, 'message': message}
@@ -547,3 +568,73 @@ def _hash_factice():
 
 
 compte_service = CompteService()
+
+
+# ---- Informations du centre à la première connexion (SCRUM-221) ----
+
+# Champs du formulaire, dans l'ordre de l'écran : (champ, message s'il est obligatoire et vide)
+# Champs du formulaire (maquettes SCRUM-221 du 25/11) ; les autres colonnes de la table organisme (représentant,
+# contacts, conditions de vente) restent vides et facultatives : elles seront renseignées plus tard dans Paramètres.
+CHAMPS_ORGANISME = (
+    ('siret', 'Le SIRET est obligatoire'),
+    ('raison_sociale', 'La raison sociale est obligatoire'),
+    ('adresse', 'L’adresse est obligatoire'),
+    ('numero_declaration_activite', None),
+    ('region_nda', None),
+    ('ville_signature', None),
+)
+CHAMPS_GESTIONNAIRE = (('prenom', 'Le prénom est obligatoire'), ('nom', 'Le nom est obligatoire'))
+
+
+def _texte(donnees, champ):
+    valeur = donnees.get(champ) if isinstance(donnees, dict) else None
+    return valeur.strip() if isinstance(valeur, str) else ''
+
+
+def _erreurs_organisme(valeurs):
+    """Champs obligatoires et formats : SIRET 14 chiffres, N° de déclaration d'activité 11 chiffres."""
+    erreurs = [_erreur_champ(champ, 'CHAMP_REQUIS', message)
+               for champ, message in (*CHAMPS_ORGANISME, *CHAMPS_GESTIONNAIRE) if message and not valeurs[champ]]
+    requis = {e['champ'] for e in erreurs}
+    for champ, valeur in valeurs.items():
+        modele = Utilisateur if champ in ('prenom', 'nom') else Organisme
+        longueur = modele._meta.get_field(champ).max_length
+        if len(valeur) > longueur:
+            erreurs.append(_erreur_champ(champ, 'TROP_LONG', f'{longueur} caractères maximum'))
+            requis.add(champ)
+    if 'siret' not in requis and not re.fullmatch(r'\d{14}', valeurs['siret']):
+        erreurs.append(_erreur_champ('siret', 'SIRET_INVALIDE', 'Le SIRET doit contenir 14 chiffres'))
+    if 'numero_declaration_activite' not in requis and valeurs['numero_declaration_activite'] and not re.fullmatch(r'\d{11}', valeurs['numero_declaration_activite']):
+        erreurs.append(_erreur_champ('numero_declaration_activite', 'NDA_INVALIDE',
+                                     'Le N° de déclaration d’activité doit contenir 11 chiffres'))
+    return erreurs
+
+
+class OrganismeService:
+    """Formulaire de première connexion (SCRUM-221) : crée le centre et fait du compte connecté son gestionnaire.
+    Log métier : identifiant de l'utilisateur ; réussite (info) : identifiant du centre créé (resultat.id) et rôle
+    attribué ; refus (warn) : noms des champs en erreur (erreur.champs), jamais les valeurs saisies ; erreur technique
+    (error) : son type. Aucune autre donnée saisie n'est journalisée."""
+
+    @log_metier("service", champs=["utilisateur.id", "utilisateur.role", "resultat.id", "erreur.champs"])
+    def enregistrer(self, utilisateur, donnees):
+        if utilisateur.organisme_id is not None:
+            raise ErreurMetier('ORGANISME_DEJA_RENSEIGNE', 'Les informations de votre centre sont déjà enregistrées.', 409)
+        valeurs = {champ: _texte(donnees, champ) for champ, _ in (*CHAMPS_ORGANISME, *CHAMPS_GESTIONNAIRE)}
+        # Espaces ignorés dans les numéros : « 123 456 789 00012 » = « 12345678900012 »
+        for champ in ('siret', 'numero_declaration_activite'):
+            valeurs[champ] = valeurs[champ].replace(' ', '')
+        erreurs = _erreurs_organisme(valeurs)
+        if erreurs:
+            raise DonneesInvalides(erreurs)  # rien n'est enregistré
+        # Le centre et le gestionnaire ensemble : si une étape échoue, rien n'est enregistré
+        with transaction.atomic():
+            organisme = Organisme.objects.create(**{champ: valeurs[champ] for champ, _ in CHAMPS_ORGANISME})
+            utilisateur.prenom, utilisateur.nom = valeurs['prenom'], valeurs['nom']
+            utilisateur.role = Utilisateur.Role.GESTIONNAIRE
+            utilisateur.organisme = organisme
+            utilisateur.save(update_fields=['prenom', 'nom', 'role', 'organisme'])
+        return organisme
+
+
+organisme_service = OrganismeService()
