@@ -80,12 +80,16 @@ export function initialesCompte(compte) {
 
 // Refus du serveur ou serveur injoignable : `erreurs` = { champ: message } ; `general` si aucun champ n'est en cause
 export class ErreurCentre extends Error {
-  constructor(erreurs, general) {
+  constructor(erreurs, general, code = null) {
     super(general || 'Le formulaire contient des erreurs')
     this.erreurs = erreurs
     this.general = general
+    this.code = code
   }
 }
+
+// Refus du serveur quand le compte connecté a déjà un centre (409)
+export const CENTRE_DEJA_ENREGISTRE = 'ORGANISME_DEJA_RENSEIGNE'
 
 // POST /organisme/ : crée le centre et fait du compte connecté son gestionnaire ; renvoie le compte connecté
 export async function enregistrerCentre(valeurs) {
@@ -101,5 +105,6 @@ export async function enregistrerCentre(valeurs) {
   const json = await reponse.json().catch(() => null)
   if (reponse.ok) return json
   const erreurs = Object.fromEntries((json?.erreurs || []).map((e) => [e.champ, e.message]))
-  throw new ErreurCentre(erreurs, Object.keys(erreurs).length ? null : (json?.detail || 'Les informations n’ont pas pu être enregistrées. Réessayez.'))
+  throw new ErreurCentre(erreurs, Object.keys(erreurs).length ? null : (json?.detail || 'Les informations n’ont pas pu être enregistrées. Réessayez.'),
+    json?.code || null)
 }

@@ -52,6 +52,7 @@ Fonctionnalité: SCRUM-27 - Créer un apprenant
 **Situation de départ**
 - `je suis connecté` (compte dont le centre est déjà renseigné) · `je me connecte avec un nouveau compte` · `je n'ai aucune formation`
 - `les formateurs et apprenants d'exemple sont enregistrés dans mon centre` (Sarah Dubois, Julien Lefèvre, Camille Martin…)
+- `un centre est déjà inscrit avec le SIRET «11122233300044»` (par un autre compte)
 - `je viens de créer mon compte` (depuis l'écran « Créer votre compte » : le centre n'est pas encore renseigné)
 - `la recherche d'entreprises connaît le SIRET «12345678900012» : «Raison sociale», «Adresse»` · `la recherche d'entreprises ne répond pas` (sans ces phrases : SIRET jamais trouvé)
 - `j'ai une formation «Intitulé» de 21 heures en «Présentiel»` (Présentiel, Distanciel ou Mixte)

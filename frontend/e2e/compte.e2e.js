@@ -1,6 +1,6 @@
 // Parcours « Créer un compte » (SCRUM-15) et « Se connecter » (SCRUM-16)
 import { expect, test } from '@playwright/test'
-import { creerCompteParApi, emailUnique, motDePasse } from './outils'
+import { creerCompteParApi, emailUnique, motDePasse, siretUnique } from './outils'
 
 test.describe('Créer un compte', () => {
   test('le responsable crée son compte, renseigne son centre puis arrive sur Sessions et planning (SCRUM-221)', async ({ page }) => {
@@ -18,11 +18,11 @@ test.describe('Créer un compte', () => {
     await expect(page).toHaveURL(/\/premiere-connexion$/)
     await expect(page.getByText('Votre compte a été créé.')).toBeVisible()
     await page.getByLabel(/^Raison sociale/).fill('HiTech Formation')
-    await page.getByLabel(/^SIRET/).fill('12345678900012')
+    await page.getByLabel(/^SIRET/).fill(siretUnique())
     await page.getByLabel(/^Adresse/).fill('12 rue des Lilas, 75011 Paris')
     await page.getByLabel(/^Prénom/).fill('Marie')
     await page.getByLabel(/^Nom/).fill('Arnaud')
-    await page.getByRole('button', { name: 'Enregistrer et accéder à Quali-formation' }).click()
+    await page.getByRole('button', { name: 'Enregistrer', exact: true }).click()
 
     await expect(page).toHaveURL(/\/sessions$/)
     await expect(page.getByText('Bienvenue sur Quali-formation !')).toBeVisible()

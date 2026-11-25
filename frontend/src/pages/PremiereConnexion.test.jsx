@@ -29,7 +29,8 @@ function serveur({ compte = SANS_CENTRE, enregistrement = reponse(201, AVEC_CENT
     }
     if (url.endsWith('/organisme/')) {
       if (enregistrement instanceof Error) throw enregistrement
-      if (enregistrement.ok) actuel = AVEC_CENTRE
+      // 201 : le centre vient d'être créé ; 409 : le compte en avait déjà un (ex. enregistré depuis un autre onglet)
+      if (enregistrement.ok || enregistrement.status === 409) actuel = AVEC_CENTRE
       return enregistrement
     }
     if (url.endsWith('/auth/logout') && options?.method === 'POST') { actuel = null; return { ok: true, status: 204 } }
@@ -53,7 +54,7 @@ const remplirObligatoires = () => {
   saisir('Prénom', 'Marie')
   saisir('Nom', 'Arnaud')
 }
-const enregistrer = () => fireEvent.click(screen.getAllByRole('button', { name: /^Enregistrer/ })[0])
+const enregistrer = () => fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
 
 describe('Formulaire « Première connexion »', () => {
   it('CA1 : après la création du compte, bandeau « Votre compte a été créé. » et e-mail pré-rempli, grisé', async () => {
@@ -126,7 +127,7 @@ describe('Formulaire « Première connexion »', () => {
     await screen.findByRole('heading', { level: 1 })
     remplirObligatoires()
     saisir('Ville de signature', ' Paris ')
-    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer et accéder à Quali-formation' }))
+    enregistrer()
     expect(await screen.findByText('Bienvenue sur Quali-formation !')).toBeTruthy()
     expect(router.state.location.pathname).toBe('/sessions')
     const [, options] = fetch.mock.calls.find(([url]) => url.endsWith('/organisme/'))
@@ -150,6 +151,19 @@ describe('Formulaire « Première connexion »', () => {
     expect(champ('SIRET').getAttribute('aria-invalid')).toBe('true')
   })
 
+  it('CA8 : centre déjà inscrit avec ce SIRET : message sous le champ SIRET, rien n’est enregistré', async () => {
+    const message = 'Ce centre est déjà inscrit sur Quali-formation. Contactez son gestionnaire.'
+    serveur({ enregistrement: reponse(400, { code: 'SIRET_DEJA_UTILISE', erreurs: [{ champ: 'siret', code: 'SIRET_DEJA_UTILISE', message }] }) })
+    const r = afficher()
+    await screen.findByRole('heading', { level: 1 })
+    remplirObligatoires()
+    enregistrer()
+    expect((await screen.findByRole('alert')).textContent).toBe('1 champ est à corriger. Rien n’a été enregistré.')
+    expect(champ('SIRET').getAttribute('aria-invalid')).toBe('true')
+    expect(document.getElementById(champ('SIRET').getAttribute('aria-describedby')).textContent).toBe(message)
+    expect(r.state.location.pathname).toBe('/premiere-connexion')
+  })
+
   it('serveur indisponible ou autre refus : message général, on reste sur le formulaire', async () => {
     serveur({ enregistrement: new TypeError('réseau') })
     const router = afficher()
@@ -159,12 +173,31 @@ describe('Formulaire « Première connexion »', () => {
     expect((await screen.findByRole('alert')).textContent).toBe('Le serveur ne répond pas : réessayez dans un instant.')
     expect(router.state.location.pathname).toBe('/premiere-connexion')
     cleanup()
-    serveur({ enregistrement: reponse(409, { code: 'ORGANISME_DEJA_RENSEIGNE', detail: 'Les informations de votre centre sont déjà enregistrées.' }) })
+    serveur({ enregistrement: reponse(500, { detail: 'Erreur du serveur.' }) })
     afficher()
     await screen.findByRole('heading', { level: 1 })
     remplirObligatoires()
     enregistrer()
-    expect((await screen.findByRole('alert')).textContent).toBe('Les informations de votre centre sont déjà enregistrées.')
+    expect((await screen.findByRole('alert')).textContent).toBe('Erreur du serveur.')
+  })
+
+  it('CA6 : centre déjà enregistré pour ce compte (ex. depuis un autre onglet) : Sessions et planning, pas de bandeau rouge', async () => {
+    serveur({ enregistrement: reponse(409, { code: 'ORGANISME_DEJA_RENSEIGNE', detail: 'Les informations de votre centre sont déjà enregistrées.' }) })
+    const router = afficher()
+    await screen.findByRole('heading', { level: 1 })
+    remplirObligatoires()
+    enregistrer()
+    await vi.waitFor(() => expect(router.state.location.pathname).toBe('/sessions'))
+    expect(screen.queryByText('Les informations de votre centre sont déjà enregistrées.')).toBeNull()
+  })
+
+  it('un seul bouton « Enregistrer », en bas du formulaire', async () => {
+    serveur()
+    afficher()
+    await screen.findByRole('heading', { level: 1 })
+    const boutons = screen.getAllByRole('button', { name: /Enregistrer/ })
+    expect(boutons.map((b) => b.textContent)).toEqual(['Enregistrer'])
+    expect(boutons[0].closest('.pc-pied')).toBeTruthy()
   })
 
   it('CA6 : centre déjà enregistré, le formulaire ne s’affiche plus', async () => {
@@ -201,14 +234,16 @@ describe('Formulaire « Première connexion »', () => {
 describe('Recherche par SIRET', () => {
   const messageSiret = () => document.getElementById('pc-siret-info')
 
-  it('CA3 : SIRET connu, la raison sociale et l’adresse se remplissent, message vert ; les champs restent modifiables', async () => {
+  it('CA3 : SIRET connu, la raison sociale et l’adresse se remplissent, sans message ; les champs restent modifiables', async () => {
     const fetch = serveur({ entreprise: TROUVEE })
     afficher()
     await screen.findByRole('heading', { level: 1 })
     saisir('SIRET', '1234567890001') // 13 chiffres : pas de recherche
     expect(fetch.mock.calls.some(([url]) => url.includes('/entreprises/'))).toBe(false)
     saisir('SIRET', '123 456 789 00012')
-    expect((await screen.findByText('Informations trouvées. Vérifiez-les avant d’enregistrer.')).closest('.pc-siret-ok')).toBeTruthy()
+    expect(await screen.findByDisplayValue('HITECH FORMATION')).toBeTruthy()
+    expect(messageSiret()).toBeNull() // pas de message vert
+    expect(screen.getByText('Saisissez votre SIRET : nous remplissons les informations pour vous.')).toBeTruthy()
     expect(fetch.mock.calls.find(([url]) => url.includes('/entreprises/'))[0]).toMatch(/\/entreprises\/12345678900012\/$/)
     expect(champ('Raison sociale').value).toBe('HITECH FORMATION')
     expect(champ('Adresse').value).toBe('12 RUE DES LILAS 75011 PARIS')
@@ -217,9 +252,9 @@ describe('Recherche par SIRET', () => {
     expect(champ('Région du NDA').value).toBe('')
     saisir('Raison sociale', 'HiTech Formation')
     expect(champ('Raison sociale').value).toBe('HiTech Formation')
-    // SIRET modifié (plus 14 chiffres) : le message disparaît
+    // SIRET modifié : rien n'est effacé
     saisir('SIRET', '1234567890001')
-    expect(messageSiret()).toBeNull()
+    expect(champ('Raison sociale').value).toBe('HiTech Formation')
   })
 
   it('CA3 : le pré-remplissage efface les erreurs des champs trouvés', async () => {
@@ -229,7 +264,7 @@ describe('Recherche par SIRET', () => {
     enregistrer()
     expect(screen.getByText('La raison sociale est obligatoire')).toBeTruthy()
     saisir('SIRET', '12345678900012')
-    await screen.findByText('Informations trouvées. Vérifiez-les avant d’enregistrer.')
+    await screen.findByDisplayValue('HITECH FORMATION')
     expect(screen.queryByText('La raison sociale est obligatoire')).toBeNull()
     expect(screen.queryByText('L’adresse est obligatoire')).toBeNull()
     expect(screen.getByText('Le prénom est obligatoire')).toBeTruthy()
