@@ -8,8 +8,9 @@ test('un nouveau compte voit ses 4 modèles génériques et ouvre la convocation
   await creerCompteParApi(page.request)
   await page.goto('/modeles/generiques')
 
-  // CA5 : Paramètres de l'organisme pas encore remplis (SCRUM-221) -> message orange, sans bouton
-  await expect(page.getByText('Pensez à remplir les informations de votre organisme dans Paramètres : elles apparaîtront automatiquement dans vos documents.')).toBeVisible()
+  // RG13 retirée : plus de message orange (l'organisme renseigne ses informations à sa première connexion)
+  await expect(page.getByRole('article', { name: 'Convention de formation' })).toBeVisible()
+  await expect(page.getByText(/Pensez à remplir/)).toHaveCount(0)
 
   // CA1 + CA3 : 4 cartes, miniature du vrai document, statut « Modèle d'origine », pas de lien « Rétablir »
   for (const nom of MODELES) {

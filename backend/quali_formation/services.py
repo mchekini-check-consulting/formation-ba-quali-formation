@@ -374,19 +374,15 @@ class ModeleService:
                                for c in variables_du_contenu(modele['contenu'])]
         return modele
 
-    def parametres_complets(self, utilisateur):
-        """RG13 : vrai quand toutes les informations de l'organisme sont remplies dans Paramètres.
-        Ces informations arrivent avec SCRUM-221 : d'ici là, aucune n'est remplie pour aucun compte."""
-        return False
-
     def lister(self, utilisateur):
         """SCRUM-211/212 : les 4 modèles génériques du compte (RG1, RG2), dans l'ordre de TypeModele
-        (contenu pour la miniature), et si le message orange « Pensez à remplir… » est à afficher (RG13)."""
+        (contenu pour la miniature). Plus de message « Pensez à remplir… » (RG13 retirée : l'organisme renseigne
+        ses informations à sa première connexion)."""
         generiques = self._modeles_du_compte(utilisateur)
         origines = {m.type: m for m in ModeleOrigine.objects.all()}
         dictionnaire = dictionnaire_variables()
         modeles = [self._decrire(origines[t], generiques.get(t), dictionnaire) for t in TypeModele.values if t in origines]
-        return {'modeles': modeles, 'parametres_complets': self.parametres_complets(utilisateur)}
+        return {'modeles': modeles}
 
     def obtenir(self, utilisateur, type_modele):
         """Un modèle du compte, avec le libellé de chacune de ses variables."""

@@ -295,7 +295,7 @@ def modeles_resume(request, utilisateur):
 @_connexion_requise
 def modeles(request, utilisateur):
     """SCRUM-211/212 : GET /modeles/ -> {modeles: les 4 modèles génériques du compte (type, nom, statut, contenu,
-    date_maj, variables), parametres_complets} ; 401. Simple lecture : pas de log métier."""
+    date_maj, variables)} ; 401. Simple lecture : pas de log métier."""
     return Response(modele_service.lister(utilisateur))
 
 

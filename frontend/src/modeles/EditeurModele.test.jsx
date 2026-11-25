@@ -23,7 +23,7 @@ function simulerBackend({ contenu = CONTENU, put = (corps) => ok({ type: 'CONVEN
     if (url.endsWith('/modeles/convention')) {
       return ok({ type: 'CONVENTION', nom: 'Convention de formation', statut: 'ORIGINE', contenu, variables: VARIABLES })
     }
-    if (url.endsWith('/modeles/')) return ok({ modeles: [], parametres_complets: true })
+    if (url.endsWith('/modeles/')) return ok({ modeles: [] })
     return ok([])
   })
   vi.stubGlobal('fetch', fetchMock)
