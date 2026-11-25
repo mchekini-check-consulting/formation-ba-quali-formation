@@ -25,4 +25,5 @@ class JsonFormatter(logging.Formatter):
                 payload[key] = value
         if record.exc_info and record.exc_info[0]:
             payload.setdefault("error", record.exc_info[0].__name__)
-        return json.dumps(payload, default=str)
+        # ensure_ascii=False : accents écrits tels quels (« société », pas « soci\u00e9t\u00e9 »)
+        return json.dumps(payload, default=str, ensure_ascii=False)
