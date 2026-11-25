@@ -13,7 +13,7 @@ applications:
     # remplace tout jusqu'à la fin de la ligne.
     tag:
       dev: "5654507"
-      qualif: fff0ed9
+      qualif: "5654507"
       preprod: ""
       prod: ""
     containerPort: 8000
@@ -65,7 +65,7 @@ applications:
     # remplace tout jusqu'à la fin de la ligne.
     tag:
       dev: "5654507"
-      qualif: fff0ed9
+      qualif: "5654507"
       preprod: ""
       prod: ""
     containerPort: 8080
