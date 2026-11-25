@@ -34,6 +34,7 @@ from quali_formation.services import (
     modele_service,
     organisme_service,
     session_service,
+    variable_service,
 )
 
 
@@ -326,6 +327,14 @@ def _modifier_modele(request, utilisateur, type_modele):
         return Response(modele_service.modifier(utilisateur, type_modele, contenu))
     except ErreurMetier as e:
         return _erreur(e)
+
+
+@api_view(["GET"])
+@_connexion_requise
+def variables(request, utilisateur):
+    """SCRUM-214 : GET /variables/ -> [{code, libelle, categorie, exemple}] triées selon RG10 ; 401.
+    Simple lecture : pas de log métier."""
+    return Response(variable_service.lister())
 
 
 # ---- Créer un compte (SCRUM-15) et se connecter (SCRUM-16) ----

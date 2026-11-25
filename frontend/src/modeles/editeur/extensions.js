@@ -44,7 +44,7 @@ export const Variable = Node.create({
   addNodeView() {
     return ({ node }) => {
       const dom = etiquette(node.attrs.code, this.options.libelles)
-      dom.contentEditable = 'false'
+      dom.setAttribute('contenteditable', 'false')
       return { dom }
     }
   },
@@ -76,7 +76,7 @@ export const EnTete = Node.create({
     return ({ node }) => {
       const dom = document.createElement('div')
       dom.className = 'doc-entete'
-      dom.contentEditable = 'false'
+      dom.setAttribute('contenteditable', 'false')
       const logo = document.createElement('span')
       logo.className = 'doc-logo'
       logo.textContent = node.attrs.logo

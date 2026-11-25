@@ -47,11 +47,11 @@ function noeud(n, libelles, cle) {
 }
 
 // SCRUM-211 (CA2) : le document tel qu'il sera imprimé, variables en étiquettes
-export function DocumentModele({ contenu, variables = [] }) {
+export function DocumentModele({ contenu, variables = [], nom = 'Document' }) {
   const libelles = Object.fromEntries(variables.map((v) => [v.code, v.libelle]))
   const corps = new DOMParser().parseFromString(contenu || '', 'text/html').body
   return (
-    <article className="doc-feuille" aria-label="Document">
+    <article className="doc-feuille" aria-label={nom}>
       {[...corps.childNodes].map((n, i) => noeud(n, libelles, String(i)))}
     </article>
   )

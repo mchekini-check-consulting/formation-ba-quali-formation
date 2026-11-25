@@ -49,4 +49,6 @@ urlpatterns = [
     # Modèles d'origine et modèles génériques du compte (SCRUM-211)
     path('modeles/', views.modeles),
     path('modeles/<str:type_modele>', views.modele),
+    # Variables du panneau de l'éditeur (SCRUM-214) : GET /variables/
+    path('variables/', views.variables),
 ]

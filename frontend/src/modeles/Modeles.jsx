@@ -6,7 +6,7 @@ import { useToast } from '../components/toastContext'
 import { pluriel } from '../formations/catalogue'
 import { DocumentModele } from './DocumentModele'
 import { EditeurDocument } from './editeur/EditeurDocument'
-import { enregistrerModele, listerModeles, messageEnregistrement, obtenirModele, resumeModeles, STATUTS } from './serviceApi'
+import { enregistrerModele, listerModeles, listerVariables, messageEnregistrement, obtenirModele, resumeModeles, STATUTS } from './serviceApi'
 import '../styles/modeles.css'
 
 // Chargement d'une donnée du backend pour une page : { donnee, erreur } ; `charger` doit être stable (useCallback)
@@ -124,9 +124,8 @@ export function ModelesGeneriques() {
 
 // SCRUM-213 (maquettes SCRUM-213-1/2) : le modèle générique dans l'éditeur. RG8 : rien n'est envoyé avant
 // « Enregistrer » ; « ← Retour » quitte sans rien envoyer. RG3 : seul le modèle générique du compte est écrit.
-// Inactifs en attendant leur US : Télécharger en Word (216), Voir le modèle d'origine (217), document Word (215),
-// panneau Variables (214).
-function EditeurModeleGenerique({ modele }) {
+// Inactifs en attendant leur US : Télécharger en Word (216), Voir le modèle d'origine (217), document Word (215).
+function EditeurModeleGenerique({ modele, catalogue }) {
   const toast = useToast()
   const contenu = useRef(modele.contenu)
   const [envoi, setEnvoi] = useState(false)
@@ -157,26 +156,19 @@ function EditeurModeleGenerique({ modele }) {
         </div>
         {erreur && <p className="mod-erreur" role="alert">{erreur}</p>}
       </div>
-      <div className="mod-editeur">
-        <EditeurDocument contenu={modele.contenu} variables={modele.variables} nom={modele.nom}
-          onModification={(html) => { contenu.current = html }} />
-        <aside className="mod-variables" aria-label="Variables">
-          <button type="button" className="mod-word" disabled title="Bientôt disponible">Utiliser mon propre document Word</button>
-          <div className="mod-variables-panneau" aria-disabled="true">
-            <h2>Variables</h2>
-            <p>Glissez une variable dans le document, ou cliquez dessus pour l’insérer à l’endroit du curseur.</p>
-            <p className="mod-bientot">Bientôt disponible</p>
-          </div>
-        </aside>
-      </div>
+      <EditeurDocument contenu={modele.contenu} variables={modele.variables} catalogue={catalogue} nom={modele.nom}
+        onModification={(html) => { contenu.current = html }}
+        avantPanneau={<button type="button" className="mod-word" disabled title="Bientôt disponible">Utiliser mon propre document Word</button>} />
     </div>
   )
 }
 
+// Le modèle et les variables du panneau (SCRUM-214), chargés ensemble avant d'ouvrir l'éditeur
 export function ModeleOuvert() {
   const { type } = useParams()
-  const chargerModele = useCallback(() => obtenirModele(type), [type])
-  const { donnee: modele, erreur } = useChargement(chargerModele)
-  if (!modele) return <PageEnChargement erreur={erreur} texte="Chargement du modèle…" />
-  return <EditeurModeleGenerique key={modele.type} modele={modele} />
+  const charger = useCallback(() => Promise.all([obtenirModele(type), listerVariables()]), [type])
+  const { donnee, erreur } = useChargement(charger)
+  if (!donnee) return <PageEnChargement erreur={erreur} texte="Chargement du modèle…" />
+  const [modele, catalogue] = donnee
+  return <EditeurModeleGenerique key={modele.type} modele={modele} catalogue={catalogue} />
 }
