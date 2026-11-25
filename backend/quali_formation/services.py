@@ -277,7 +277,10 @@ class SessionService:
         # SCRUM-221 : seulement les apprenants du centre
         return Apprenant.objects.filter(organisme_id=utilisateur.organisme_id) if utilisateur.organisme_id else Apprenant.objects.none()
 
-    @log_metier("service", champs=["resultat.id"])
+    @log_metier("service", champs=["utilisateur.organisme.raison_sociale", "resultat.id"],
+                message="La société {utilisateur.organisme.raison_sociale} a créé le formateur "
+                        "n° {resultat.id} : création réussie",
+                message_echec="La société {utilisateur.organisme.raison_sociale} n'a pas pu créer de formateur")
     def creer_formateur(self, utilisateur, prenom, nom, email, entreprise=''):
         """Enregistre un formateur du centre (SCRUM-26) ; il est ensuite proposé à l'étape 2 de « Nouvelle session »."""
         return Formateur.objects.create(organisme=_organisme_requis(utilisateur), prenom=prenom, nom=nom,
