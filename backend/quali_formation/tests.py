@@ -6,7 +6,13 @@ from django.test import SimpleTestCase, TestCase
 from django.utils import timezone
 
 from quali_formation.blocs import BLOCS, blocs_manquants
-from quali_formation.models import Formation, FormationHistorique, Item, Utilisateur
+from quali_formation.models import (
+    Formation,
+    FormationHistorique,
+    Item,
+    Organisme,
+    Utilisateur,
+)
 from quali_formation.services import formations_visibles
 
 ANNEE = timezone.localdate().year
@@ -24,9 +30,19 @@ VALEURS_COMPLETES = {
     'document': 'Attestation de réalisation', 'satisfaction': ['À chaud (fin de formation)'],
     'resultats_plan': 'Questionnaire à chaud',
 }
-def connecter(client, email='camille@organisme.fr'):
-    """Crée un compte et ouvre sa session (SCRUM-16) : les formations sont réservées au compte connecté."""
+def creer_centre(raison_sociale='Cap Compétences'):
+    """Centre de formation (SCRUM-221) avec ses seules informations obligatoires."""
+    return Organisme.objects.create(raison_sociale=raison_sociale, siret='12345678900012', adresse='12 rue des Lilas, Paris')
+
+
+def connecter(client, email='camille@organisme.fr', centre=True):
+    """Crée un compte et ouvre sa session (SCRUM-16). Par défaut, le compte a déjà renseigné son centre (SCRUM-221) :
+    il en est le gestionnaire et voit les données de ce centre. `centre=False` : compte qui vient d'être créé."""
     compte = Utilisateur.objects.create(email=email, mot_de_passe='x', cgu_acceptees_le=timezone.now())
+    if centre:
+        compte.organisme = creer_centre()
+        compte.role = Utilisateur.Role.GESTIONNAIRE
+        compte.save()
     connecter_existant(client, compte)
     return compte
 

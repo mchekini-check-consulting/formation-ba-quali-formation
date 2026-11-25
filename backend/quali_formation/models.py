@@ -87,6 +87,44 @@ class Sequence(models.Model):
         return self.titre
 
 
+class Organisme(models.Model):
+    """Centre de formation (SCRUM-221) : une ligne par centre, créée à l'enregistrement du formulaire de première
+    connexion. Raison sociale, SIRET et adresse obligatoires ; les autres informations sont facultatives.
+    Le logo n'est pas encore enregistré (stockage traité dans une US dédiée)."""
+
+    # Identité de l'organisme
+    raison_sociale = models.CharField(max_length=255)
+    siret = models.CharField(max_length=14)
+    numero_declaration_activite = models.CharField(max_length=11, blank=True, default='')
+    region_nda = models.CharField(max_length=100, blank=True, default='')
+    adresse = models.CharField(max_length=500)
+    ville_signature = models.CharField(max_length=100, blank=True, default='')
+    # Représentant et contacts
+    representant_legal = models.CharField(max_length=200, blank=True, default='')
+    fonction_representant = models.CharField(max_length=100, blank=True, default='')
+    email_contact = models.EmailField(max_length=254, blank=True, default='')
+    telephone = models.CharField(max_length=30, blank=True, default='')
+    referent_handicap = models.CharField(max_length=200, blank=True, default='')
+    contact_stagiaires = models.CharField(max_length=254, blank=True, default='')
+    contact_assistance_technique = models.CharField(max_length=254, blank=True, default='')
+    # Conditions de vente
+    regime_tva = models.CharField(max_length=255, blank=True, default='')
+    penalites_retard = models.CharField(max_length=255, blank=True, default='')
+    delai_annulation = models.CharField(max_length=100, blank=True, default='')
+    montant_dedit = models.CharField(max_length=255, blank=True, default='')
+    conditions_abandon = models.CharField(max_length=500, blank=True, default='')
+    mediateur_consommation = models.CharField(max_length=255, blank=True, default='')
+    ville_tribunal = models.CharField(max_length=100, blank=True, default='')
+    date_creation = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'organisme'
+        ordering = ('id',)
+
+    def __str__(self):
+        return self.raison_sociale
+
+
 class Formateur(models.Model):
     """Un formateur, que l'on peut rattacher aux sessions (SCRUM-25 ; création : SCRUM-26)."""
 
@@ -96,6 +134,9 @@ class Formateur(models.Model):
     specialites = models.CharField(max_length=255, blank=True)
     # SCRUM-166 : vide = « Individuel »
     entreprise = models.CharField(max_length=255, blank=True, default='')
+
+    # SCRUM-221 : centre du formateur ; vide pour ceux créés avant (invisibles depuis)
+    organisme = models.ForeignKey(Organisme, on_delete=models.CASCADE, null=True, blank=True, related_name='formateurs')
 
     class Meta:
         db_table = 'formateur'
@@ -113,6 +154,9 @@ class Apprenant(models.Model):
     email = models.EmailField(max_length=255)
     # SCRUM-166 : vide = « Individuel »
     entreprise = models.CharField(max_length=255, blank=True, default='')
+
+    # SCRUM-221 : centre du apprenant ; vide pour ceux créés avant (invisibles depuis)
+    organisme = models.ForeignKey(Organisme, on_delete=models.CASCADE, null=True, blank=True, related_name='apprenants')
 
     class Meta:
         db_table = 'apprenant'
@@ -163,6 +207,17 @@ class Utilisateur(models.Model):
     mot_de_passe = models.CharField(max_length=128)
     cgu_acceptees_le = models.DateTimeField()
     date_creation = models.DateTimeField(auto_now_add=True)
+
+    class Role(models.TextChoices):
+        GESTIONNAIRE = 'GESTIONNAIRE', 'Gestionnaire'
+        UTILISATEUR = 'UTILISATEUR', 'Utilisateur'
+
+    # SCRUM-221 : renseignés à l'enregistrement du formulaire de première connexion ;
+    # organisme vide tant que ce formulaire n'est pas enregistré (l'application reste alors bloquée sur le formulaire)
+    prenom = models.CharField(max_length=100, blank=True, default='')
+    nom = models.CharField(max_length=100, blank=True, default='')
+    role = models.CharField(max_length=12, choices=Role.choices, default=Role.UTILISATEUR)
+    organisme = models.ForeignKey(Organisme, on_delete=models.SET_NULL, null=True, blank=True, related_name='utilisateurs')
 
     class Meta:
         db_table = 'utilisateur'

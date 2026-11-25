@@ -2,6 +2,7 @@ import { Navigate } from 'react-router-dom'
 import Layout from './components/Layout'
 import ConnexionDialog from './compte/ConnexionDialog'
 import CreerCompte from './pages/CreerCompte'
+import PremiereConnexion from './pages/PremiereConnexion'
 import TableauDeBord from './pages/TableauDeBord'
 import FormationDetail from './pages/FormationDetail'
 import FormationForm from './pages/FormationForm'
@@ -22,6 +23,8 @@ export const routes = [
   { path: '/creer-un-compte', element: <CreerCompte /> },
   // Se connecter (SCRUM-16) : pop-up par-dessus la landing page
   { path: '/se-connecter', element: <><LandingPage /><ConnexionDialog /></> },
+  // Informations du centre à la première connexion (SCRUM-221) : page plein écran, sans barre latérale
+  { path: '/premiere-connexion', element: <PremiereConnexion /> },
   {
     element: <Layout />,
     children: [

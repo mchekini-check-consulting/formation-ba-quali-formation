@@ -11,7 +11,8 @@ beforeEach(() => {
   vi.stubGlobal('fetch', vi.fn(async (url) => {
     if (!url.endsWith('/auth/moi')) return { ok: true, status: 200, json: async () => [] }
     return connecte
-      ? { ok: true, status: 200, json: async () => ({ id: 1, email: 'marie.arnaud@hitech.fr' }) }
+      ? { ok: true, status: 200, json: async () => ({ id: 1, email: 'marie.arnaud@hitech.fr', prenom: 'Marie', nom: 'Arnaud',
+        role: 'GESTIONNAIRE', organisme: { id: 1, raison_sociale: 'HiTech Formation' } }) }
       : { ok: false, status: 401, json: async () => ({ code: 'NON_CONNECTE' }) }
   }))
 })
@@ -39,13 +40,14 @@ describe('Menu latéral (SCRUM-209)', () => {
     }
   })
 
-  it('CA1 : Paramètres et le compte connecté (initiales, « Mon compte », sans l’e-mail : SCRUM-19) en bas du menu', async () => {
+  it('CA1 : Paramètres puis le compte connecté en bas du menu : initiales et raison sociale (SCRUM-221 CA6), sans l’e-mail (SCRUM-19)', async () => {
     connecte = true
     afficher()
     const bas = document.querySelector('.nav-bas')
     expect(within(bas).getByRole('link', { name: 'Paramètres' })).toBeTruthy()
     expect(await within(bas).findByText('MA')).toBeTruthy()
-    expect(within(bas).getByText('Mon compte')).toBeTruthy()
+    const centre = within(bas).getByText('HiTech Formation')
+    expect(centre.getAttribute('title')).toBe('HiTech Formation') // texte complet si coupé avec « … »
     expect(bas.textContent).not.toContain('marie.arnaud@hitech.fr')
   })
 

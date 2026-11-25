@@ -4,6 +4,7 @@ import Icone from '../components/Icone'
 import { Modal } from '../components/Modal'
 import { LIENS } from '../landing/contenu'
 import ChampMotDePasse from './ChampMotDePasse'
+import { PAGE_PREMIERE_CONNEXION } from './centre'
 import { MSG_CONNECTE, MSG_DECONNECTE, PAGE_D_ACCUEIL, seConnecter } from './serviceCompte'
 
 // SCRUM-16 « Se connecter à mon compte » : pop-up ouvert par-dessus la landing page
@@ -40,8 +41,10 @@ function ConnexionDialog() {
     if (Object.keys(manquants).length) return
     setEnvoi(true)
     try {
-      await seConnecter(valeurs)
-      await navigate(PAGE_D_ACCUEIL, { state: { message: MSG_CONNECTE } }) // RG-CX-06, SCRUM-19
+      const compte = await seConnecter(valeurs)
+      // SCRUM-221 : centre pas encore enregistré -> formulaire de première connexion, avant toute autre page
+      if (compte?.organisme === null) await navigate(PAGE_PREMIERE_CONNEXION)
+      else await navigate(PAGE_D_ACCUEIL, { state: { message: MSG_CONNECTE } }) // RG-CX-06, SCRUM-19
     } catch (err) {
       setErreurs(err.erreurs || { general: 'La connexion a échoué. Réessayez.' })
       setEnvoi(false)

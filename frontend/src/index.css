@@ -159,7 +159,7 @@ svg{flex-shrink:0}
 .nav-bas{gap:4px}
 .nav-compte{display:flex;align-items:center;gap:10px;padding:8px 10px;min-width:0}
 .nav-compte .avatar{width:34px;height:34px;font-size:13px;flex-shrink:0}
-.nav-compte-nom{font-size:14px;font-weight:600;color:var(--texte)}
+.nav-compte-nom{font-size:14px;font-weight:600;color:var(--texte);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* Pop-ups des blocs : toutes de la même taille ; un contenu plus long défile à l'intérieur (.wiz-body) */
 .wiz{height:min(720px,100%)}

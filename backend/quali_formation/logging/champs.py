@@ -11,6 +11,8 @@ from enum import Enum
 from uuid import UUID
 
 RESULTAT = "resultat"
+# Échec : l'exception levée (ex. erreur.champs = noms des champs refusés), jamais son message
+ERREUR = "erreur"
 _TAILLE = "taille"
 
 # Écrits par la plateforme (et attributs d'un LogRecord Python) : un champ approuvé ne

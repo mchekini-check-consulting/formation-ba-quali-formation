@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, NavLink, Outlet } from 'react-router-dom'
-import { compteConnecte, initiales } from '../compte/serviceCompte'
+import { Link, Navigate, NavLink, Outlet } from 'react-router-dom'
+import { initialesCompte, PAGE_PREMIERE_CONNEXION } from '../compte/centre'
+import { compteConnecte } from '../compte/serviceCompte'
 import BarreHaut from './BarreHaut'
 import Icone from './Icone'
 import { ToastProvider } from './Toast'
@@ -50,6 +51,9 @@ function Layout() {
     return () => document.removeEventListener('click', fermer)
   }, [])
 
+  // SCRUM-221 (critère 2) : tant que le centre n'est pas enregistré, toute page ramène au formulaire de première connexion
+  if (compte && compte.organisme === null) return <Navigate to={PAGE_PREMIERE_CONNEXION} replace />
+
   return (
     <ToastProvider>
       <div className="app">
@@ -69,14 +73,14 @@ function Layout() {
             ))}
           </nav>
 
-          {/* En bas : Paramètres, puis le compte connecté. Le compte n'a pas encore de nom ni d'organisme : initiales et « Mon compte » ;
-              l'e-mail n'apparaît que dans la liste du profil (SCRUM-19, CA5) */}
+          {/* En bas : Paramètres, puis le compte connecté (SCRUM-221, critère 6) : bulle avec les initiales de l'utilisateur
+              et la raison sociale du centre, coupée avec « … » si elle est trop longue ; l'e-mail reste dans le profil (SCRUM-19) */}
           <div className="nav nav-bas">
             <NavLink to={lienBientot('parametres')} onClick={fermerMenu}><Icone nom="parametres" taille={18} />Paramètres</NavLink>
-            {compte && (
+            {compte?.organisme && (
               <div className="nav-compte">
-                <span className="avatar" aria-hidden="true">{initiales(compte.email)}</span>
-                <span className="nav-compte-nom">Mon compte</span>
+                <span className="avatar" aria-hidden="true">{initialesCompte(compte)}</span>
+                <span className="nav-compte-nom" title={compte.organisme.raison_sociale}>{compte.organisme.raison_sociale}</span>
               </div>
             )}
           </div>

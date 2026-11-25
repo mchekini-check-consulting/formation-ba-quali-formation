@@ -9,6 +9,9 @@ from quali_formation.tests import connecter
 class SessionsPlanningTests(TestCase):
     def setUp(self):
         self.compte = connecter(self.client)
+        # Les exemples chargés par migration n'ont pas de centre (SCRUM-221) : ici, ce sont ceux du centre du compte
+        Formateur.objects.update(organisme=self.compte.organisme)
+        Apprenant.objects.update(organisme=self.compte.organisme)
         self.formation = Formation.objects.create(reference='FOR-2026-001', intitule="Management d'équipe", duree_heures=21,
                                                   proprietaire=self.compte)
         self.formateur = Formateur.objects.get(email='julien.lefevre@exemple.fr')
@@ -144,6 +147,9 @@ class SessionsPlanningTests(TestCase):
 class CreationApprenantTests(TestCase):
     """SCRUM-27 : POST /apprenants/."""
 
+    def setUp(self):
+        self.compte = connecter(self.client)
+
     def poster(self, **corps):
         return self.client.post('/apprenants/', corps, content_type='application/json')
 
@@ -174,6 +180,9 @@ class CreationApprenantTests(TestCase):
 
 class CreationFormateurTests(TestCase):
     """SCRUM-26 : POST /formateurs/."""
+
+    def setUp(self):
+        self.compte = connecter(self.client)
 
     def poster(self, **corps):
         return self.client.post('/formateurs/', corps, content_type='application/json')
