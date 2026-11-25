@@ -30,6 +30,9 @@ export const listerModeles = () => lire('/modeles/')
 // SCRUM-211 : GET /modeles/<type> -> { type, nom, statut, contenu, variables: [{ code, libelle }] }
 export const obtenirModele = (type) => lire(`/modeles/${encodeURIComponent(type)}`)
 
+// SCRUM-214 : GET /variables/ -> [{ code, libelle, categorie, exemple }], catégories dans l'ordre de RG10
+export const listerVariables = () => lire('/variables/')
+
 // SCRUM-213 : PUT /modeles/<type> { contenu } -> le modèle enregistré (PERSONNALISE) + nb_formations_utilisant, nb_formations
 export const enregistrerModele = (type, contenu) => lire(`/modeles/${encodeURIComponent(type)}`, {
   method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contenu }),

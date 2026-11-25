@@ -34,7 +34,7 @@
 .doc-logo{font-weight:700;color:#0F766E;letter-spacing:.08em}
 .doc-cond{color:#6B7280}
 /* Variable : étiquette bleue avec son libellé (le code reste en info-bulle) */
-.doc-variable{display:inline-block;background:#DBEAFE;color:#1E40AF;border-radius:4px;padding:0 6px;font-size:.92em;font-weight:600;line-height:1.5}
+.doc-variable{display:inline-block;background:#E0F2FE;color:#0369A1;border-radius:4px;padding:0 6px;font-size:.92em;font-weight:600;line-height:1.5}
 @media (max-width:760px){.doc-zone{padding:8px}.doc-feuille{padding:20px 16px}}
 
 /* Modèles génériques (SCRUM-212, maquette SCRUM-212-1) : grille de 4 cartes */
@@ -78,7 +78,7 @@
 .mod-erreur{margin:4px 0 0;color:var(--danger);font-weight:600;font-size:14px}
 .mod-editeur{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}
 .edt{display:flex;flex-direction:column;gap:12px;min-width:0}
-.edt-barre{position:sticky;top:0;z-index:2;display:flex;flex-wrap:wrap;align-items:center;gap:2px;padding:8px 10px;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+.edt-barre{position:sticky;top:0;z-index:2;display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:8px 10px;background:var(--surface);border:1px solid var(--line);border-radius:10px}
 .edt-btn{position:relative;display:inline-grid;place-items:center;width:32px;height:32px;padding:0;border:0;border-radius:8px;background:none;color:var(--ink-2);cursor:pointer}
 .edt-btn:hover:not(:disabled){background:var(--surface-2)}
 .edt-btn.on{background:var(--brand-soft);color:var(--brand-text)}
@@ -97,9 +97,20 @@
 .edt-feuille .ProseMirror-selectednode{outline:2px solid #2563EB;outline-offset:1px;border-radius:4px}
 .mod-variables{display:flex;flex-direction:column;gap:12px;position:sticky;top:0}
 .mod-word{padding:12px;border:1px dashed var(--brand-line);border-radius:10px;background:var(--surface);color:var(--brand-text);font:inherit;font-weight:600;font-size:14px}
-.mod-variables-panneau{padding:16px;background:var(--surface);border:1px solid var(--line);border-radius:12px;opacity:.7}
-.mod-variables-panneau h2{margin:0 0 8px;font-size:17px}
-.mod-variables-panneau p{margin:0;color:var(--ink-3);font-size:13.5px}
-.mod-bientot{margin-top:12px!important;font-weight:600}
+/* Panneau Variables (SCRUM-214, maquette SCRUM-214-1) : catégories (RG10) et variables en étiquettes à cliquer ou glisser */
+.pv{padding:16px;background:var(--surface);border:1px solid var(--line);border-radius:12px;max-height:calc(100vh - 120px);overflow-y:auto}
+.pv h2{margin:0 0 8px;font-size:17px}
+.pv>p{margin:0;color:var(--ink-3);font-size:13.5px}
+.pv-categorie h3{margin:18px 0 8px;font-size:12.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.pv-liste{display:flex;flex-wrap:wrap;gap:6px}
+.pv-variable{border:0;font-family:inherit;font-size:13px;padding:3px 8px;cursor:grab;text-align:left}
+.pv-variable:hover:not(:disabled){background:#BAE6FD}
+.pv-variable:focus-visible{outline:2px solid var(--brand);outline-offset:1px}
+.pv-variable:disabled{opacity:.5;cursor:not-allowed}
+/* Barre : outils, puis la case « Aperçu avec des données d'exemple » ; aperçu : valeurs d'exemple en vert */
+.edt-outils{display:flex;flex-wrap:wrap;align-items:center;gap:2px;margin:0;padding:0;border:0;min-width:0}
+.edt-apercu-case{display:inline-flex;align-items:center;gap:8px;margin-top:6px;font-size:14px;color:var(--ink-2);cursor:pointer}
+.edt-apercu-case input{width:16px;height:16px;accent-color:var(--brand)}
+.edt-apercu .doc-variable{background:#ECFDF5;color:#047857}
 @media (max-width:1100px){.mod-editeur{grid-template-columns:1fr}.mod-variables{position:static}}
 @media (max-width:760px){.edt-zone{padding:8px}}

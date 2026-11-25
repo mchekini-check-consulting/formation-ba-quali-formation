@@ -1,9 +1,6 @@
 """Règles de gestion du module Formations (RG01 à RG38), indépendantes de l'API pour être testées seules."""
 
-import json
 import re
-from functools import cache
-from pathlib import Path
 
 from django.contrib.auth.hashers import check_password, make_password
 from django.core.exceptions import ValidationError
@@ -27,6 +24,7 @@ from quali_formation.models import (
     Session,
     TypeModele,
     Utilisateur,
+    Variable,
 )
 from quali_formation.serializers import ItemSerializer
 
@@ -336,14 +334,12 @@ class ContenuModeleInvalide(ErreurMetier):
 
 
 # Dictionnaire des variables {{code}} (code, libellé, catégorie...) ; table Variable avec SCRUM-214
-FICHIER_VARIABLES = Path(__file__).resolve().parent / 'donnees_modeles' / 'variables.json'
 VARIABLE = re.compile(r'\{\{\s*([A-Za-z0-9_]+)\s*\}\}')
 
 
-@cache
 def dictionnaire_variables():
-    """{code: libellé} des variables du dictionnaire de données."""
-    return {v['code']: v['libelle'] for v in json.loads(FICHIER_VARIABLES.read_text(encoding='utf-8'))}
+    """{code: libellé} des variables du dictionnaire de données (table Variable, SCRUM-214)."""
+    return dict(Variable.objects.values_list('code', 'libelle'))
 
 
 def variables_du_contenu(contenu):
@@ -429,6 +425,19 @@ class ModeleService:
 
 
 modele_service = ModeleService()
+
+
+class VariableService:
+    def lister(self):
+        """SCRUM-214 : variables du panneau de l'éditeur (code, libellé, catégorie, exemple). RG10 : catégories
+        dans l'ordre Session, Formation, Apprenant, Client, Prix, Fin de formation, Document, Organisme
+        (ordre de Variable.Categorie), puis l'ordre de chaque variable dans sa catégorie."""
+        rang = {categorie: i for i, categorie in enumerate(Variable.Categorie.values)}
+        variables = sorted(Variable.objects.all(), key=lambda v: (rang.get(v.categorie, len(rang)), v.ordre, v.code))
+        return [{'code': v.code, 'libelle': v.libelle, 'categorie': v.categorie, 'exemple': v.exemple} for v in variables]
+
+
+variable_service = VariableService()
 
 
 class ItemService:
