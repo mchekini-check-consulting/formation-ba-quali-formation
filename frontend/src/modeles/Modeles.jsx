@@ -6,7 +6,8 @@ import { useToast } from '../components/toastContext'
 import { pluriel } from '../formations/catalogue'
 import { DocumentModele } from './DocumentModele'
 import { EditeurDocument } from './editeur/EditeurDocument'
-import { enregistrerModele, listerModeles, listerVariables, messageEnregistrement, obtenirModele, resumeModeles, STATUTS } from './serviceApi'
+import { BoutonImportWord } from './editeur/BoutonImportWord'
+import { enregistrerModele, importerWord, listerModeles, listerVariables, messageEnregistrement, obtenirModele, resumeModeles, STATUTS } from './serviceApi'
 import '../styles/modeles.css'
 
 // Chargement d'une donnée du backend pour une page : { donnee, erreur } ; `charger` doit être stable (useCallback)
@@ -124,18 +125,56 @@ export function ModelesGeneriques() {
 
 // SCRUM-213 (maquettes SCRUM-213-1/2) : le modèle générique dans l'éditeur. RG8 : rien n'est envoyé avant
 // « Enregistrer » ; « ← Retour » quitte sans rien envoyer. RG3 : seul le modèle générique du compte est écrit.
-// Inactifs en attendant leur US : Télécharger en Word (216), Voir le modèle d'origine (217), document Word (215).
+// Inactifs en attendant leur US : Télécharger en Word (216), Voir le modèle d'origine (217).
+// SCRUM-215 : guide affiché après un import Word (maquette SCRUM-215-1), fermé par « J'ai compris »
+function GuideImport({ onFermer }) {
+  return (
+    <section className="mod-guide" aria-labelledby="mod-guide-titre">
+      <div>
+        <h2 id="mod-guide-titre">Votre document est importé. Dernière étape : indiquez les informations qui changent.</h2>
+        <p>Votre fichier contient les informations d’un seul apprenant (nom, entreprise, dates…). Remplacez-les par les variables à droite : elles seront remplies automatiquement pour chaque apprenant.</p>
+        <ol>
+          <li><b>Sélectionnez</b> une information dans le document, par exemple « Camille ».</li>
+          <li><b>Cliquez</b> sur la variable correspondante à droite, par exemple « Prénom ».</li>
+          <li><b>Vérifiez</b> avec l’aperçu, puis <b>enregistrez</b>.</li>
+        </ol>
+      </div>
+      <button type="button" className="btn btn-line btn-sm" onClick={onFermer}>J’ai compris</button>
+    </section>
+  )
+}
+
 function EditeurModeleGenerique({ modele, catalogue }) {
   const toast = useToast()
   const contenu = useRef(modele.contenu)
   const [envoi, setEnvoi] = useState(false)
   const [erreur, setErreur] = useState(null)
+  // SCRUM-215 : document affiché (remplacé par un import, l'éditeur est alors rouvert avec une nouvelle clé),
+  // nom du fichier importé (encadré « Document importé ») et import à enregistrer avec « Enregistrer » (RG8)
+  const [affiche, setAffiche] = useState({ contenu: modele.contenu, cle: 0 })
+  const [fichierImporte, setFichierImporte] = useState(modele.statut === 'IMPORTE' ? modele.nom_fichier_importe : null)
+  const [importAEnregistrer, setImportAEnregistrer] = useState(null)
+  const [guide, setGuide] = useState(false)
+
+  function importe({ contenu: html, nomFichier }) {
+    contenu.current = html
+    setAffiche((d) => ({ contenu: html, cle: d.cle + 1 }))
+    setFichierImporte(nomFichier)
+    setImportAEnregistrer(nomFichier)
+    setGuide(true)
+  }
+
+  const boutonImport = (libelle, className) => (
+    <BoutonImportWord libelle={libelle} className={className} importer={(fichier) => importerWord(modele.type, fichier)}
+      onImporte={importe} onErreur={setErreur} />
+  )
 
   async function enregistrer() {
     setEnvoi(true)
     setErreur(null)
     try {
-      toast(messageEnregistrement(await enregistrerModele(modele.type, contenu.current)))
+      toast(messageEnregistrement(await enregistrerModele(modele.type, contenu.current, importAEnregistrer)))
+      setImportAEnregistrer(null)
     } catch (e) {
       setErreur(e.message)
     } finally {
@@ -156,9 +195,18 @@ function EditeurModeleGenerique({ modele, catalogue }) {
         </div>
         {erreur && <p className="mod-erreur" role="alert">{erreur}</p>}
       </div>
-      <EditeurDocument contenu={modele.contenu} variables={modele.variables} catalogue={catalogue} nom={modele.nom}
-        onModification={(html) => { contenu.current = html }}
-        avantPanneau={<button type="button" className="mod-word" disabled title="Bientôt disponible">Utiliser mon propre document Word</button>} />
+      {guide && <GuideImport onFermer={() => setGuide(false)} />}
+      <EditeurDocument key={affiche.cle} contenu={affiche.contenu} variables={modele.variables} catalogue={catalogue}
+        nom={modele.nom} onModification={(html) => { contenu.current = html }}
+        avantPanneau={fichierImporte
+          ? (
+            <div className="mod-importe">
+              <Icone nom="doc" taille={18} />
+              <p><b>Document importé</b><span title={fichierImporte}>{fichierImporte}</span></p>
+              {boutonImport('Remplacer le fichier', 'mod-word mod-word-petit')}
+            </div>
+          )
+          : boutonImport('Utiliser mon propre document Word', 'mod-word')} />
     </div>
   )
 }

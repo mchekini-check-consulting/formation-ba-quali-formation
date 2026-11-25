@@ -16,7 +16,9 @@ async function lire(chemin, options = {}) {
     throw new ErreurMetier('RESEAU', 'Le serveur ne répond pas : vérifiez que le backend est lancé.')
   }
   const json = await reponse.json().catch(() => null)
-  // 401 NON_CONNECTE, 404 MODELE_INTROUVABLE, 400 CONTENU_INVALIDE : le message du backend (avec « Se connecter » pour le 401)
+  // 413 : envoi refusé avant le backend (limite d'un proxy) ; message clair au lieu d'une erreur technique
+  if (reponse.status === 413) throw new ErreurMetier('FICHIER_TROP_VOLUMINEUX', 'Le fichier est trop volumineux pour être envoyé (10 Mo maximum).')
+  // 401 NON_CONNECTE, 404 MODELE_INTROUVABLE, 400 CONTENU_INVALIDE / FORMAT_INVALIDE… : le message du backend (avec « Se connecter » pour le 401)
   if (!reponse.ok) throw new ErreurMetier(json?.code || 'ERREUR', json?.detail || 'Les modèles n’ont pas pu être chargés. Réessayez.')
   return json
 }
@@ -34,9 +36,18 @@ export const obtenirModele = (type) => lire(`/modeles/${encodeURIComponent(type)
 export const listerVariables = () => lire('/variables/')
 
 // SCRUM-213 : PUT /modeles/<type> { contenu } -> le modèle enregistré (PERSONNALISE) + nb_formations_utilisant, nb_formations
-export const enregistrerModele = (type, contenu) => lire(`/modeles/${encodeURIComponent(type)}`, {
-  method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contenu }),
+// SCRUM-215 : après un import Word, + nom_fichier_importe -> statut IMPORTE « Mon document »
+export const enregistrerModele = (type, contenu, nomFichierImporte = null) => lire(`/modeles/${encodeURIComponent(type)}`, {
+  method: 'PUT', headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(nomFichierImporte ? { contenu, nom_fichier_importe: nomFichierImporte } : { contenu }),
 })
+
+// SCRUM-215 : POST /modeles/<type>/import (multipart, champ « fichier ») -> { contenu, nom_fichier } ; rien n'est enregistré
+export function importerWord(type, fichier) {
+  const formulaire = new FormData()
+  formulaire.append('fichier', fichier)
+  return lire(`/modeles/${encodeURIComponent(type)}/import`, { method: 'POST', body: formulaire })
+}
 
 // Message après « Enregistrer » (maquette SCRUM-213-2, RG6) ; sans formation, seulement la confirmation
 export function messageEnregistrement({ nb_formations_utilisant: utilisant, nb_formations: total }) {

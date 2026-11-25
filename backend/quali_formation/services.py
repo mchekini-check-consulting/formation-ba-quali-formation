@@ -2,6 +2,8 @@
 
 import re
 
+import mammoth
+import nh3
 from django.contrib.auth.hashers import check_password, make_password
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
@@ -333,6 +335,36 @@ class ContenuModeleInvalide(ErreurMetier):
         super().__init__('CONTENU_INVALIDE', message)
 
 
+# SCRUM-215 « Importer son propre document Word » (RG11) : .docx de 10 Mo au plus
+FORMAT_WORD = '.docx'
+TAILLE_MAX_WORD = 10 * 1024 * 1024
+# Styles Word -> styles de l'éditeur (Titre 1 = h1, Titre 2 = h3, comme les modèles d'origine)
+STYLES_WORD = (
+    "p[style-name='Title'] => h1:fresh\n"
+    "p[style-name='Heading 1'] => h1:fresh\n"
+    "p[style-name='Heading 2'] => h3:fresh\n"
+    "p[style-name='Heading 3'] => h3:fresh\n"
+    "u => u\n"
+    "strike => s"
+)
+# Seules balises gardées : ni script, ni lien, ni image, ni attribut. Tableaux : chaque case devient un paragraphe
+BALISES_WORD = {'p', 'h1', 'h3', 'strong', 'em', 'u', 's', 'ul', 'ol', 'li', 'br'}
+
+
+class ImportWordRefuse(ErreurMetier):
+    """400 : FORMAT_INVALIDE, FICHIER_TROP_VOLUMINEUX ou FICHIER_ILLISIBLE (motif dans les logs)."""
+
+
+def html_depuis_word(fichier):
+    """Le texte du .docx avec sa mise en forme principale (mammoth), nettoyé (nh3) avant d'être affiché."""
+    try:
+        resultat = mammoth.convert_to_html(fichier, style_map=STYLES_WORD)
+    except Exception as exc:  # pas un vrai .docx (archive ou XML illisible)
+        raise ImportWordRefuse('FICHIER_ILLISIBLE',
+                               'Ce fichier Word n’a pas pu être lu. Vérifiez qu’il s’ouvre dans Word.') from exc
+    return nh3.clean(resultat.value, tags=BALISES_WORD, attributes={}, link_rel=None, strip_comments=True)
+
+
 # Dictionnaire des variables {{code}} (code, libellé, catégorie...) ; table Variable avec SCRUM-214
 VARIABLE = re.compile(r'\{\{\s*([A-Za-z0-9_]+)\s*\}\}')
 
@@ -362,10 +394,11 @@ class ModeleService:
         Jamais modifié : le modèle d'origine, sans date de mise à jour (RG4)."""
         if generique is None:
             modele = {'type': origine.type, 'nom': origine.nom, 'statut': ModeleGenerique.Statut.ORIGINE,
-                      'contenu': origine.contenu, 'date_maj': None}
+                      'contenu': origine.contenu, 'date_maj': None, 'nom_fichier_importe': None}
         else:
             modele = {'type': origine.type, 'nom': origine.nom, 'statut': generique.statut,
-                      'contenu': generique.contenu, 'date_maj': generique.date_maj}
+                      'contenu': generique.contenu, 'date_maj': generique.date_maj,
+                      'nom_fichier_importe': generique.nom_fichier_importe}
         modele['variables'] = [{'code': c, 'libelle': dictionnaire.get(c, c)}
                                for c in variables_du_contenu(modele['contenu'])]
         return modele
@@ -388,10 +421,11 @@ class ModeleService:
         return self._decrire(origine, self._modeles_du_compte(utilisateur).get(origine.type), dictionnaire_variables())
 
     @log_metier("service", champs=["utilisateur.id", "type_modele", "resultat.statut"])
-    def enregistrer(self, utilisateur, type_modele, contenu):
+    def enregistrer(self, utilisateur, type_modele, contenu, nom_fichier_importe=None):
         """Enregistre le modèle générique du compte, créé à partir du modèle d'origine à la première fois (RG3).
         RG12 : aucun contrôle ni blocage sur le contenu (mentions légales, variables) ; seulement un texte
-        de taille raisonnable."""
+        de taille raisonnable. RG4 : « Mon document » (IMPORTE) après un import Word (SCRUM-215), et le reste
+        quand il est retouché sans nouvel import (même nom de fichier) ; sinon « Personnalisé »."""
         origine = ModeleOrigine.objects.filter(type=str(type_modele).upper()).first()
         if origine is None:
             raise ModeleIntrouvable()
@@ -399,10 +433,33 @@ class ModeleService:
             raise ContenuModeleInvalide('Le document envoyé est vide ou illisible.')
         if len(contenu) > TAILLE_MAX_CONTENU:
             raise ContenuModeleInvalide('Le document est trop volumineux pour être enregistré.')
+        if nom_fichier_importe is not None and not isinstance(nom_fichier_importe, str):
+            raise ContenuModeleInvalide('Le nom du document importé est illisible.')
+        existant = ModeleGenerique.objects.filter(proprietaire=utilisateur, type=origine.type).first()
+        if nom_fichier_importe:
+            statut, nom_fichier = ModeleGenerique.Statut.IMPORTE, nom_fichier_importe[:255]
+        elif existant is not None and existant.statut == ModeleGenerique.Statut.IMPORTE:
+            statut, nom_fichier = existant.statut, existant.nom_fichier_importe
+        else:
+            statut, nom_fichier = ModeleGenerique.Statut.PERSONNALISE, None
         modele, _ = ModeleGenerique.objects.update_or_create(
             proprietaire=utilisateur, type=origine.type,
-            defaults={'contenu': contenu, 'statut': ModeleGenerique.Statut.PERSONNALISE})
+            defaults={'contenu': contenu, 'statut': statut, 'nom_fichier_importe': nom_fichier})
         return modele
+
+    @log_metier("service", champs=["utilisateur.organisme_id", "type_modele", "extension", "taille"])
+    def importer_word(self, utilisateur, type_modele, fichier, extension, taille):
+        """SCRUM-215 : le contenu d'un .docx converti pour l'éditeur (RG11). RG8 : rien n'est enregistré, et le
+        fichier n'est jamais gardé (lu en mémoire ou dans un fichier temporaire effacé par Django).
+        Logs : jamais le nom du fichier ni son contenu (seulement extension et taille)."""
+        if not ModeleOrigine.objects.filter(type=str(type_modele).upper()).exists():
+            raise ModeleIntrouvable()
+        if fichier is None or extension != FORMAT_WORD:
+            raise ImportWordRefuse('FORMAT_INVALIDE', 'Seuls les fichiers Word (.docx) sont acceptés.')
+        if taille > TAILLE_MAX_WORD:
+            raise ImportWordRefuse('FICHIER_TROP_VOLUMINEUX',
+                                   'Le fichier dépasse 10 Mo : choisissez un document plus léger.')
+        return {'contenu': html_depuis_word(fichier)}
 
     def formations_utilisant(self, utilisateur, type_modele):
         """RG6 : (formations qui utilisent le modèle générique de ce type, formations du compte), hors archivées.
@@ -410,10 +467,11 @@ class ModeleService:
         nb_formations = formations_visibles(utilisateur).exclude(statut=Formation.Statut.ARCHIVEE).count()
         return nb_formations, nb_formations
 
-    def modifier(self, utilisateur, type_modele, contenu):
-        """SCRUM-213 : « Enregistrer » dans l'éditeur. Le modèle enregistré (statut PERSONNALISE) et, pour le
-        message de confirmation, le nombre de formations qui utilisent cette nouvelle version (RG6)."""
-        modele = self.enregistrer(utilisateur, type_modele, contenu)
+    def modifier(self, utilisateur, type_modele, contenu, nom_fichier_importe=None):
+        """SCRUM-213 : « Enregistrer » dans l'éditeur. Le modèle enregistré (statut PERSONNALISE, ou IMPORTE
+        après un import Word) et, pour le message de confirmation, le nombre de formations qui utilisent cette
+        nouvelle version (RG6)."""
+        modele = self.enregistrer(utilisateur, type_modele, contenu, nom_fichier_importe)
         utilisant, total = self.formations_utilisant(utilisateur, modele.type)
         return {**self.obtenir(utilisateur, modele.type), 'nb_formations_utilisant': utilisant, 'nb_formations': total}
 

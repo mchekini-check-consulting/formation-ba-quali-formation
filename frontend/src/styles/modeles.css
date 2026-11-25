@@ -96,7 +96,7 @@
 .edt-feuille .doc-variable{cursor:default}
 .edt-feuille .ProseMirror-selectednode{outline:2px solid #2563EB;outline-offset:1px;border-radius:4px}
 .mod-variables{display:flex;flex-direction:column;gap:12px;position:sticky;top:0}
-.mod-word{padding:12px;border:1px dashed var(--brand-line);border-radius:10px;background:var(--surface);color:var(--brand-text);font:inherit;font-weight:600;font-size:14px}
+.mod-word{cursor:pointer;padding:12px;border:1px dashed var(--brand-line);border-radius:10px;background:var(--surface);color:var(--brand-text);font:inherit;font-weight:600;font-size:14px}
 /* Panneau Variables (SCRUM-214, maquette SCRUM-214-1) : catégories (RG10) et variables en étiquettes à cliquer ou glisser */
 .pv{padding:16px;background:var(--surface);border:1px solid var(--line);border-radius:12px;max-height:calc(100vh - 120px);overflow-y:auto}
 .pv h2{margin:0 0 8px;font-size:17px}
@@ -114,3 +114,19 @@
 .edt-apercu .doc-variable{background:#ECFDF5;color:#047857}
 @media (max-width:1100px){.mod-editeur{grid-template-columns:1fr}.mod-variables{position:static}}
 @media (max-width:760px){.edt-zone{padding:8px}}
+
+/* Import d'un document Word (SCRUM-215, maquette SCRUM-215-1) : guide orange, encadré « Document importé » */
+.mod-guide{display:flex;align-items:flex-start;gap:16px;padding:16px 20px;border:1px solid var(--warn-line);border-radius:12px;background:#FFF7ED;color:var(--ink)}
+.mod-guide>div{flex:1;min-width:0}
+.mod-guide h2{margin:0 0 6px;font-size:15px;font-weight:700}
+.mod-guide p{margin:0;color:var(--ink-2);font-size:14px}
+.mod-guide ol{margin:10px 0 0;padding-left:22px;font-size:14px;color:var(--ink-2)}
+.mod-guide li+li{margin-top:2px}
+.mod-guide .btn{flex:none;background:var(--surface)}
+.mod-importe{display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:12px;color:var(--ink-2)}
+.mod-importe svg{flex:none}
+.mod-importe p{flex:1;min-width:0;margin:0;display:flex;flex-direction:column;font-size:14px}
+.mod-importe p span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink-3)}
+
+.mod-word-petit{flex:none;padding:8px 12px;font-size:13.5px}
+@media (max-width:640px){.mod-guide{flex-direction:column}}
