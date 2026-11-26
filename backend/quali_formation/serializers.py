@@ -140,11 +140,23 @@ class ApprenantSerializer(serializers.ModelSerializer):
 
 
 class EntrepriseSerializer(serializers.ModelSerializer):
-    """Entreprise cliente proposée dans la fenêtre « Nouvel apprenant » (SCRUM-112)."""
+    """Entreprise cliente du centre : proposée dans la fenêtre « Nouvel apprenant » (SCRUM-112) et affichée dans l'onglet
+    Entreprises clientes (SCRUM-120). `interlocuteur` : prénom et nom de l'interlocuteur principal (vide s'il n'y en a
+    pas) ; `nombre_salaries` : apprenants du centre rattachés à l'entreprise (annotation posée par le service)."""
+
+    interlocuteur = serializers.SerializerMethodField()
+    nombre_salaries = serializers.SerializerMethodField()
 
     class Meta:
         model = Entreprise
-        fields = ('id', 'raison_sociale')
+        fields = ('id', 'raison_sociale', 'siret', 'ville', 'opco', 'interlocuteur', 'nombre_salaries')
+
+    def get_interlocuteur(self, entreprise):
+        return f'{entreprise.interlocuteur_prenom} {entreprise.interlocuteur_nom}'.strip()
+
+    def get_nombre_salaries(self, entreprise):
+        nombre = getattr(entreprise, 'nombre_salaries', None)
+        return entreprise.apprenants.filter(organisme_id=entreprise.organisme_id).count() if nombre is None else nombre
 
 
 class PersonneCreationSerializer(serializers.Serializer):

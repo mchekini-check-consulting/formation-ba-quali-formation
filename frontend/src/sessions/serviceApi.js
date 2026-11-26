@@ -33,8 +33,10 @@ export const listerFormateurs = (recherche = '') =>
 // SCRUM-112 : apprenants du centre triés par nom, filtrés par `recherche` (nom, e-mail ou entreprise)
 export const listerApprenants = (recherche = '') =>
   appel(recherche.trim() ? `/apprenants/?recherche=${encodeURIComponent(recherche.trim())}` : '/apprenants/')
-// Entreprises clientes du centre (liste « Entreprise » de « Nouvel apprenant », SCRUM-112)
-export const listerEntreprises = () => appel('/entreprises/')
+// Entreprises clientes du centre (liste « Entreprise » de « Nouvel apprenant », SCRUM-112), triées par raison sociale,
+// avec SIRET, ville, OPCO, interlocuteur et nombre de salariés, filtrées par `recherche` (raison sociale, SIRET ou ville, SCRUM-120)
+export const listerEntreprises = (recherche = '') =>
+  appel(recherche.trim() ? `/entreprises/?recherche=${encodeURIComponent(recherche.trim())}` : '/entreprises/')
 // POST {prenom, nom, email} : formateur (SCRUM-26) ou apprenant (SCRUM-27)
 const identite = (p) => ({ prenom: p.prenom.trim(), nom: p.nom.trim(), email: p.email.trim() })
 // Formateur : + statut et NDA, facultatifs ; le NDA n'est envoyé que pour un sous-traitant (SCRUM-119)
