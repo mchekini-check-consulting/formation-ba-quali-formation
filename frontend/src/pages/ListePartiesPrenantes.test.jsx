@@ -36,43 +36,9 @@ describe('Parties prenantes — onglets (SCRUM-112 CA1)', () => {
     expect(screen.getByRole('link', { name: 'Parties prenantes' }).getAttribute('aria-current')).toBe('page')
   })
 
-  it('onglet Formateurs : la liste et « Nouveau formateur » d’avant (SCRUM-119 à venir)', async () => {
-    installerFauxBackend()
-    afficher()
-    fireEvent.click(onglet('Formateurs'))
-    expect(onglet('Formateurs').getAttribute('aria-selected')).toBe('true')
-    const formateurs = within(await liste('Formateurs')).getAllByRole('listitem')
-    expect(formateurs.map((l) => l.textContent)).toEqual([
-      'SDSarah Dubois—sarah.dubois@exemple.fr', 'JLJulien LefèvreCap Conseiljulien.lefevre@exemple.fr',
-    ])
-    fireEvent.click(screen.getByRole('button', { name: 'Nouveau formateur' }))
-    saisir('Prénom', 'Ana')
-    saisir('Nom', 'Roux')
-    saisir('E-mail', 'ana.roux@exemple.fr')
-    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
-    expect((await screen.findByRole('status')).textContent).toContain('Le formateur « Ana Roux » a été créé.')
-    fireEvent.click(screen.getByRole('button', { name: 'Fermer le message' }))
-    expect(screen.queryByRole('status')).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: 'Nouveau formateur' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Annuler' }))
-    expect(screen.queryByRole('dialog')).toBeNull()
-  })
+  // Onglet Formateurs : FormateursOnglet.test.jsx (SCRUM-119)
 
-  it('onglet Formateurs vide ou en erreur', async () => {
-    vi.stubGlobal('fetch', vi.fn(async (url) => (url.endsWith('/auth/moi') ? repondre(401, {}) : repondre(200, []))))
-    afficher()
-    fireEvent.click(onglet('Formateurs'))
-    expect(await screen.findByText('Aucun formateur pour l’instant.')).toBeTruthy()
-  })
-
-  it('onglet Entreprises clientes : bientôt disponible (SCRUM-120 à venir)', async () => {
-    installerFauxBackend()
-    afficher()
-    fireEvent.click(onglet('Entreprises clientes'))
-    expect(screen.getByRole('heading', { name: 'Bientôt disponible' })).toBeTruthy()
-    fireEvent.click(onglet('Apprenants'))
-    expect((await lignes())).toHaveLength(4)
-  })
+  // Onglet Entreprises clientes : EntreprisesOnglet.test.jsx (SCRUM-120)
 })
 
 describe('Liste des apprenants (SCRUM-112)', () => {
@@ -183,7 +149,7 @@ describe('Fenêtre « Nouvel apprenant » (SCRUM-112)', () => {
     fireEvent.change(statut, { target: { value: 'SALARIE' } })
     const entreprise = await screen.findByLabelText(/^Entreprise/)
     await waitFor(() => expect(within(entreprise).getAllByRole('option').map((o) => o.textContent))
-      .toEqual(['Choisir une entreprise', 'Société Durand', 'Globex']))
+      .toEqual(['Choisir une entreprise', 'Globex', 'Société Durand']))
     expect(screen.getByLabelText(/^Poste/).getAttribute('placeholder')).toBe('Ex. : Assistante RH')
     expect(screen.getByText('Facultatif · parmi vos entreprises clientes')).toBeTruthy()
     for (const autre of ['DEMANDEUR_EMPLOI', 'INDEPENDANT', 'PARTICULIER']) {

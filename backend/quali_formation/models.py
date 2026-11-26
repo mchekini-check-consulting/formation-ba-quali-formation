@@ -132,6 +132,12 @@ class Entreprise(models.Model):
     raison_sociale = models.CharField(max_length=255)
     siret = models.CharField(max_length=14)
     organisme = models.ForeignKey(Organisme, on_delete=models.CASCADE, related_name='entreprises')
+    # SCRUM-120 : OPCO (aucune saisie pour l'instant : « À confirmer »), ville et interlocuteur principal
+    # (vides tant que la création d'une entreprise, SCRUM-113, ne les renseigne pas)
+    opco = models.CharField(max_length=100, blank=True, default='')
+    ville = models.CharField(max_length=255, blank=True, default='')
+    interlocuteur_prenom = models.CharField(max_length=100, blank=True, default='')
+    interlocuteur_nom = models.CharField(max_length=100, blank=True, default='')
 
     class Meta:
         db_table = 'entreprise'
@@ -151,6 +157,15 @@ class Formateur(models.Model):
     # SCRUM-166 : vide = « Individuel »
     entreprise = models.CharField(max_length=255, blank=True, default='')
 
+    # SCRUM-119 : statut et n° de déclaration d'activité (NDA, 11 chiffres, pour un sous-traitant), facultatifs.
+    # Vides pour les formateurs créés avant.
+    class Statut(models.TextChoices):
+        SALARIE = 'SALARIE', 'Salarié'
+        SOUS_TRAITANT = 'SOUS_TRAITANT', 'Sous-traitant'
+
+    statut = models.CharField(max_length=20, choices=Statut.choices, blank=True, default='')
+    numero_nda = models.CharField(max_length=11, blank=True, default='')
+
     # SCRUM-221 : centre du formateur ; vide pour ceux créés avant (invisibles depuis)
     organisme = models.ForeignKey(Organisme, on_delete=models.CASCADE, null=True, blank=True, related_name='formateurs')
 
@@ -160,6 +175,30 @@ class Formateur(models.Model):
 
     def __str__(self):
         return f'{self.prenom} {self.nom}'
+
+
+class FormateurDocument(models.Model):
+    """Un document d'un formateur (SCRUM-119) : son CV (1 au plus) ou un diplôme (5 au plus). Le fichier lui-même
+    est enregistré en base, dans `contenu` (pas de stockage de fichiers dans le projet)."""
+
+    class Type(models.TextChoices):
+        CV = 'CV', 'CV'
+        DIPLOME = 'DIPLOME', 'Diplôme'
+
+    formateur = models.ForeignKey(Formateur, on_delete=models.CASCADE, related_name='documents')
+    type = models.CharField(max_length=10, choices=Type.choices)
+    nom_fichier = models.CharField(max_length=255)
+    format = models.CharField(max_length=10)  # extension, en minuscules : pdf, jpg, jpeg, png, doc, docx
+    taille = models.PositiveIntegerField()  # en octets
+    contenu = models.BinaryField()
+    date_ajout = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'formateur_document'
+        ordering = ('date_ajout', 'id')
+
+    def __str__(self):
+        return self.nom_fichier
 
 
 class Apprenant(models.Model):

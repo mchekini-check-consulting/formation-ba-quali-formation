@@ -41,8 +41,6 @@
 .app-carte-tete{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
 .app-carte-tete h2{font-size:18px;font-weight:700;color:var(--c-texte);margin:0}
 .app-nombre{font-weight:500;color:var(--c-texte-2);font-size:15px}
-.app-bientot h2{font-size:18px;font-weight:700;margin:0}
-.app-bientot p{margin:0;color:var(--c-texte-2)}
 
 /* Boutons */
 .app-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:44px;padding:0 22px;border-radius:999px;

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import ErreurChargement from '../components/ErreurChargement'
+import { messageFichiersNonEnregistres } from '../formateurs/formateurs'
+import '../formateurs/formateurs.css'
 import Icone from '../components/Icone'
 import { MenuPartiesPrenantes, PanneauPartiePrenante } from '../sessions/PartiesPrenantes'
 import { messageCreation } from '../sessions/typesPersonnes'
@@ -16,6 +18,7 @@ function SessionsPlanning() {
   const [sessions, setSessions] = useState(null)
   const [erreur, setErreur] = useState(null)
   const [message, setMessage] = useState(location.state?.message || null)
+  const [alerte, setAlerte] = useState(null) // SCRUM-119 : fichiers du formateur créé qui n'ont pas pu être enregistrés
   const nouvelleId = location.state?.sessionId
   const [panneau, setPanneau] = useState(null) // 'formateur', 'apprenant' ou null
 
@@ -31,6 +34,12 @@ function SessionsPlanning() {
           <button type="button" className="sp-fermer" aria-label="Fermer le message" onClick={() => setMessage(null)}><Icone nom="x" taille={18} /></button>
         </div>
       )}
+      {alerte && (
+        <div className="app-bandeau-alerte" role="alert">
+          <span>{alerte}</span>
+          <button type="button" aria-label="Fermer l’alerte" onClick={() => setAlerte(null)}><Icone nom="x" taille={16} /></button>
+        </div>
+      )}
       <div className="page-head">
         <div><h1>Sessions et planning</h1><p className="sub">Retrouvez ici toutes vos sessions de formation et leur planning.</p></div>
         <div className="sp-actions">
@@ -40,7 +49,11 @@ function SessionsPlanning() {
       </div>
       {panneau && (
         <PanneauPartiePrenante type={panneau} key={panneau} onFermer={() => setPanneau(null)}
-          onCree={(p) => { setMessage(messageCreation(panneau, p)); setPanneau(null) }} />
+          onCree={(p, nonEnregistres = []) => {
+            setMessage(messageCreation(panneau, p))
+            setAlerte(nonEnregistres.length ? messageFichiersNonEnregistres(p, nonEnregistres) : null)
+            setPanneau(null)
+          }} />
       )}
 
       {sessions === null && (erreur ? <ErreurChargement erreur={erreur} /> : <p className="chargement">Chargement des sessions…</p>)}

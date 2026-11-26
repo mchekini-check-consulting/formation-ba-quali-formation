@@ -153,7 +153,8 @@ class ApprenantsTests(TestCase):
         self.apprenant('Ana', 'Ici')
         self.assertEqual([a['nom'] for a in self.lister()], ['Ici'])
         self.assertEqual(self.lister('durand'), [])
-        self.assertEqual(self.client.get('/entreprises/').json(), [{'id': self.durand.id, 'raison_sociale': 'Société Durand'}])
+        self.assertEqual([(e['id'], e['raison_sociale']) for e in self.client.get('/entreprises/').json()],
+                         [(self.durand.id, 'Société Durand')])
 
 
 class EntreprisesClientesTests(TestCase):
