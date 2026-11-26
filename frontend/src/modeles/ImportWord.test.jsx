@@ -113,7 +113,9 @@ describe('Importer son propre document Word (SCRUM-215)', () => {
     const { fetchMock } = await ouvrir()
     for (const nom of ['convocation.pdf', 'convocation.doc']) {
       choisir('Utiliser mon propre document Word', docx(nom))
-      expect((await screen.findByRole('alert')).textContent).toBe('Seuls les fichiers Word (.docx) sont acceptés.')
+      // affiché sous le bouton d'import (panneau de droite), pas en haut de la page
+      const panneau = screen.getByRole('complementary', { name: 'Variables' })
+      expect((await within(panneau).findByRole('alert')).textContent).toBe('Seuls les fichiers Word (.docx) sont acceptés.')
     }
     expect(appels(fetchMock, '/import')).toHaveLength(0)
     expect(document().textContent).toBe('Texte d’origine')
