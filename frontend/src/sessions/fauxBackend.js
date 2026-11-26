@@ -24,7 +24,11 @@ export const APPRENANTS = [
   apprenant(3, 'Léa', 'Moreau', 'lea.moreau@gmail.com', '', { statut: 'DEMANDEUR_EMPLOI' }),
   apprenant(5, 'Yanis', 'Petit', 'yanis.petit@marine.fr', 'Globex', { telephone: '0612345678', statut: 'PARTICULIER', nombre_sessions: 1 }),
 ]
-export const ENTREPRISES = [{ id: 7, raison_sociale: 'Société Durand' }, { id: 8, raison_sociale: 'Globex' }]
+// SCRUM-120 : triées par raison sociale, avec SIRET, ville, OPCO, interlocuteur et nombre de salariés
+export const ENTREPRISES = [
+  { id: 8, raison_sociale: 'Globex', siret: '52874196300015', ville: 'Nantes', opco: 'AKTO', interlocuteur: '', nombre_salaries: 1 },
+  { id: 7, raison_sociale: 'Société Durand', siret: '38945612300034', ville: 'Paris', opco: '', interlocuteur: 'Hugo Weber', nombre_salaries: 2 },
+]
 
 // Même recherche que le backend, sans tenir compte des majuscules : prénom et nom, e-mail, et entreprise pour un apprenant
 const rechercher = (personnes, texte, avecEntreprise) => {
@@ -65,7 +69,12 @@ export function installerFauxBackend({
       personnes[chemin].push(cree)
       return repondre(201, cree)
     }
-    if (chemin === '/entreprises/') return repondre(200, entreprises)
+    if (chemin === '/entreprises/') {
+      // Même recherche que le backend : raison sociale, SIRET (espaces ignorés) ou ville
+      const r = (new URLSearchParams(requete).get('recherche') || '').toLowerCase()
+      return repondre(200, entreprises.filter((e) => !r || [e.raison_sociale, e.ville].some((t) => t.toLowerCase().includes(r))
+        || (r.replaceAll(' ', '') && e.siret.includes(r.replaceAll(' ', '')))))
+    }
     const recherche = new URLSearchParams(requete).get('recherche')
     if (recherche && personnes[chemin]) return repondre(200, rechercher(personnes[chemin], recherche, chemin === '/apprenants/'))
     if (options?.method === 'POST') {

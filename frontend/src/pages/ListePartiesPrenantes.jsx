@@ -3,6 +3,7 @@ import {
   classeBulle, libelleStatut, telephoneFr, texteSessions, VIDE,
 } from '../apprenants/apprenants'
 import ErreurChargement from '../components/ErreurChargement'
+import OngletEntreprises from '../entreprises/OngletEntreprises'
 import { messageFichiersNonEnregistres } from '../formateurs/formateurs'
 import '../formateurs/formateurs.css'
 import Icone from '../components/Icone'
@@ -18,7 +19,7 @@ const ONGLETS = [
 ]
 const DELAI_RECHERCHE = 250 // ms : la liste se met à jour quand on arrête de taper
 
-// Page « Parties prenantes » (SCRUM-209, onglets et apprenants : SCRUM-112, formateurs : SCRUM-119) : seulement les personnes du centre.
+// Page « Parties prenantes » (SCRUM-209, onglets et apprenants : SCRUM-112, formateurs : SCRUM-119, entreprises clientes : SCRUM-120) : seulement les personnes du centre.
 function ListePartiesPrenantes() {
   const [onglet, setOnglet] = useState('apprenants')
   const [total, setTotal] = useState(null) // nombre d'apprenants du centre (onglet), sans la recherche
@@ -39,12 +40,7 @@ function ListePartiesPrenantes() {
       <div role="tabpanel" id={`panneau-${onglet}`} aria-labelledby={`onglet-${onglet}`}>
         {onglet === 'apprenants' && <Apprenants onTotal={setTotal} />}
         {onglet === 'formateurs' && <Formateurs />}
-        {onglet === 'entreprises' && (
-          <section className="app-carte app-bientot">
-            <h2>Bientôt disponible</h2>
-            <p>Les entreprises clientes de votre centre s’afficheront ici dans une prochaine version.</p>
-          </section>
-        )}
+        {onglet === 'entreprises' && <OngletEntreprises />}
       </div>
     </div>
   )

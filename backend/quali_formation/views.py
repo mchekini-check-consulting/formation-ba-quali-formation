@@ -267,8 +267,10 @@ def apprenants(request, utilisateur):
 @api_view(["GET"])
 @_connexion_requise
 def entreprises(request, utilisateur):
-    """Entreprises clientes du centre (SCRUM-112 : liste « Entreprise » de « Nouvel apprenant ») ; 401 NON_CONNECTE."""
-    return Response(EntrepriseSerializer(session_service.lister_entreprises(utilisateur), many=True).data)
+    """Entreprises clientes du centre (SCRUM-112 : liste « Entreprise » de « Nouvel apprenant » ; SCRUM-120 : onglet
+    Entreprises clientes, recherche ?recherche=, nombre de salariés) ; 401 NON_CONNECTE."""
+    entreprises = session_service.lister_entreprises(utilisateur, request.query_params.get('recherche', ''))
+    return Response(EntrepriseSerializer(entreprises, many=True).data)
 
 
 # ---- Informations du centre à la première connexion (SCRUM-221) ----

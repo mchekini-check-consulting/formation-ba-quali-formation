@@ -38,14 +38,7 @@ describe('Parties prenantes — onglets (SCRUM-112 CA1)', () => {
 
   // Onglet Formateurs : FormateursOnglet.test.jsx (SCRUM-119)
 
-  it('onglet Entreprises clientes : bientôt disponible (SCRUM-120 à venir)', async () => {
-    installerFauxBackend()
-    afficher()
-    fireEvent.click(onglet('Entreprises clientes'))
-    expect(screen.getByRole('heading', { name: 'Bientôt disponible' })).toBeTruthy()
-    fireEvent.click(onglet('Apprenants'))
-    expect((await lignes())).toHaveLength(4)
-  })
+  // Onglet Entreprises clientes : EntreprisesOnglet.test.jsx (SCRUM-120)
 })
 
 describe('Liste des apprenants (SCRUM-112)', () => {
@@ -156,7 +149,7 @@ describe('Fenêtre « Nouvel apprenant » (SCRUM-112)', () => {
     fireEvent.change(statut, { target: { value: 'SALARIE' } })
     const entreprise = await screen.findByLabelText(/^Entreprise/)
     await waitFor(() => expect(within(entreprise).getAllByRole('option').map((o) => o.textContent))
-      .toEqual(['Choisir une entreprise', 'Société Durand', 'Globex']))
+      .toEqual(['Choisir une entreprise', 'Globex', 'Société Durand']))
     expect(screen.getByLabelText(/^Poste/).getAttribute('placeholder')).toBe('Ex. : Assistante RH')
     expect(screen.getByText('Facultatif · parmi vos entreprises clientes')).toBeTruthy()
     for (const autre of ['DEMANDEUR_EMPLOI', 'INDEPENDANT', 'PARTICULIER']) {

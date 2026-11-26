@@ -1,0 +1,17 @@
+/* SCRUM-120 : onglet Entreprises clientes, selon docs/charte-graphique.md (variables posées par apprenants.css) */
+.app-page{--c-pastille-orange-fond:#FFF7ED; --c-pastille-orange:#9A3412}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .app-page{--c-pastille-orange-fond:#3B2413; --c-pastille-orange:#FDBA74}}
+:root[data-theme="dark"] .app-page{--c-pastille-orange-fond:#3B2413; --c-pastille-orange:#FDBA74}
+
+/* Colonnes : bulle, Entreprise (raison sociale et SIRET), Ville, OPCO, Interlocuteur, Salariés */
+.app-ligne.ent-ligne,.ent-ligne{display:grid;grid-template-columns:40px minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1.3fr) minmax(90px,.8fr);
+  align-items:center;gap:16px;padding:14px 16px}
+.ent-entete{padding-top:4px;padding-bottom:10px;font-size:14px;font-weight:600;color:var(--c-texte-2)}
+.ent-salaries{text-align:right}
+.ent-pastille-orange{background:var(--c-pastille-orange-fond);color:var(--c-pastille-orange)}
+@media (max-width:900px){
+  .ent-entete{display:none}
+  .app-ligne.ent-ligne{grid-template-columns:40px 1fr auto;row-gap:6px}
+  .app-ligne.ent-ligne>:nth-child(n+3){grid-column:2}
+  .app-ligne.ent-ligne>.ent-salaries{grid-column:3;grid-row:1}
+}

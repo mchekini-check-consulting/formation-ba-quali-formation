@@ -132,6 +132,12 @@ class Entreprise(models.Model):
     raison_sociale = models.CharField(max_length=255)
     siret = models.CharField(max_length=14)
     organisme = models.ForeignKey(Organisme, on_delete=models.CASCADE, related_name='entreprises')
+    # SCRUM-120 : OPCO (aucune saisie pour l'instant : « À confirmer »), ville et interlocuteur principal
+    # (vides tant que la création d'une entreprise, SCRUM-113, ne les renseigne pas)
+    opco = models.CharField(max_length=100, blank=True, default='')
+    ville = models.CharField(max_length=255, blank=True, default='')
+    interlocuteur_prenom = models.CharField(max_length=100, blank=True, default='')
+    interlocuteur_nom = models.CharField(max_length=100, blank=True, default='')
 
     class Meta:
         db_table = 'entreprise'

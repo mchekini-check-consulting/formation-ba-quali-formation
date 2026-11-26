@@ -314,9 +314,24 @@ class SessionService:
         return apprenants
 
     @log_metier("service", champs=["resultat.taille"])
-    def lister_entreprises(self, utilisateur):
-        # SCRUM-112 : entreprises clientes du centre (liste « Entreprise » de la fenêtre « Nouvel apprenant »)
-        return Entreprise.objects.filter(organisme_id=utilisateur.organisme_id) if utilisateur.organisme_id else Entreprise.objects.none()
+    def lister_entreprises(self, utilisateur, recherche=''):
+        """Entreprises clientes du centre (SCRUM-112 ; aucune tant que le centre n'est pas renseigné), triées par raison
+        sociale, avec leur nombre de salariés : apprenants du centre qui y sont rattachés (SCRUM-120).
+        `recherche` : garde celles dont la raison sociale, le SIRET (espaces ignorés) ou la ville contient ce texte."""
+        if not utilisateur.organisme_id:
+            return Entreprise.objects.none()
+        entreprises = (Entreprise.objects.filter(organisme_id=utilisateur.organisme_id)
+                       .annotate(nombre_salaries=Count('apprenants', distinct=True,
+                                                       filter=Q(apprenants__organisme_id=utilisateur.organisme_id)))
+                       .order_by(Lower('raison_sociale'), 'id'))
+        recherche = (recherche or '').strip()
+        if recherche:
+            filtre = Q(raison_sociale__icontains=recherche) | Q(ville__icontains=recherche)
+            siret = recherche.replace(' ', '')
+            if siret:
+                filtre |= Q(siret__icontains=siret)
+            entreprises = entreprises.filter(filtre)
+        return entreprises
 
     @log_metier("service", champs=["utilisateur.organisme.raison_sociale", "resultat.id"],
                 message="La société {utilisateur.organisme.raison_sociale} a créé le formateur "
