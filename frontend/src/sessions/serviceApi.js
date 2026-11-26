@@ -37,6 +37,12 @@ export const listerApprenants = (recherche = '') =>
 // avec SIRET, ville, OPCO, interlocuteur et nombre de salariés, filtrées par `recherche` (raison sociale, SIRET ou ville, SCRUM-120)
 export const listerEntreprises = (recherche = '') =>
   appel(recherche.trim() ? `/entreprises/?recherche=${encodeURIComponent(recherche.trim())}` : '/entreprises/')
+// SCRUM-113 : jusqu'à 10 établissements de l'annuaire officiel (raison sociale, SIRET, forme juridique, code NAF,
+// adresse, code postal, ville) dont la raison sociale ou le SIRET correspond au texte (3 caractères au moins)
+export const rechercherAnnuaire = (texte) => appel(`/annuaire-entreprises/?recherche=${encodeURIComponent(texte.trim())}`)
+// SCRUM-113 : POST /entreprises/ ; 409 SIRET_DEJA_ENREGISTRE si le SIRET est déjà enregistré dans le centre
+export const creerEntreprise = (entreprise) => appel('/entreprises/', entreprise)
+
 // POST {prenom, nom, email} : formateur (SCRUM-26) ou apprenant (SCRUM-27)
 const identite = (p) => ({ prenom: p.prenom.trim(), nom: p.nom.trim(), email: p.email.trim() })
 // Formateur : + statut et NDA, facultatifs ; le NDA n'est envoyé que pour un sous-traitant (SCRUM-119)

@@ -8,6 +8,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from quali_formation.entreprises import (
+    RechercheTropCourte,
     ServiceEntreprisesIndisponible,
     SiretInvalide,
     recherche_entreprises,
@@ -18,6 +19,7 @@ from quali_formation.models import Utilisateur
 from quali_formation.serializers import (
     ApprenantCreationSerializer,
     ApprenantSerializer,
+    EntrepriseCreationSerializer,
     EntrepriseSerializer,
     FormateurCreationSerializer,
     FormateurDocumentSerializer,
@@ -267,13 +269,40 @@ def apprenants(request, utilisateur):
                       ApprenantSerializer, ApprenantCreationSerializer, **filtres)
 
 
-@api_view(["GET"])
+@api_view(["GET", "POST"])
 @_connexion_requise
 def entreprises(request, utilisateur):
     """Entreprises clientes du centre (SCRUM-112 : liste « Entreprise » de « Nouvel apprenant » ; SCRUM-120 : onglet
-    Entreprises clientes, recherche ?recherche=, nombre de salariés) ; 401 NON_CONNECTE."""
+    Entreprises clientes, recherche ?recherche=, nombre de salariés) ; 401 NON_CONNECTE.
+    POST (SCRUM-113) : création ; 201, 400 champ manquant ou format invalide, 409 SIRET_DEJA_ENREGISTRE (ce centre)."""
+    if request.method == 'POST':
+        entree = EntrepriseCreationSerializer(data=request.data)
+        entree.is_valid(raise_exception=True)
+        try:
+            entreprise = session_service.creer_entreprise(utilisateur, **entree.validated_data)
+        except ErreurMetier as e:
+            return _erreur(e)
+        return Response(EntrepriseSerializer(entreprise).data, status=status.HTTP_201_CREATED)
     entreprises = session_service.lister_entreprises(utilisateur, request.query_params.get('recherche', ''))
     return Response(EntrepriseSerializer(entreprises, many=True).data)
+
+
+@api_view(["GET"])
+@_connexion_requise
+def annuaire_entreprises(request, utilisateur):
+    """SCRUM-113 : GET /annuaire-entreprises/?recherche= → jusqu'à 10 établissements de l'annuaire officiel (raison
+    sociale, SIRET, forme juridique, code NAF, adresse, code postal, ville) ; [] si rien n'est trouvé. 400
+    RECHERCHE_TROP_COURTE (moins de 3 caractères) ; 503 SERVICE_INDISPONIBLE ; 401. Log métier écrit par le service."""
+    try:
+        resultat = recherche_entreprises.chercher(request.query_params.get('recherche', ''), utilisateur)
+    except RechercheTropCourte:
+        return Response({'code': 'RECHERCHE_TROP_COURTE', 'detail': 'Saisissez au moins 3 caractères.'},
+                        status=status.HTTP_400_BAD_REQUEST)
+    except ServiceEntreprisesIndisponible:
+        setattr(request._request, DEJA_ECRIT, True)  # panne déjà journalisée par le service
+        return Response({'code': 'SERVICE_INDISPONIBLE', 'detail': 'La recherche d’entreprises ne répond pas.'},
+                        status=status.HTTP_503_SERVICE_UNAVAILABLE)
+    return Response(resultat['etablissements'])
 
 
 # ---- Informations du centre à la première connexion (SCRUM-221) ----
