@@ -506,7 +506,7 @@ def fichier_word(contenu, nom, champs_log):
     try:
         fichier = docx_depuis_html(contenu, nom)
     except Exception as exc:
-        logger_metier.error('Export Word en échec', extra={'layer': 'service', **champs_log, **error_fields(exc)})
+        logger_metier.exception('Export Word en échec', extra={'layer': 'service', **champs_log, **error_fields(exc)})
         raise ExportWordImpossible() from exc
     return {'fichier': fichier, 'nom_fichier': f'Modèle - {nom}.docx'}
 

@@ -11,6 +11,7 @@ from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import RGBColor
 
+from quali_formation.logging.formatter import JsonFormatter
 from quali_formation.models import ModeleOrigine
 from quali_formation.tests import connecter
 from quali_formation.word_export import DOCX_MIME, docx_depuis_html
@@ -167,9 +168,11 @@ class ExporterWordTests(TestCase):
         self.assertEqual(ligne.type_modele, 'CONVOCATION')
         self.assertEqual(getattr(ligne, 'utilisateur.organisme_id'), str(self.compte.organisme_id))
         self.assertEqual(ligne.error, 'RuntimeError')
-        tout = str(ligne.__dict__)
-        self.assertNotIn('confidentiel', tout)
-        self.assertNotIn('apprenant_nom', tout)
+        # Ligne écrite sur stdout : type de l'erreur seulement, ni son message ni sa trace
+        ecrite = JsonFormatter().format(ligne)
+        self.assertNotIn('confidentiel', ecrite)
+        self.assertNotIn('Traceback', ecrite)
+        self.assertNotIn('apprenant_nom', ecrite)
 
 
 class DocxDepuisHtmlTests(TestCase):
