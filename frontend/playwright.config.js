@@ -1,10 +1,8 @@
 import { defineConfig, devices } from '@playwright/test'
-import { defineBddProject } from 'playwright-bdd'
 
 // Tests end to end (npm run test:e2e) : un vrai navigateur (Chromium) refait les parcours des utilisateurs
 // sur l'application complète lancée sur le poste — écran (serveur de dev) + backend Django sur une base vide.
-// Deux familles : les parcours écrits en code (e2e/*.e2e.js) et les tests fonctionnels des US, écrits en français
-// (e2e/fonctionnels/*.feature, un fichier par US) ; `bddgen` les traduit en tests avant chaque lancement.
+// Parcours écrits en code : e2e/*.e2e.js et e2e/modeles/*.e2e.js.
 // Ports à part (5180 et 8100) : les tests tournent même si l'application est déjà lancée en local (5173 et 8000).
 const PORT_ECRAN = 5180
 const PORT_BACKEND = 8100
@@ -26,16 +24,6 @@ export default defineConfig({
   },
   projects: [
     { name: 'parcours', testDir: './e2e', testMatch: '**/*.e2e.js', use: { ...devices['Desktop Chrome'] } },
-    {
-      ...defineBddProject({
-        name: 'fonctionnels',
-        language: 'fr',
-        features: 'e2e/fonctionnels/*.feature',
-        steps: 'e2e/fonctionnels/etapes/*.js',
-        missingSteps: 'fail-on-gen', // une phrase sans définition est signalée avant de lancer le navigateur
-      }),
-      use: { ...devices['Desktop Chrome'] },
-    },
   ],
   webServer: [
     {

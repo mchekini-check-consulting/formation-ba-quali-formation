@@ -32,26 +32,6 @@ export async function renseignerCentreParApi(requete, raisonSociale = 'Centre de
   expect(reponse.status(), await reponse.text()).toBe(201)
 }
 
-// Formateurs et apprenants d'exemple (ceux de la maquette SCRUM-25), enregistrés dans le centre du compte connecté
-const FORMATEURS = [
-  ['Sarah', 'Dubois', 'sarah.dubois@exemple.fr'], ['Marc', 'Roux', 'marc.roux@exemple.fr'],
-  ['Amina', 'Fontaine', 'amina.fontaine@exemple.fr'], ['Julien', 'Lefèvre', 'julien.lefevre@exemple.fr'],
-]
-const APPRENANTS = [
-  ['Camille', 'Martin'], ['Hugo', 'Bernard'], ['Léa', 'Moreau'], ['Yanis', 'Petit'],
-  ['Nora', 'Garcia'], ['Théo', 'Laurent'], ['Inès', 'Robert'], ['Malik', 'Benali'],
-]
-const sansAccent = (texte) => texte.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
-export async function creerPersonnesExemplesParApi(requete) {
-  for (const [prenom, nom, email] of FORMATEURS) {
-    expect((await requete.post('/api/formateurs/', { data: { prenom, nom, email } })).status()).toBe(201)
-  }
-  for (const [prenom, nom] of APPRENANTS) {
-    const email = `${sansAccent(prenom)}.${sansAccent(nom)}@acme.fr`
-    expect((await requete.post('/api/apprenants/', { data: { prenom, nom, email, entreprise: 'Acme', statut: 'SALARIE' } })).status()).toBe(201)
-  }
-}
-
 // Crée une formation en brouillon depuis l'écran (seul l'intitulé est obligatoire, RG02)
 export async function creerFormationBrouillon(page, intitule) {
   await page.goto('/formations/nouvelle')

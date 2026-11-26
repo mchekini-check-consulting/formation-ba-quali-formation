@@ -18,7 +18,7 @@ export default defineConfig({
   // Tests unitaires (vitest) : DOM simulé par jsdom
   test: {
     environment: 'jsdom',
-    // Seulement les tests unitaires de src/ : les tests end to end et fonctionnels (e2e/) passent par Playwright
+    // Seulement les tests unitaires de src/ : les tests end to end (e2e/) passent par Playwright
     include: ['src/**/*.test.{js,jsx}'],
     // Les tests des écrans Formations utilisent les données de démo (pas besoin du backend)
     env: { VITE_DONNEES: 'demo' },
