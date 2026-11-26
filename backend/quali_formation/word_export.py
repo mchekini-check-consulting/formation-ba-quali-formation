@@ -98,30 +98,43 @@ class _Redacteur:
         if isinstance(noeud, str):
             self._texte(noeud, format_texte, alignement)
             return
-        balise = noeud.balise
-        if balise in IGNOREES:
+        if noeud.balise in IGNOREES:
             return
         style = noeud.style
         alignement = ALIGNEMENTS.get(style.get('text-align', '').lower(), alignement)
-        format_texte = self._format(noeud, style, format_texte)
+        self._balise(noeud, self._format(noeud, style, format_texte), alignement, style)
+
+    def _balise(self, noeud, format_texte, alignement, style):
+        balise = noeud.balise
         if balise == 'br':
-            if self.paragraphe is not None:
-                self.paragraphe.add_run().add_break()
+            self._retour_a_la_ligne()
         elif balise in ('ul', 'ol'):
             self._liste(noeud, format_texte, alignement)
         elif balise == 'li':
             self._puce(noeud, format_texte, alignement)
         elif balise in BLOCS and balise != 'div':
             self._bloc(noeud, format_texte, alignement, TITRES.get(balise), style)
-        elif balise == 'div' or (balise == 'span' and 'eh' in getattr(noeud.parent, 'classes', set())):
+        elif self._conteneur(noeud):
             # Conteneur (dont l'en-tête des modèles d'origine : logo puis coordonnées) : un paragraphe par bloc
             self._fermer()
-            for enfant in noeud.enfants:
-                self.ecrire(enfant, format_texte, alignement)
+            self._enfants(noeud, format_texte, alignement)
             self._fermer()
         else:  # mise en forme dans le texte (gras, couleur…) ou balise inconnue : seulement son contenu
-            for enfant in noeud.enfants:
-                self.ecrire(enfant, format_texte, alignement)
+            self._enfants(noeud, format_texte, alignement)
+
+    @staticmethod
+    def _conteneur(noeud):
+        if noeud.balise == 'div':
+            return True
+        return noeud.balise == 'span' and 'eh' in noeud.parent.classes
+
+    def _enfants(self, noeud, format_texte, alignement):
+        for enfant in noeud.enfants:
+            self.ecrire(enfant, format_texte, alignement)
+
+    def _retour_a_la_ligne(self):
+        if self.paragraphe is not None:
+            self.paragraphe.add_run().add_break()
 
     @staticmethod
     def _format(noeud, style, format_texte):
@@ -170,8 +183,7 @@ class _Redacteur:
             paragraphe = self._nouveau(titre or ('List Continue' if self.listes else None), alignement)
         if m := MARGE.match(style.get('margin-top', '')):
             paragraphe.paragraph_format.space_before = Pt(int(m.group(1)) * 0.75)  # 1 px = 0,75 pt
-        for enfant in noeud.enfants:
-            self.ecrire(enfant, format_texte, alignement)
+        self._enfants(noeud, format_texte, alignement)
         self._fermer()
 
     def _liste(self, noeud, format_texte, alignement):
@@ -180,8 +192,7 @@ class _Redacteur:
         style = self._style_liste(noeud.balise, niveau)
         numerotation = _numerotation(self.document, style) if noeud.balise == 'ol' else _numero_du_style(self.document, style)
         self.listes.append((noeud.balise, numerotation))
-        for enfant in noeud.enfants:
-            self.ecrire(enfant, format_texte, alignement)
+        self._enfants(noeud, format_texte, alignement)
         self.listes.pop()
         self._fermer()
 
@@ -205,8 +216,7 @@ class _Redacteur:
         numpr.get_or_add_ilvl().val = 0
         numpr.get_or_add_numId().val = numerotation
         self.paragraphe_puce = paragraphe
-        for enfant in noeud.enfants:
-            self.ecrire(enfant, format_texte, alignement)
+        self._enfants(noeud, format_texte, alignement)
         self._fermer()
 
 
