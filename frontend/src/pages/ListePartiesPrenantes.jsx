@@ -38,7 +38,7 @@ function ListePartiesPrenantes() {
         ))}
       </div>
       <div role="tabpanel" id={`panneau-${onglet}`} aria-labelledby={`onglet-${onglet}`}>
-        {onglet === 'apprenants' && <Apprenants onTotal={setTotal} />}
+        {onglet === 'apprenants' && <Apprenants total={total} onTotal={setTotal} />}
         {onglet === 'formateurs' && <Formateurs />}
         {onglet === 'entreprises' && <OngletEntreprises />}
       </div>
@@ -46,8 +46,8 @@ function ListePartiesPrenantes() {
   )
 }
 
-// Onglet Apprenants : carte « Apprenants · N », « + Nouvel apprenant », recherche et une ligne par apprenant
-function Apprenants({ onTotal }) {
+// Onglet Apprenants : carte « Apprenants · N » (N : tous les apprenants du centre, même pendant une recherche), « + Nouvel apprenant », recherche et une ligne par apprenant
+function Apprenants({ total, onTotal }) {
   const [apprenants, setApprenants] = useState(null)
   const [erreur, setErreur] = useState(null)
   const [recherche, setRecherche] = useState('')
@@ -86,7 +86,7 @@ function Apprenants({ onTotal }) {
   return (
     <section className="app-carte" aria-labelledby="app-liste-titre">
       <div className="app-carte-tete">
-        <h2 id="app-liste-titre">Apprenants{apprenants && <span className="app-nombre"> · {apprenants.length}</span>}</h2>
+        <h2 id="app-liste-titre">Apprenants{total !== null && <span className="app-nombre"> · {total}</span>}</h2>
         <button type="button" className="app-btn app-btn-principal" onClick={() => setPanneau(true)}>+ Nouvel apprenant</button>
       </div>
       <input type="search" className="app-inp app-recherche" aria-label="Rechercher un apprenant"
