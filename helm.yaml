@@ -13,7 +13,7 @@ applications:
     # remplace tout jusqu'à la fin de la ligne.
     tag:
       dev: 7b89015
-      qualif: c94b2dc
+      qualif: 7b89015
       preprod: ""
       prod: ""
     containerPort: 8000
@@ -65,7 +65,7 @@ applications:
     # remplace tout jusqu'à la fin de la ligne.
     tag:
       dev: 7b89015
-      qualif: 2231e4b
+      qualif: 7b89015
       preprod: ""
       prod: ""
     containerPort: 8080
