@@ -55,6 +55,8 @@ urlpatterns = [
     path('modeles/<str:type_modele>', views.modele),
     # Importer son propre document Word (SCRUM-215) : POST /modeles/<type>/import (rien n'est enregistré)
     path('modeles/<str:type_modele>/import', views.importer_modele),
+    # Télécharger un modèle en Word (SCRUM-216) : GET /modeles/<type>/export.docx (dernière version enregistrée)
+    path('modeles/<str:type_modele>/export.docx', views.exporter_modele),
     # Variables du panneau de l'éditeur (SCRUM-214) : GET /variables/
     path('variables/', views.variables),
 ]

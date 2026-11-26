@@ -1,5 +1,6 @@
 """Règles de gestion du module Formations (RG01 à RG38), indépendantes de l'API pour être testées seules."""
 
+import logging
 import re
 from pathlib import Path
 
@@ -16,6 +17,7 @@ from rest_framework.exceptions import APIException
 
 from quali_formation.blocs import blocs_manquants
 from quali_formation.logging.log_metier import log_metier
+from quali_formation.logging.loggable import error_fields
 from quali_formation.models import (
     Apprenant,
     Entreprise,
@@ -34,6 +36,7 @@ from quali_formation.models import (
     Variable,
 )
 from quali_formation.serializers import ItemSerializer
+from quali_formation.word_export import docx_depuis_html
 
 Statut = Formation.Statut
 Publication = Formation.Publication
@@ -483,6 +486,31 @@ def html_depuis_word(fichier):
     return nh3.clean(resultat.value, tags=BALISES_WORD, attributes={}, link_rel=None, strip_comments=True)
 
 
+class ExportWordImpossible(ErreurMetier):
+    """500 : le fichier Word n'a pas pu être créé (SCRUM-216)."""
+
+    def __init__(self):
+        super().__init__('EXPORT_IMPOSSIBLE', 'Le fichier Word n’a pas pu être créé. Réessayez.', 500)
+
+
+logger_metier = logging.getLogger('quali_formation.metier')
+# Champs des logs métier des modèles (identifiants seulement, jamais de contenu)
+CHAMP_TYPE_MODELE = 'type_modele'
+CHAMP_ORGANISME = 'utilisateur.organisme_id'
+
+
+def fichier_word(contenu, nom, champs_log):
+    """SCRUM-216 : un modèle (générique, ou de la formation avec SCRUM-219) en .docx : {fichier, nom_fichier}.
+    Pas de log pour un téléchargement réussi ; en cas d'échec, une ligne ERROR avec seulement les identifiants
+    de `champs_log` (organisme, type de modèle), jamais le contenu du document."""
+    try:
+        fichier = docx_depuis_html(contenu, nom)
+    except Exception as exc:
+        logger_metier.exception('Export Word en échec', extra={'layer': 'service', **champs_log, **error_fields(exc)})
+        raise ExportWordImpossible() from exc
+    return {'fichier': fichier, 'nom_fichier': f'Modèle - {nom}.docx'}
+
+
 # Dictionnaire des variables {{code}} (code, libellé, catégorie...) ; table Variable avec SCRUM-214
 VARIABLE = re.compile(r'\{\{\s*([A-Za-z0-9_]+)\s*\}\}')
 
@@ -538,7 +566,7 @@ class ModeleService:
             raise ModeleIntrouvable()
         return self._decrire(origine, self._modeles_du_compte(utilisateur).get(origine.type), dictionnaire_variables())
 
-    @log_metier("service", champs=["utilisateur.id", "type_modele", "resultat.statut"])
+    @log_metier("service", champs=["utilisateur.id", CHAMP_TYPE_MODELE, "resultat.statut"])
     def enregistrer(self, utilisateur, type_modele, contenu, nom_fichier_importe=None):
         """Enregistre le modèle générique du compte, créé à partir du modèle d'origine à la première fois (RG3).
         RG12 : aucun contrôle ni blocage sur le contenu (mentions légales, variables) ; seulement un texte
@@ -565,7 +593,7 @@ class ModeleService:
             defaults={'contenu': contenu, 'statut': statut, 'nom_fichier_importe': nom_fichier})
         return modele
 
-    @log_metier("service", champs=["utilisateur.organisme_id", "type_modele", "extension", "taille"])
+    @log_metier("service", champs=[CHAMP_ORGANISME, CHAMP_TYPE_MODELE, "extension", "taille"])
     def importer_word(self, utilisateur, type_modele, fichier, extension, taille):
         """SCRUM-215 : le contenu d'un .docx converti pour l'éditeur (RG11). RG8 : rien n'est enregistré, et le
         fichier n'est jamais gardé (lu en mémoire ou dans un fichier temporaire effacé par Django).
@@ -578,6 +606,16 @@ class ModeleService:
             raise ImportWordRefuse('FICHIER_TROP_VOLUMINEUX',
                                    'Le fichier dépasse 10 Mo : choisissez un document plus léger.')
         return {'contenu': html_depuis_word(fichier)}
+
+    def exporter_word(self, utilisateur, type_modele):
+        """SCRUM-216 : la dernière version ENREGISTRÉE du modèle du compte (le modèle d'origine s'il n'a jamais été
+        enregistré) en .docx, nommé « Modèle - <nom du document>.docx », variables écrites {{code}} (RG9)."""
+        modele = self.obtenir(utilisateur, type_modele)
+        champs_log = {'class': 'ModeleService', 'method': 'exporter_word',
+                      CHAMP_TYPE_MODELE: modele['type']}
+        if utilisateur.organisme_id is not None:
+            champs_log[CHAMP_ORGANISME] = str(utilisateur.organisme_id)
+        return fichier_word(modele['contenu'], modele['nom'], champs_log)
 
     def formations_utilisant(self, utilisateur, type_modele):
         """RG6 : (formations qui utilisent le modèle générique de ce type, formations du compte), hors archivées.

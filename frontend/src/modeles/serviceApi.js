@@ -49,6 +49,32 @@ export function importerWord(type, fichier) {
   return lire(`/modeles/${encodeURIComponent(type)}/import`, { method: 'POST', body: formulaire })
 }
 
+// SCRUM-216 : GET /modeles/<type>/export.docx -> la dernière version ENREGISTRÉE en Word (variables {{code}}, RG9)
+export const adresseExportWord = (type) => `/modeles/${encodeURIComponent(type)}/export.docx`
+export const nomFichierWord = (nom) => `Modèle - ${nom}.docx`
+
+// Téléchargement d'un fichier Word du backend sous `nomFichier` (accents compris) ; réutilisable (SCRUM-219)
+export async function telechargerWord(chemin, nomFichier) {
+  let reponse
+  try {
+    reponse = await fetch(`${apiBase()}${chemin}`, { credentials: 'include' })
+  } catch {
+    throw new ErreurMetier('RESEAU', 'Le serveur ne répond pas : vérifiez que le backend est lancé.')
+  }
+  if (!reponse.ok) {
+    const json = await reponse.json().catch(() => null)
+    throw new ErreurMetier(json?.code || 'ERREUR', json?.detail || 'Le fichier Word n’a pas pu être téléchargé. Réessayez.')
+  }
+  const adresse = URL.createObjectURL(await reponse.blob())
+  const lien = document.createElement('a')
+  lien.href = adresse
+  lien.download = nomFichier
+  document.body.append(lien)
+  lien.click()
+  lien.remove()
+  setTimeout(() => URL.revokeObjectURL(adresse), 1000)
+}
+
 // Message après « Enregistrer » (maquette SCRUM-213-2, RG6) ; sans formation, seulement la confirmation
 export function messageEnregistrement({ nb_formations_utilisant: utilisant, nb_formations: total }) {
   if (!total) return 'Modèle générique enregistré.'
