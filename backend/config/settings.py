@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.1/ref/settings/
 """
 
+import hashlib
 import os
 from pathlib import Path
 
@@ -22,11 +23,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-ypqij-8!o4jwc7w%k8&0vyb()xu(2+xt(l39q(7kmqxonhe1ob'
+# Clé secrète jamais écrite dans le code : DJANGO_SECRET_KEY si fournie, sinon dérivée de DATABASE_URL
+# (injectée par la plateforme, contient le mot de passe de la base) : stable entre les réplicas d'un environnement
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY') or hashlib.sha256(
+    f"quali-formation:{os.environ.get('DATABASE_URL', BASE_DIR)}".encode()).hexdigest()
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Debug désactivé sauf demande explicite (DJANGO_DEBUG=true)
+DEBUG = os.environ.get('DJANGO_DEBUG', 'false').lower() == 'true'
 
 # Noms de domaine acceptés, séparés par des virgules (fourni par helm.yaml en cluster)
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
