@@ -3,21 +3,22 @@ import {
   classeBulle, libelleStatut, telephoneFr, texteSessions, VIDE,
 } from '../apprenants/apprenants'
 import ErreurChargement from '../components/ErreurChargement'
+import { messageFichiersNonEnregistres } from '../formateurs/formateurs'
+import '../formateurs/formateurs.css'
 import Icone from '../components/Icone'
 import { PanneauPartiePrenante } from '../sessions/PartiesPrenantes'
 import { initiales, listerApprenants, listerFormateurs } from '../sessions/serviceApi'
-import { messageCreation, PARTIES_PRENANTES } from '../sessions/typesPersonnes'
 import '../apprenants/apprenants.css'
 import '../sessions/sessions.css'
 
 const ONGLETS = [
   { cle: 'apprenants', titre: 'Apprenants' }, // SCRUM-112
-  { cle: 'formateurs', titre: 'Formateurs' }, // SCRUM-119 (en attendant : liste de SCRUM-209)
+  { cle: 'formateurs', titre: 'Formateurs' }, // SCRUM-119
   { cle: 'entreprises', titre: 'Entreprises clientes' }, // SCRUM-120
 ]
 const DELAI_RECHERCHE = 250 // ms : la liste se met à jour quand on arrête de taper
 
-// Page « Parties prenantes » (SCRUM-209, onglets et apprenants : SCRUM-112) : seulement les personnes du centre.
+// Page « Parties prenantes » (SCRUM-209, onglets et apprenants : SCRUM-112, formateurs : SCRUM-119) : seulement les personnes du centre.
 function ListePartiesPrenantes() {
   const [onglet, setOnglet] = useState('apprenants')
   const [total, setTotal] = useState(null) // nombre d'apprenants du centre (onglet), sans la recherche
@@ -127,48 +128,81 @@ function Apprenants({ onTotal }) {
   )
 }
 
-// Onglet Formateurs : liste et création d'un formateur telles qu'avant SCRUM-112 (refonte : SCRUM-119)
+// Onglet Formateurs (SCRUM-119) : carte « Formateurs · N » (N : tous les formateurs du centre), « + Nouveau formateur »,
+// recherche par nom ou e-mail et une ligne par formateur (bulle, prénom et nom, e-mail, nombre de sessions)
 function Formateurs() {
   const [formateurs, setFormateurs] = useState(null)
+  const [total, setTotal] = useState(null)
   const [erreur, setErreur] = useState(null)
+  const [recherche, setRecherche] = useState('')
   const [panneau, setPanneau] = useState(false)
-  const [message, setMessage] = useState(null)
+  const [nouveau, setNouveau] = useState(null) // identifiant du formateur qui vient d'être ajouté
+  const [alerte, setAlerte] = useState(null) // fichiers non enregistrés après la création
+  const derniere = useRef(0) // ignore les réponses d'une recherche déjà remplacée
 
-  const charger = () => listerFormateurs().then(setFormateurs).catch(setErreur)
-  useEffect(() => { void charger() }, [])
-
-  const cree = (p) => {
-    setMessage(messageCreation('formateur', p))
-    setPanneau(false)
-    void charger()
+  const charger = (texte) => {
+    const numero = ++derniere.current
+    return listerFormateurs(texte)
+      .then((liste) => {
+        if (numero !== derniere.current) return
+        setFormateurs(liste)
+        setErreur(null)
+        if (!texte.trim()) setTotal(liste.length)
+      })
+      .catch((e) => { if (numero === derniere.current) setErreur(e) })
   }
+
+  useEffect(() => {
+    const minuteur = setTimeout(() => { void charger(recherche) }, recherche ? DELAI_RECHERCHE : 0)
+    return () => clearTimeout(minuteur)
+  }, [recherche]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Le formateur ajouté apparaît en tête de liste, mis en évidence (la recherche est vidée pour le montrer)
+  const cree = (f, nonEnregistres = []) => {
+    setPanneau(false)
+    setNouveau(f.id)
+    setAlerte(nonEnregistres.length ? messageFichiersNonEnregistres(f, nonEnregistres) : null)
+    if (recherche) setRecherche('')
+    else void charger('')
+  }
+  const lignes = formateurs && nouveau !== null
+    ? [...formateurs.filter((f) => f.id === nouveau), ...formateurs.filter((f) => f.id !== nouveau)]
+    : formateurs
 
   return (
     <>
-      {message && (
-        <div className="sp-bandeau" role="status">
-          <Icone nom="check" taille={18} epaisseur={2.4} /><span>{message}</span>
-          <button type="button" className="sp-fermer" aria-label="Fermer le message" onClick={() => setMessage(null)}><Icone nom="x" taille={18} /></button>
+      {alerte && (
+        <div className="app-bandeau-alerte" role="alert">
+          <span>{alerte}</span>
+          <button type="button" aria-label="Fermer le message" onClick={() => setAlerte(null)}><Icone nom="x" taille={16} /></button>
         </div>
       )}
-      <section className="lpp-groupe" aria-labelledby="lpp-formateur">
+      <section className="app-carte" aria-labelledby="frm-liste-titre">
         <div className="app-carte-tete">
-          <h2 id="lpp-formateur">Formateurs {formateurs && <span className="lpp-nombre">{formateurs.length}</span>}</h2>
-          <button type="button" className="btn btn-outline" onClick={() => setPanneau(true)}>
-            <Icone nom="plus" taille={18} epaisseur={2.4} />{PARTIES_PRENANTES.formateur.titre}
-          </button>
+          <h2 id="frm-liste-titre">Formateurs{total !== null && <span className="app-nombre"> · {total}</span>}</h2>
+          <button type="button" className="app-btn app-btn-principal" onClick={() => setPanneau(true)}>+ Nouveau formateur</button>
         </div>
+        <input type="search" className="app-inp app-recherche" aria-label="Rechercher un formateur"
+               placeholder="Rechercher par nom ou e-mail" value={recherche} onChange={(e) => setRecherche(e.target.value)} />
         {panneau && <PanneauPartiePrenante type="formateur" onFermer={() => setPanneau(false)} onCree={cree} />}
+
         {formateurs === null && (erreur ? <ErreurChargement erreur={erreur} /> : <p className="chargement">Chargement des formateurs…</p>)}
-        {formateurs?.length === 0 && <p className="lpp-vide">Aucun formateur pour l’instant.</p>}
-        {formateurs?.length > 0 && (
-          <ul className="sp-liste" aria-label="Formateurs">
-            {formateurs.map((p) => (
-              <li key={p.id} className="lpp-ligne">
-                <span className={`ns-avatar ns-av${p.id % 5}`} aria-hidden="true">{initiales(p)}</span>
-                <b>{p.prenom} {p.nom}</b>
-                <span className="lpp-col">{p.entreprise || '—'}</span>
-                <span className="lpp-col">{p.email}</span>
+        {formateurs?.length === 0 && (recherche.trim()
+          ? <p className="app-vide-texte">Aucun formateur ne correspond à votre recherche.</p>
+          : (
+            <div className="app-vide">
+              <h3>Aucun formateur pour le moment</h3>
+              <p>Ajoutez votre premier formateur avec « + Nouveau formateur ».</p>
+            </div>
+          ))}
+        {lignes?.length > 0 && (
+          <ul className="app-liste" aria-label="Formateurs">
+            {lignes.map((f) => (
+              <li key={f.id} className={`app-ligne frm-ligne${f.id === nouveau ? ' app-ligne-nouvelle' : ''}`}
+                  aria-current={f.id === nouveau ? 'true' : undefined}>
+                <span className={classeBulle(f.id)} aria-hidden="true">{initiales(f)}</span>
+                <span className="app-col-nom"><b>{f.prenom} {f.nom}</b><small>{f.email}</small></span>
+                <span className="app-col app-sessions">{texteSessions(f.nombre_sessions)}</span>
               </li>
             ))}
           </ul>

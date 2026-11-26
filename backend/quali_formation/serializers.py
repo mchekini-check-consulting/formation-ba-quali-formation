@@ -9,6 +9,7 @@ from quali_formation.models import (
     Apprenant,
     Entreprise,
     Formateur,
+    FormateurDocument,
     Formation,
     Item,
     Sequence,
@@ -95,9 +96,26 @@ class FormationEcritureSerializer(serializers.Serializer):
 # ---- Sessions et planning (SCRUM-25) ----
 
 class FormateurSerializer(serializers.ModelSerializer):
+    """Lecture d'un formateur ; statut, NDA et nombre de sessions : SCRUM-119 (`nombre_sessions` : annotation posée
+    quand la liste est lue par le service)."""
+
+    nombre_sessions = serializers.SerializerMethodField()
+
     class Meta:
         model = Formateur
-        fields = ('id', 'prenom', 'nom', 'email', 'specialites', 'entreprise')
+        fields = ('id', 'prenom', 'nom', 'email', 'specialites', 'entreprise', 'statut', 'numero_nda', 'nombre_sessions')
+
+    def get_nombre_sessions(self, formateur):
+        nombre = getattr(formateur, 'nombre_sessions', None)
+        return formateur.sessions.count() if nombre is None else nombre
+
+
+class FormateurDocumentSerializer(serializers.ModelSerializer):
+    """Document enregistré d'un formateur (SCRUM-119), sans son contenu."""
+
+    class Meta:
+        model = FormateurDocument
+        fields = ('id', 'type', 'nom_fichier', 'format', 'taille', 'date_ajout')
 
 
 class ApprenantSerializer(serializers.ModelSerializer):
@@ -159,6 +177,23 @@ class ApprenantCreationSerializer(PersonneCreationSerializer):
         chiffres = re.sub(r'[\s.-]', '', telephone)
         if chiffres and not re.fullmatch(r'\d{10}', chiffres):
             raise serializers.ValidationError(MSG_TELEPHONE)
+        return chiffres
+
+
+MSG_NDA = 'Le NDA doit contenir 11 chiffres'
+
+
+class FormateurCreationSerializer(PersonneCreationSerializer):
+    """Écriture d'un formateur (SCRUM-26, complétée par SCRUM-119) : statut et NDA facultatifs ; le NDA, s'il est
+    renseigné, a 11 chiffres (espaces ignorés)."""
+
+    statut = serializers.ChoiceField(choices=Formateur.Statut.choices, required=False, allow_blank=True, default='')
+    numero_nda = serializers.CharField(max_length=30, required=False, allow_blank=True, default='')
+
+    def validate_numero_nda(self, numero_nda):
+        chiffres = re.sub(r'\s', '', numero_nda)
+        if chiffres and not re.fullmatch(r'\d{11}', chiffres):
+            raise serializers.ValidationError(MSG_NDA)
         return chiffres
 
 

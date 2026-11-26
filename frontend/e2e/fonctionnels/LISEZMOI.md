@@ -13,6 +13,7 @@ complète (écran + backend, avec une base vide créée pour l'occasion : dev et
 | `SCRUM-209-reorganiser-le-menu-lateral.feature` | Réorganiser le menu latéral |
 | `SCRUM-221-informations-du-centre.feature` | Renseigner les informations du centre à la première connexion |
 | `SCRUM-112-consulter-les-apprenants.feature` | Accéder aux parties prenantes et consulter les apprenants |
+| `SCRUM-119-consulter-les-formateurs.feature` | Consulter les formateurs (liste, recherche, statut, NDA, CV et diplômes) |
 
 ## Quand ils tournent
 
