@@ -46,6 +46,7 @@ l'intégrer dans la branche avant d'envoyer (skill `deploy`).
   migration déjà sur `main`.
 
 **Frontend**
+- Toute interface doit respecter `docs/charte-graphique.md` et les maquettes de l'US.
 - Adresse d'un backend : `apiBase(...)` dans `frontend/src/api.js`, calculée depuis
   l'adresse de la page. Elle vise encore `/backend` en dur : pour appeler un autre backend, la généraliser en `apiBase('<backend>')` (skill `nouvelle-fonctionnalite`). Jamais d'URL, d'environnement,
   de `localhost` ou de nom de dépôt écrits en dur.

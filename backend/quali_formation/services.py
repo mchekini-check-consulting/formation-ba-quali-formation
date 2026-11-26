@@ -8,6 +8,8 @@ from django.contrib.auth.hashers import check_password, make_password
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.db import IntegrityError, transaction
+from django.db.models import Count, Q, Value
+from django.db.models.functions import Concat, Lower
 from django.utils import timezone
 from rest_framework.exceptions import APIException
 
@@ -15,6 +17,7 @@ from quali_formation.blocs import blocs_manquants
 from quali_formation.logging.log_metier import log_metier
 from quali_formation.models import (
     Apprenant,
+    Entreprise,
     Formateur,
     Formation,
     FormationHistorique,
@@ -273,9 +276,28 @@ class SessionService:
         return Formateur.objects.filter(organisme_id=utilisateur.organisme_id) if utilisateur.organisme_id else Formateur.objects.none()
 
     @log_metier("service", champs=["resultat.taille"])
-    def lister_apprenants(self, utilisateur):
-        # SCRUM-221 : seulement les apprenants du centre
-        return Apprenant.objects.filter(organisme_id=utilisateur.organisme_id) if utilisateur.organisme_id else Apprenant.objects.none()
+    def lister_apprenants(self, utilisateur, recherche=''):
+        """Apprenants du centre (SCRUM-221), triés par nom, avec leur nombre de sessions (SCRUM-112).
+        `recherche` : garde ceux dont le prénom et nom, l'e-mail ou l'entreprise contient ce texte."""
+        if not utilisateur.organisme_id:
+            return Apprenant.objects.none()
+        apprenants = (Apprenant.objects.filter(organisme_id=utilisateur.organisme_id)
+                      .select_related('entreprise_cliente')
+                      .annotate(nombre_sessions=Count('sessions', distinct=True),
+                                nom_complet=Concat('prenom', Value(' '), 'nom'))
+                      .order_by(Lower('nom'), Lower('prenom'), 'id'))
+        recherche = (recherche or '').strip()
+        if recherche:
+            apprenants = apprenants.filter(
+                Q(nom_complet__icontains=recherche) | Q(email__icontains=recherche)
+                | Q(entreprise_cliente__raison_sociale__icontains=recherche)
+                | Q(entreprise_cliente__isnull=True, entreprise__icontains=recherche))
+        return apprenants
+
+    @log_metier("service", champs=["resultat.taille"])
+    def lister_entreprises(self, utilisateur):
+        # SCRUM-112 : entreprises clientes du centre (liste « Entreprise » de la fenêtre « Nouvel apprenant »)
+        return Entreprise.objects.filter(organisme_id=utilisateur.organisme_id) if utilisateur.organisme_id else Entreprise.objects.none()
 
     @log_metier("service", champs=["utilisateur.organisme.raison_sociale", "resultat.id"],
                 message="La société {utilisateur.organisme.raison_sociale} a créé le formateur "
@@ -287,10 +309,23 @@ class SessionService:
                                         email=email, entreprise=entreprise)
 
     @log_metier("service", champs=["resultat.id"])
-    def creer_apprenant(self, utilisateur, prenom, nom, email, entreprise=''):
-        """Enregistre un apprenant du centre (SCRUM-27) ; il est ensuite proposé à l'étape 3 de « Nouvelle session »."""
-        return Apprenant.objects.create(organisme=_organisme_requis(utilisateur), prenom=prenom, nom=nom,
-                                        email=email, entreprise=entreprise)
+    def creer_apprenant(self, utilisateur, prenom, nom, email, statut, entreprise='', telephone='',
+                        entreprise_id=None, poste=''):
+        """Enregistre un apprenant du centre (SCRUM-27, SCRUM-112) ; il est ensuite proposé à l'étape 3 de
+        « Nouvelle session ». Entreprise cliente et poste ne sont gardés que pour un salarié ; l'entreprise doit être
+        une entreprise cliente du centre (400 ENTREPRISE_INTROUVABLE sinon)."""
+        organisme = _organisme_requis(utilisateur)
+        entreprise_cliente = None
+        if statut != Apprenant.Statut.SALARIE:
+            poste = ''
+        elif entreprise_id is not None:
+            entreprise_cliente = Entreprise.objects.filter(pk=entreprise_id, organisme=organisme).first()
+            if entreprise_cliente is None:
+                raise ErreurMetier('ENTREPRISE_INTROUVABLE', 'Cette entreprise n’existe pas parmi vos entreprises clientes.',
+                                   champs={'entreprise_id': ['Cette entreprise n’existe pas parmi vos entreprises clientes.']})
+        return Apprenant.objects.create(organisme=organisme, prenom=prenom, nom=nom, email=email,
+                                        entreprise=entreprise, telephone=telephone, statut=statut,
+                                        entreprise_cliente=entreprise_cliente, poste=poste)
 
     @log_metier("service", champs=["donnees.modalite", "formateurs.taille", "apprenants.taille"])
     def creer_session(self, utilisateur, formateurs, apprenants, **donnees):

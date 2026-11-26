@@ -51,14 +51,14 @@ Fonctionnalité: SCRUM-209 - Réorganiser le menu latéral
   Scénario: CA3 - Sessions et planning est mise en évidence sur sa page
     Alors l'entrée «Sessions et planning» du menu est mise en évidence
 
-  Scénario: La page Parties prenantes liste les formateurs et les apprenants créés
+  Scénario: La page Parties prenantes liste les apprenants créés (présentation : SCRUM-112)
     Lorsque je clique sur l'entrée «Parties prenantes» du menu
-    Et que je clique sur «Nouvel apprenant»
+    Et que je clique sur «+ Nouvel apprenant»
     Et que je remplis les champs :
       | Prénom | Zoé                 |
       | Nom    | Roux                |
       | E-mail | zoe.roux@exemple.fr |
+      | Statut | Particulier         |
     Et que je clique sur «Enregistrer»
-    Alors le bandeau de confirmation affiche "L’apprenant « Zoé Roux » a été créé. Vous pouvez maintenant l’ajouter à une session."
-    Et je vois «zoe.roux@exemple.fr»
+    Alors je vois «zoe.roux@exemple.fr»
     Et l'apprenant «zoe.roux@exemple.fr» est enregistré

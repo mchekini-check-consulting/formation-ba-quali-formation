@@ -1,3 +1,4 @@
+import re
 from decimal import Decimal
 from typing import ClassVar
 
@@ -6,6 +7,7 @@ from rest_framework import serializers
 from quali_formation.blocs import blocs_manquants
 from quali_formation.models import (
     Apprenant,
+    Entreprise,
     Formateur,
     Formation,
     Item,
@@ -99,9 +101,32 @@ class FormateurSerializer(serializers.ModelSerializer):
 
 
 class ApprenantSerializer(serializers.ModelSerializer):
+    """Lecture d'un apprenant (SCRUM-112). `entreprise` : raison sociale de son entreprise cliente, à défaut l'ancien
+    texte libre (SCRUM-166). `nombre_sessions` : présent quand la liste est lue par le service."""
+
+    entreprise = serializers.SerializerMethodField()
+    entreprise_id = serializers.IntegerField(source='entreprise_cliente_id', read_only=True, allow_null=True)
+    nombre_sessions = serializers.SerializerMethodField()
+
     class Meta:
         model = Apprenant
-        fields = ('id', 'prenom', 'nom', 'email', 'entreprise')
+        fields = ('id', 'prenom', 'nom', 'email', 'telephone', 'statut', 'entreprise', 'entreprise_id', 'poste',
+                  'nombre_sessions')
+
+    def get_entreprise(self, apprenant):
+        return apprenant.entreprise_cliente.raison_sociale if apprenant.entreprise_cliente_id else apprenant.entreprise
+
+    def get_nombre_sessions(self, apprenant):
+        nombre = getattr(apprenant, 'nombre_sessions', None)
+        return apprenant.sessions.count() if nombre is None else nombre
+
+
+class EntrepriseSerializer(serializers.ModelSerializer):
+    """Entreprise cliente proposée dans la fenêtre « Nouvel apprenant » (SCRUM-112)."""
+
+    class Meta:
+        model = Entreprise
+        fields = ('id', 'raison_sociale')
 
 
 class PersonneCreationSerializer(serializers.Serializer):
@@ -114,6 +139,27 @@ class PersonneCreationSerializer(serializers.Serializer):
         'blank': "Indiquez l'e-mail.", 'required': "Indiquez l'e-mail.", 'invalid': "Format d'e-mail invalide"})
     # SCRUM-166 : facultative, vide = « Individuel »
     entreprise = serializers.CharField(max_length=255, required=False, allow_blank=True, default='')
+
+
+MSG_TELEPHONE = 'Le téléphone doit contenir 10 chiffres'
+MSG_STATUT = 'Le statut est obligatoire'
+
+
+class ApprenantCreationSerializer(PersonneCreationSerializer):
+    """Écriture d'un apprenant (SCRUM-27, complétée par SCRUM-112) : téléphone facultatif (10 chiffres, espaces,
+    points et tirets ignorés), statut obligatoire, entreprise cliente et poste facultatifs."""
+
+    telephone = serializers.CharField(max_length=30, required=False, allow_blank=True, default='')
+    statut = serializers.ChoiceField(choices=Apprenant.Statut.choices, error_messages={
+        'required': MSG_STATUT, 'blank': MSG_STATUT, 'null': MSG_STATUT, 'invalid_choice': MSG_STATUT})
+    entreprise_id = serializers.IntegerField(required=False, allow_null=True, default=None)
+    poste = serializers.CharField(max_length=255, required=False, allow_blank=True, default='')
+
+    def validate_telephone(self, telephone):
+        chiffres = re.sub(r'[\s.-]', '', telephone)
+        if chiffres and not re.fullmatch(r'\d{10}', chiffres):
+            raise serializers.ValidationError(MSG_TELEPHONE)
+        return chiffres
 
 
 class SessionPlanningSerializer(serializers.ModelSerializer):

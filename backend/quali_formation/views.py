@@ -14,7 +14,9 @@ from quali_formation.logging.log_metier import log_metier
 from quali_formation.logging.middleware import DEJA_ECRIT
 from quali_formation.models import Utilisateur
 from quali_formation.serializers import (
+    ApprenantCreationSerializer,
     ApprenantSerializer,
+    EntrepriseSerializer,
     FormateurSerializer,
     FormationEcritureSerializer,
     FormationSerializer,
@@ -210,18 +212,18 @@ def sessions_planning(request, utilisateur):
     return Response(SessionPlanningSerializer(session_service.lister_sessions(utilisateur), many=True).data)
 
 
-def _personnes(request, utilisateur, lister, creer, serializer):
+def _personnes(request, utilisateur, lister, creer, serializer, creation=PersonneCreationSerializer, **filtres):
     """GET : les personnes du centre (SCRUM-221). POST : création dans le centre ; 201, 400 si un champ manque
     ou si l'e-mail est invalide, 403 ORGANISME_A_RENSEIGNER si le centre n'est pas encore renseigné."""
     if request.method == 'POST':
-        entree = PersonneCreationSerializer(data=request.data)
+        entree = creation(data=request.data)
         entree.is_valid(raise_exception=True)
         try:
             personne = creer(utilisateur, **entree.validated_data)
         except ErreurMetier as e:
             return _erreur(e)
         return Response(serializer(personne).data, status=status.HTTP_201_CREATED)
-    return Response(serializer(lister(utilisateur), many=True).data)
+    return Response(serializer(lister(utilisateur, **filtres), many=True).data)
 
 
 @api_view(["GET", "POST"])
@@ -237,9 +239,18 @@ def formateurs(request, utilisateur):
 @log_metier("controller", champs=["resultat.id"])
 @_connexion_requise
 def apprenants(request, utilisateur):
-    """Apprenants du centre (création : SCRUM-27) ; 401 NON_CONNECTE."""
+    """Apprenants du centre (création : SCRUM-27 ; liste, recherche ?recherche=, téléphone, statut, entreprise et
+    poste : SCRUM-112) ; 401 NON_CONNECTE."""
+    filtres = {'recherche': request.query_params.get('recherche', '')} if request.method == 'GET' else {}
     return _personnes(request, utilisateur, session_service.lister_apprenants, session_service.creer_apprenant,
-                      ApprenantSerializer)
+                      ApprenantSerializer, ApprenantCreationSerializer, **filtres)
+
+
+@api_view(["GET"])
+@_connexion_requise
+def entreprises(request, utilisateur):
+    """Entreprises clientes du centre (SCRUM-112 : liste « Entreprise » de « Nouvel apprenant ») ; 401 NON_CONNECTE."""
+    return Response(EntrepriseSerializer(session_service.lister_entreprises(utilisateur), many=True).data)
 
 
 # ---- Informations du centre à la première connexion (SCRUM-221) ----

@@ -125,6 +125,22 @@ class Organisme(models.Model):
         return self.raison_sociale
 
 
+class Entreprise(models.Model):
+    """Entreprise cliente du centre (SCRUM-112, table minimale ; complétée par SCRUM-113 et SCRUM-120).
+    Un apprenant salarié peut y être rattaché."""
+
+    raison_sociale = models.CharField(max_length=255)
+    siret = models.CharField(max_length=14)
+    organisme = models.ForeignKey(Organisme, on_delete=models.CASCADE, related_name='entreprises')
+
+    class Meta:
+        db_table = 'entreprise'
+        ordering = ('raison_sociale', 'id')
+
+    def __str__(self):
+        return self.raison_sociale
+
+
 class Formateur(models.Model):
     """Un formateur, que l'on peut rattacher aux sessions (SCRUM-25 ; création : SCRUM-26)."""
 
@@ -152,8 +168,22 @@ class Apprenant(models.Model):
     prenom = models.CharField(max_length=100)
     nom = models.CharField(max_length=100)
     email = models.EmailField(max_length=255)
-    # SCRUM-166 : vide = « Individuel »
+    # SCRUM-166 : vide = « Individuel ». Ancien texte libre, affiché en secours depuis SCRUM-112
     entreprise = models.CharField(max_length=255, blank=True, default='')
+
+    # SCRUM-112 : téléphone (10 chiffres), statut, entreprise cliente et poste (ces deux derniers pour un salarié).
+    # Vides pour les apprenants créés avant.
+    class Statut(models.TextChoices):
+        SALARIE = 'SALARIE', 'Salarié'
+        DEMANDEUR_EMPLOI = 'DEMANDEUR_EMPLOI', 'Demandeur d’emploi'
+        INDEPENDANT = 'INDEPENDANT', 'Indépendant'
+        PARTICULIER = 'PARTICULIER', 'Particulier'
+
+    telephone = models.CharField(max_length=10, blank=True, default='')
+    statut = models.CharField(max_length=20, choices=Statut.choices, blank=True, default='')
+    entreprise_cliente = models.ForeignKey(Entreprise, on_delete=models.SET_NULL, null=True, blank=True,
+                                           db_column='entreprise_id', related_name='apprenants')
+    poste = models.CharField(max_length=255, blank=True, default='')
 
     # SCRUM-221 : centre du apprenant ; vide pour ceux créés avant (invisibles depuis)
     organisme = models.ForeignKey(Organisme, on_delete=models.CASCADE, null=True, blank=True, related_name='apprenants')

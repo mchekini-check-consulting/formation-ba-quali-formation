@@ -264,7 +264,8 @@ class FiltrageParCentreTests(TestCase):
         # Les exemples chargés par migration (sans centre) ne sont visibles par personne
         self.assertEqual([f['email'] for f in self.client.get('/formateurs/').json()], ['ana@ici.fr'])
         self.assertEqual(self.client.get('/apprenants/').json(), [])
-        cree = self.client.post('/apprenants/', {'prenom': 'Zoé', 'nom': 'Roux', 'email': 'zoe@ici.fr'},
+        cree = self.client.post('/apprenants/', {'prenom': 'Zoé', 'nom': 'Roux', 'email': 'zoe@ici.fr',
+                                                     'statut': 'PARTICULIER'},
                                 content_type='application/json').json()
         self.assertEqual(Apprenant.objects.get(pk=cree['id']).organisme, self.centre)
 

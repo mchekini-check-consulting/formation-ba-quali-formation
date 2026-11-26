@@ -55,6 +55,7 @@ Fonctionnalité: SCRUM-27 - Créer un apprenant depuis Sessions et planning (Par
       | Prénom | Sophie                  |
       | Nom    | Leroy                   |
       | E-mail | sophie.leroy@exemple.fr |
+      | Statut | Particulier             |
     Et que je clique sur «Enregistrer»
     Alors la fenêtre «Nouvel apprenant» est fermée
     Et le bandeau de confirmation affiche "L’apprenant « Sophie Leroy » a été créé. Vous pouvez maintenant l’ajouter à une session."
@@ -67,6 +68,7 @@ Fonctionnalité: SCRUM-27 - Créer un apprenant depuis Sessions et planning (Par
       | Prénom | Thomas                  |
       | Nom    | Petit                   |
       | E-mail | thomas.petit@exemple.fr |
+      | Statut | Particulier             |
     Et que je clique sur «Enregistrer»
     Et que j'ai ouvert l'étape Apprenants d'une session de 10 places
     Alors «Thomas Petit» est affiché dans la liste
