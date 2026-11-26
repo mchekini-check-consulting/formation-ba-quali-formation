@@ -155,6 +155,8 @@ function EditeurModeleGenerique({ modele, catalogue }) {
   const [fichierImporte, setFichierImporte] = useState(modele.statut === 'IMPORTE' ? modele.nom_fichier_importe : null)
   const [importAEnregistrer, setImportAEnregistrer] = useState(null)
   const [guide, setGuide] = useState(false)
+  // Refus d'un import (format, taille, fichier illisible) : affiché sous le bouton d'import, pas en haut de la page
+  const [erreurImport, setErreurImport] = useState(null)
 
   function importe({ contenu: html, nomFichier }) {
     contenu.current = html
@@ -166,7 +168,7 @@ function EditeurModeleGenerique({ modele, catalogue }) {
 
   const boutonImport = (libelle, className) => (
     <BoutonImportWord libelle={libelle} className={className} importer={(fichier) => importerWord(modele.type, fichier)}
-      onImporte={importe} onErreur={setErreur} />
+      onImporte={importe} onErreur={setErreurImport} />
   )
 
   async function enregistrer() {
@@ -198,15 +200,20 @@ function EditeurModeleGenerique({ modele, catalogue }) {
       {guide && <GuideImport onFermer={() => setGuide(false)} />}
       <EditeurDocument key={affiche.cle} contenu={affiche.contenu} variables={modele.variables} catalogue={catalogue}
         nom={modele.nom} onModification={(html) => { contenu.current = html }}
-        avantPanneau={fichierImporte
-          ? (
-            <div className="mod-importe">
-              <Icone nom="doc" taille={18} />
-              <p><b>Document importé</b><span title={fichierImporte}>{fichierImporte}</span></p>
-              {boutonImport('Remplacer le fichier', 'mod-word mod-word-petit')}
-            </div>
-          )
-          : boutonImport('Utiliser mon propre document Word', 'mod-word')} />
+        avantPanneau={(
+          <>
+            {fichierImporte
+              ? (
+                <div className="mod-importe">
+                  <Icone nom="doc" taille={18} />
+                  <p><b>Document importé</b><span title={fichierImporte}>{fichierImporte}</span></p>
+                  {boutonImport('Remplacer le fichier', 'mod-word mod-word-petit')}
+                </div>
+              )
+              : boutonImport('Utiliser mon propre document Word', 'mod-word')}
+            {erreurImport && <p className="mod-erreur" role="alert">{erreurImport}</p>}
+          </>
+        )} />
     </div>
   )
 }

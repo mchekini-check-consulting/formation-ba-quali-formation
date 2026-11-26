@@ -14,10 +14,11 @@ test('importer un .docx, remplacer « Camille » par une variable, enregistrer :
 
   // CA4 : un fichier qui n'est pas un .docx est refusé
   await page.getByLabel('Utiliser mon propre document Word').setInputFiles({ name: 'convocation.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF') })
-  await expect(page.getByRole('alert')).toHaveText('Seuls les fichiers Word (.docx) sont acceptés.')
+  await expect(page.getByRole('complementary', { name: 'Variables' }).getByRole('alert')).toHaveText('Seuls les fichiers Word (.docx) sont acceptés.')
 
   // CA1 + CA2 : le .docx remplace le document ; guide et encadré « Document importé »
   await page.getByLabel('Utiliser mon propre document Word').setInputFiles(DOCX)
+  await expect(page.getByRole('alert')).toHaveCount(0) // le message disparaît avec un bon fichier
   const document = page.getByRole('textbox', { name: 'Convocation' })
   await expect(document.getByRole('heading', { level: 1 })).toHaveText('Convocation à la formation Management d’équipe')
   await expect(document.locator('strong')).toHaveText('Camille')
