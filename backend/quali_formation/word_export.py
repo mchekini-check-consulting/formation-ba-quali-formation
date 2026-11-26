@@ -56,21 +56,22 @@ class _Arbre(HTMLParser):
         super().__init__(convert_charrefs=True)
         self.racine = self.courant = _Noeud('body', {})
 
-    def handle_starttag(self, balise, attributs):
-        noeud = _Noeud(balise, attributs, self.courant)
+    # Mêmes noms de paramètres que HTMLParser (tag, attrs, data)
+    def handle_starttag(self, tag, attrs):
+        noeud = _Noeud(tag, attrs, self.courant)
         self.courant.enfants.append(noeud)
-        if balise not in VIDES:
+        if tag not in VIDES:
             self.courant = noeud
 
-    def handle_endtag(self, balise):
+    def handle_endtag(self, tag):
         noeud = self.courant
-        while noeud is not self.racine and noeud.balise != balise:
+        while noeud is not self.racine and noeud.balise != tag:
             noeud = noeud.parent
         if noeud is not self.racine:
             self.courant = noeud.parent
 
-    def handle_data(self, texte):
-        self.courant.enfants.append(texte)
+    def handle_data(self, data):
+        self.courant.enfants.append(data)
 
 
 def _couleur(valeur):
@@ -124,9 +125,7 @@ class _Redacteur:
 
     @staticmethod
     def _conteneur(noeud):
-        if noeud.balise == 'div':
-            return True
-        return noeud.balise == 'span' and 'eh' in noeud.parent.classes
+        return noeud.balise == 'div' or (noeud.balise == 'span' and 'eh' in noeud.parent.classes)
 
     def _enfants(self, noeud, format_texte, alignement):
         for enfant in noeud.enfants:

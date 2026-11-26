@@ -414,6 +414,9 @@ class ExportWordImpossible(ErreurMetier):
 
 
 logger_metier = logging.getLogger('quali_formation.metier')
+# Champs des logs métier des modèles (identifiants seulement, jamais de contenu)
+CHAMP_TYPE_MODELE = 'type_modele'
+CHAMP_ORGANISME = 'utilisateur.organisme_id'
 
 
 def fichier_word(contenu, nom, champs_log):
@@ -483,7 +486,7 @@ class ModeleService:
             raise ModeleIntrouvable()
         return self._decrire(origine, self._modeles_du_compte(utilisateur).get(origine.type), dictionnaire_variables())
 
-    @log_metier("service", champs=["utilisateur.id", "type_modele", "resultat.statut"])
+    @log_metier("service", champs=["utilisateur.id", CHAMP_TYPE_MODELE, "resultat.statut"])
     def enregistrer(self, utilisateur, type_modele, contenu, nom_fichier_importe=None):
         """Enregistre le modèle générique du compte, créé à partir du modèle d'origine à la première fois (RG3).
         RG12 : aucun contrôle ni blocage sur le contenu (mentions légales, variables) ; seulement un texte
@@ -510,7 +513,7 @@ class ModeleService:
             defaults={'contenu': contenu, 'statut': statut, 'nom_fichier_importe': nom_fichier})
         return modele
 
-    @log_metier("service", champs=["utilisateur.organisme_id", "type_modele", "extension", "taille"])
+    @log_metier("service", champs=[CHAMP_ORGANISME, CHAMP_TYPE_MODELE, "extension", "taille"])
     def importer_word(self, utilisateur, type_modele, fichier, extension, taille):
         """SCRUM-215 : le contenu d'un .docx converti pour l'éditeur (RG11). RG8 : rien n'est enregistré, et le
         fichier n'est jamais gardé (lu en mémoire ou dans un fichier temporaire effacé par Django).
@@ -529,9 +532,9 @@ class ModeleService:
         enregistré) en .docx, nommé « Modèle - <nom du document>.docx », variables écrites {{code}} (RG9)."""
         modele = self.obtenir(utilisateur, type_modele)
         champs_log = {'class': 'ModeleService', 'method': 'exporter_word',
-                      'type_modele': modele['type']}
+                      CHAMP_TYPE_MODELE: modele['type']}
         if utilisateur.organisme_id is not None:
-            champs_log['utilisateur.organisme_id'] = str(utilisateur.organisme_id)
+            champs_log[CHAMP_ORGANISME] = str(utilisateur.organisme_id)
         return fichier_word(modele['contenu'], modele['nom'], champs_log)
 
     def formations_utilisant(self, utilisateur, type_modele):
