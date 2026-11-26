@@ -1,13 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { PageEnChargement } from '../components/ErreurChargement'
+import { ConfirmDialog } from '../components/Modal'
 import Icone from '../components/Icone'
 import { useToast } from '../components/toastContext'
 import { pluriel } from '../formations/catalogue'
 import { DocumentModele } from './DocumentModele'
 import { EditeurDocument } from './editeur/EditeurDocument'
 import { BoutonImportWord } from './editeur/BoutonImportWord'
-import { enregistrerModele, importerWord, listerModeles, listerVariables, messageEnregistrement, obtenirModele, resumeModeles, STATUTS } from './serviceApi'
+import {
+  adresseExportWord, enregistrerModele, importerWord, listerModeles, listerVariables, messageEnregistrement, nomFichierWord,
+  obtenirModele, resumeModeles, STATUTS, telechargerWord,
+} from './serviceApi'
 import '../styles/modeles.css'
 
 // Chargement d'une donnée du backend pour une page : { donnee, erreur } ; `charger` doit être stable (useCallback)
@@ -125,7 +129,7 @@ export function ModelesGeneriques() {
 
 // SCRUM-213 (maquettes SCRUM-213-1/2) : le modèle générique dans l'éditeur. RG8 : rien n'est envoyé avant
 // « Enregistrer » ; « ← Retour » quitte sans rien envoyer. RG3 : seul le modèle générique du compte est écrit.
-// Inactifs en attendant leur US : Télécharger en Word (216), Voir le modèle d'origine (217).
+// Inactif en attendant son US : Voir le modèle d'origine (217).
 // SCRUM-215 : guide affiché après un import Word (maquette SCRUM-215-1), fermé par « J'ai compris »
 function GuideImport({ onFermer }) {
   return (
@@ -157,6 +161,11 @@ function EditeurModeleGenerique({ modele, catalogue }) {
   const [guide, setGuide] = useState(false)
   // Refus d'un import (format, taille, fichier illisible) : affiché sous le bouton d'import, pas en haut de la page
   const [erreurImport, setErreurImport] = useState(null)
+  // SCRUM-216 : le Word téléchargé est la dernière version ENREGISTRÉE ; modifications ou import pas encore
+  // enregistrés -> fenêtre de confirmation avant de télécharger
+  const [nonEnregistre, setNonEnregistre] = useState(false)
+  const [confirmerExport, setConfirmerExport] = useState(false)
+  const [telechargement, setTelechargement] = useState(false)
 
   function importe({ contenu: html, nomFichier }) {
     contenu.current = html
@@ -164,6 +173,7 @@ function EditeurModeleGenerique({ modele, catalogue }) {
     setFichierImporte(nomFichier)
     setImportAEnregistrer(nomFichier)
     setGuide(true)
+    setNonEnregistre(true)
   }
 
   const boutonImport = (libelle, className) => (
@@ -171,12 +181,26 @@ function EditeurModeleGenerique({ modele, catalogue }) {
       onImporte={importe} onErreur={setErreurImport} />
   )
 
+  async function telecharger() {
+    setConfirmerExport(false)
+    setTelechargement(true)
+    setErreur(null)
+    try {
+      await telechargerWord(adresseExportWord(modele.type), nomFichierWord(modele.nom))
+    } catch (e) {
+      setErreur(e.message)
+    } finally {
+      setTelechargement(false)
+    }
+  }
+
   async function enregistrer() {
     setEnvoi(true)
     setErreur(null)
     try {
       toast(messageEnregistrement(await enregistrerModele(modele.type, contenu.current, importAEnregistrer)))
       setImportAEnregistrer(null)
+      setNonEnregistre(false)
     } catch (e) {
       setErreur(e.message)
     } finally {
@@ -191,15 +215,24 @@ function EditeurModeleGenerique({ modele, catalogue }) {
         <h1>{modele.nom}</h1>
         <p>Modifiez le texte librement. Glissez les variables à droite dans le document : elles seront remplacées par les vraies informations.</p>
         <div className="mod-actions">
-          <button type="button" className="btn btn-line" disabled title="Bientôt disponible">Télécharger en Word</button>
+          <button type="button" className="btn btn-line" disabled={telechargement}
+            onClick={() => (nonEnregistre ? setConfirmerExport(true) : telecharger())}>
+            {telechargement ? 'Téléchargement…' : 'Télécharger en Word'}
+          </button>
           <button type="button" className="btn btn-line" disabled title="Bientôt disponible">Voir le modèle d’origine</button>
           <button type="button" className="btn btn-primary" onClick={enregistrer} disabled={envoi}>Enregistrer</button>
         </div>
         {erreur && <p className="mod-erreur" role="alert">{erreur}</p>}
       </div>
+      {confirmerExport && (
+        <ConfirmDialog titre="Modifications non enregistrées"
+          texte="Le fichier Word contiendra la dernière version enregistrée, sans vos modifications. Enregistrez d’abord pour les inclure."
+          action="Télécharger quand même" icone="alert" fondIcone="var(--warn-soft)" couleurIcone="var(--warn)"
+          onAnnuler={() => setConfirmerExport(false)} onOk={telecharger} />
+      )}
       {guide && <GuideImport onFermer={() => setGuide(false)} />}
       <EditeurDocument key={affiche.cle} contenu={affiche.contenu} variables={modele.variables} catalogue={catalogue}
-        nom={modele.nom} onModification={(html) => { contenu.current = html }}
+        nom={modele.nom} onModification={(html) => { contenu.current = html; setNonEnregistre(true) }}
         avantPanneau={(
           <>
             {fichierImporte

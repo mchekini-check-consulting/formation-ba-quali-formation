@@ -1,5 +1,6 @@
 """Règles de gestion du module Formations (RG01 à RG38), indépendantes de l'API pour être testées seules."""
 
+import logging
 import re
 
 import mammoth
@@ -15,6 +16,7 @@ from rest_framework.exceptions import APIException
 
 from quali_formation.blocs import blocs_manquants
 from quali_formation.logging.log_metier import log_metier
+from quali_formation.logging.loggable import error_fields
 from quali_formation.models import (
     Apprenant,
     Entreprise,
@@ -32,6 +34,7 @@ from quali_formation.models import (
     Variable,
 )
 from quali_formation.serializers import ItemSerializer
+from quali_formation.word_export import docx_depuis_html
 
 Statut = Formation.Statut
 Publication = Formation.Publication
@@ -403,6 +406,28 @@ def html_depuis_word(fichier):
     return nh3.clean(resultat.value, tags=BALISES_WORD, attributes={}, link_rel=None, strip_comments=True)
 
 
+class ExportWordImpossible(ErreurMetier):
+    """500 : le fichier Word n'a pas pu être créé (SCRUM-216)."""
+
+    def __init__(self):
+        super().__init__('EXPORT_IMPOSSIBLE', 'Le fichier Word n’a pas pu être créé. Réessayez.', 500)
+
+
+logger_metier = logging.getLogger('quali_formation.metier')
+
+
+def fichier_word(contenu, nom, champs_log):
+    """SCRUM-216 : un modèle (générique, ou de la formation avec SCRUM-219) en .docx : {fichier, nom_fichier}.
+    Pas de log pour un téléchargement réussi ; en cas d'échec, une ligne ERROR avec seulement les identifiants
+    de `champs_log` (organisme, type de modèle), jamais le contenu du document."""
+    try:
+        fichier = docx_depuis_html(contenu, nom)
+    except Exception as exc:
+        logger_metier.error('Export Word en échec', extra={'layer': 'service', **champs_log, **error_fields(exc)})
+        raise ExportWordImpossible() from exc
+    return {'fichier': fichier, 'nom_fichier': f'Modèle - {nom}.docx'}
+
+
 # Dictionnaire des variables {{code}} (code, libellé, catégorie...) ; table Variable avec SCRUM-214
 VARIABLE = re.compile(r'\{\{\s*([A-Za-z0-9_]+)\s*\}\}')
 
@@ -498,6 +523,16 @@ class ModeleService:
             raise ImportWordRefuse('FICHIER_TROP_VOLUMINEUX',
                                    'Le fichier dépasse 10 Mo : choisissez un document plus léger.')
         return {'contenu': html_depuis_word(fichier)}
+
+    def exporter_word(self, utilisateur, type_modele):
+        """SCRUM-216 : la dernière version ENREGISTRÉE du modèle du compte (le modèle d'origine s'il n'a jamais été
+        enregistré) en .docx, nommé « Modèle - <nom du document>.docx », variables écrites {{code}} (RG9)."""
+        modele = self.obtenir(utilisateur, type_modele)
+        champs_log = {'class': 'ModeleService', 'method': 'exporter_word',
+                      'type_modele': modele['type']}
+        if utilisateur.organisme_id is not None:
+            champs_log['utilisateur.organisme_id'] = str(utilisateur.organisme_id)
+        return fichier_word(modele['contenu'], modele['nom'], champs_log)
 
     def formations_utilisant(self, utilisateur, type_modele):
         """RG6 : (formations qui utilisent le modèle générique de ce type, formations du compte), hors archivées.

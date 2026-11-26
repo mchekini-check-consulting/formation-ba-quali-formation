@@ -1,6 +1,8 @@
 from functools import wraps
 from pathlib import Path
 
+from django.http import HttpResponse
+from django.utils.http import content_disposition_header
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -39,6 +41,7 @@ from quali_formation.services import (
     session_service,
     variable_service,
 )
+from quali_formation.word_export import DOCX_MIME
 
 
 @api_view(["GET"])
@@ -356,6 +359,24 @@ def importer_modele(request, utilisateur, type_modele):
     except ErreurMetier as e:
         return _erreur(e)
     return Response({**resultat, 'nom_fichier': nom[:255]})
+
+
+def fichier_word_reponse(resultat):
+    """Le .docx à télécharger ; nom avec accents gardés (filename* en UTF-8). Réutilisable (SCRUM-219)."""
+    reponse = HttpResponse(resultat['fichier'], content_type=DOCX_MIME)
+    reponse['Content-Disposition'] = content_disposition_header(True, resultat['nom_fichier'])
+    return reponse
+
+
+@api_view(["GET"])
+@_connexion_requise
+def exporter_modele(request, utilisateur, type_modele):
+    """SCRUM-216 : GET /modeles/<type>/export.docx -> « Modèle - <nom>.docx » ; 401, 404. Pas de log métier,
+    sauf une ligne ERROR si le fichier n'a pas pu être créé (service)."""
+    try:
+        return fichier_word_reponse(modele_service.exporter_word(utilisateur, type_modele))
+    except ErreurMetier as e:
+        return _erreur(e)
 
 
 @api_view(["GET"])

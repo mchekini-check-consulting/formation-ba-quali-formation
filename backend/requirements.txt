@@ -6,3 +6,4 @@ psycopg[binary]==3.3.6
 sqlparse==0.6.0
 mammoth==1.13.0
 nh3==0.3.8
+python-docx==1.2.0

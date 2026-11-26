@@ -60,9 +60,8 @@ describe('Éditeur d’un modèle générique (SCRUM-213)', () => {
     await ouvrir()
     expect(screen.getByRole('heading', { level: 1, name: 'Convention de formation' })).toBeTruthy()
     expect(screen.getByText(/Modifiez le texte librement/)).toBeTruthy()
-    for (const nom of ['Télécharger en Word', 'Voir le modèle d’origine']) {
-      expect(screen.getByRole('button', { name: nom }).disabled).toBe(true)
-    }
+    expect(screen.getByRole('button', { name: 'Voir le modèle d’origine' }).disabled).toBe(true)
+    expect(screen.getByRole('button', { name: 'Télécharger en Word' }).disabled).toBe(false) // SCRUM-216
     expect(screen.getByRole('button', { name: 'Utiliser mon propre document Word' }).disabled).toBe(false) // SCRUM-215
     expect(screen.getByRole('button', { name: 'Enregistrer' }).disabled).toBe(false)
     expect(within(screen.getByRole('complementary', { name: 'Variables' })).getByRole('heading', { name: 'Variables' })).toBeTruthy()
