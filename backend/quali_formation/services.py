@@ -263,6 +263,8 @@ class FormationService:
 formation_service = FormationService()
 
 
+MSG_ENTREPRISE_DEJA_ENREGISTREE = 'Cette entreprise est déjà enregistrée'  # SCRUM-113
+
 # SCRUM-119 : documents d'un formateur (CV, diplômes)
 FORMATS_DOCUMENT = ('pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx')
 TAILLE_MAX_DOCUMENT = 10 * 1024 * 1024
@@ -370,6 +372,21 @@ class SessionService:
             raise ErreurMetier('TROP_DE_DIPLOMES', f'« {nom} » refusé : 5 diplômes maximum')
         return FormateurDocument.objects.create(formateur=formateur, type=type_document, nom_fichier=nom,
                                                 format=extension, taille=fichier.size, contenu=fichier.read())
+
+    def creer_entreprise(self, utilisateur, **donnees):
+        """SCRUM-113 : enregistre une entreprise cliente du centre. Un SIRET une seule fois par centre :
+        409 SIRET_DEJA_ENREGISTRE sinon (un autre centre peut enregistrer la même entreprise).
+        Pas de log métier pour l'instant (à décider par la BA)."""
+        organisme = _organisme_requis(utilisateur)
+        if Entreprise.objects.filter(organisme=organisme, siret=donnees['siret']).exists():
+            raise ErreurMetier('SIRET_DEJA_ENREGISTRE', MSG_ENTREPRISE_DEJA_ENREGISTREE, 409,
+                               siret=[MSG_ENTREPRISE_DEJA_ENREGISTREE])
+        try:
+            with transaction.atomic():
+                return Entreprise.objects.create(organisme=organisme, **donnees)
+        except IntegrityError as e:  # deux enregistrements simultanés du même SIRET
+            raise ErreurMetier('SIRET_DEJA_ENREGISTRE', MSG_ENTREPRISE_DEJA_ENREGISTREE, 409,
+                               siret=[MSG_ENTREPRISE_DEJA_ENREGISTREE]) from e
 
     @log_metier("service", champs=["resultat.id"])
     def creer_apprenant(self, utilisateur, prenom, nom, email, statut, entreprise='', telephone='',

@@ -25,6 +25,13 @@ export const APPRENANTS = [
   apprenant(5, 'Yanis', 'Petit', 'yanis.petit@marine.fr', 'Globex', { telephone: '0612345678', statut: 'PARTICULIER', nombre_sessions: 1 }),
 ]
 // SCRUM-120 : triées par raison sociale, avec SIRET, ville, OPCO, interlocuteur et nombre de salariés
+// SCRUM-113 : établissements de l'annuaire officiel
+export const ANNUAIRE = [
+  { siret: '38945612300034', raison_sociale: 'SOCIETE DURAND', forme_juridique: 'SAS', code_naf: '47.11B', adresse: '12 RUE DE LA PAIX',
+    code_postal: '75002', ville: 'PARIS' },
+  { siret: '51287496300027', raison_sociale: 'DURAND ET FILS', forme_juridique: 'SARL', code_naf: '', adresse: '3 QUAI DU RHONE',
+    code_postal: '69002', ville: 'LYON' },
+]
 export const ENTREPRISES = [
   { id: 8, raison_sociale: 'Globex', siret: '52874196300015', ville: 'Nantes', opco: 'AKTO', interlocuteur: '', nombre_salaries: 1 },
   { id: 7, raison_sociale: 'Société Durand', siret: '38945612300034', ville: 'Paris', opco: '', interlocuteur: 'Hugo Weber', nombre_salaries: 2 },
@@ -47,9 +54,13 @@ export const repondre = (status, corps) => ({ ok: status < 400, status, json: as
 // reponsePersonne(corps) : réponse du POST /formateurs/ ou /apprenants/ (par défaut 201, ajouté à la liste)
 // entreprises : entreprises clientes du centre (GET /entreprises/, SCRUM-112)
 // reponseDocument(type, fichier) : réponse du POST /formateurs/<id>/documents/ (par défaut 201, SCRUM-119)
+// annuaire : établissements de GET /annuaire-entreprises/ ; reponseEntreprise(corps) : réponse du POST /entreprises/
+// (par défaut 201, ajoutée à la liste) (SCRUM-113)
 export function installerFauxBackend({
-  sessions = [SESSION_EXCEL], formations = FORMATIONS, entreprises = ENTREPRISES, reponsePost, reponsePersonne, reponseDocument,
+  sessions = [SESSION_EXCEL], formations = FORMATIONS, entreprises: entreprisesDepart = ENTREPRISES, reponsePost, reponsePersonne,
+  reponseDocument, annuaire = ANNUAIRE, reponseEntreprise,
 } = {}) {
+  const entreprises = [...entreprisesDepart]
   const liste = [...sessions]
   const personnes = { '/formateurs/': [...FORMATEURS], '/apprenants/': [...APPRENANTS] }
   const fetch = vi.fn(async (url, options) => {
@@ -68,6 +79,16 @@ export function installerFauxBackend({
       if (chemin === '/formateurs/') cree.entreprise = ''
       personnes[chemin].push(cree)
       return repondre(201, cree)
+    }
+    if (chemin === '/annuaire-entreprises/') return annuaire instanceof Error ? repondre(503, { code: 'SERVICE_INDISPONIBLE' }) : repondre(200, annuaire)
+    if (chemin === '/entreprises/' && options?.method === 'POST') {
+      const corps = JSON.parse(options.body)
+      if (reponseEntreprise) return reponseEntreprise(corps)
+      const creee = { id: 60, raison_sociale: corps.raison_sociale, siret: corps.siret, ville: corps.ville, opco: '',
+        interlocuteur: `${corps.interlocuteur_prenom} ${corps.interlocuteur_nom}`.trim(), nombre_salaries: 0 }
+      entreprises.push(creee)
+      entreprises.sort((a, b) => a.raison_sociale.localeCompare(b.raison_sociale))
+      return repondre(201, creee)
     }
     if (chemin === '/entreprises/') {
       // Même recherche que le backend : raison sociale, SIRET (espaces ignorés) ou ville
