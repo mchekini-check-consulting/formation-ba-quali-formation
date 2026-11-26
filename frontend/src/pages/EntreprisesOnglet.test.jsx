@@ -64,13 +64,7 @@ describe('Liste des entreprises clientes (SCRUM-120)', () => {
     expect(screen.getByRole('heading', { level: 2 }).textContent).toBe('Entreprises clientes · 0')
   })
 
-  it('« + Nouvelle entreprise cliente » est visible mais inactif jusqu’à SCRUM-113', async () => {
-    installerFauxBackend()
-    ouvrirOnglet()
-    const bouton = screen.getByRole('button', { name: '+ Nouvelle entreprise cliente' })
-    expect(bouton.disabled).toBe(true)
-    expect(bouton.getAttribute('title')).toBe('Bientôt disponible')
-  })
+  // « + Nouvelle entreprise cliente » et CA6 (entreprise ajoutée en tête) : PanneauEntreprise.test.jsx (SCRUM-113)
 
   it('le chargement échoue : message d’erreur', async () => {
     vi.stubGlobal('fetch', vi.fn(async (url) => (url.endsWith('/auth/moi') ? repondre(401, {}) : repondre(500, null))))

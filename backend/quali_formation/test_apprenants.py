@@ -162,8 +162,8 @@ class EntreprisesClientesTests(TestCase):
 
     def test_entreprises_du_centre_triees(self):
         centre = connecter(self.client).organisme
-        for nom in ('Zeta', 'Alpha'):
-            Entreprise.objects.create(raison_sociale=nom, siret='12345678900012', organisme=centre)
+        for nom, siret in (('Zeta', '12345678900012'), ('Alpha', '12345678900020')):
+            Entreprise.objects.create(raison_sociale=nom, siret=siret, organisme=centre)
         self.assertEqual([e['raison_sociale'] for e in self.client.get('/entreprises/').json()], ['Alpha', 'Zeta'])
         self.assertEqual(str(Entreprise.objects.first()), 'Alpha')
 

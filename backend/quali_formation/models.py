@@ -132,16 +132,36 @@ class Entreprise(models.Model):
     raison_sociale = models.CharField(max_length=255)
     siret = models.CharField(max_length=14)
     organisme = models.ForeignKey(Organisme, on_delete=models.CASCADE, related_name='entreprises')
-    # SCRUM-120 : OPCO (aucune saisie pour l'instant : « À confirmer »), ville et interlocuteur principal
-    # (vides tant que la création d'une entreprise, SCRUM-113, ne les renseigne pas)
+    # SCRUM-120 : OPCO (aucune saisie pour l'instant : « À confirmer »)
     opco = models.CharField(max_length=100, blank=True, default='')
+    # SCRUM-113 : informations de l'établissement (remplies depuis l'annuaire, modifiables) ; adresse, code postal et
+    # ville obligatoires à la création. Vides pour les entreprises créées avant.
+    forme_juridique = models.CharField(max_length=100, blank=True, default='')
+    code_naf = models.CharField(max_length=10, blank=True, default='')
+    adresse = models.CharField(max_length=255, blank=True, default='')
+    code_postal = models.CharField(max_length=10, blank=True, default='')
     ville = models.CharField(max_length=255, blank=True, default='')
+    adresse_facturation = models.CharField(max_length=255, blank=True, default='')  # vide : identique à l'adresse
+    email = models.EmailField(max_length=255, blank=True, default='')
+
+    # Interlocuteur principal, facultatif (prénom et nom affichés dans la liste, SCRUM-120)
+    class Role(models.TextChoices):
+        RESSOURCES_HUMAINES = 'RESSOURCES_HUMAINES', 'Ressources humaines'
+        MANAGER = 'MANAGER', 'Manager'
+        COMPTABILITE = 'COMPTABILITE', 'Comptabilité'
+        DIRIGEANT = 'DIRIGEANT', 'Dirigeant'
+
     interlocuteur_prenom = models.CharField(max_length=100, blank=True, default='')
     interlocuteur_nom = models.CharField(max_length=100, blank=True, default='')
+    interlocuteur_role = models.CharField(max_length=30, choices=Role.choices, blank=True, default='')
+    interlocuteur_email = models.EmailField(max_length=255, blank=True, default='')
+    interlocuteur_telephone = models.CharField(max_length=10, blank=True, default='')
 
     class Meta:
         db_table = 'entreprise'
         ordering = ('raison_sociale', 'id')
+        # SCRUM-113 : un SIRET une seule fois par centre (un autre centre peut enregistrer la même entreprise)
+        constraints = (models.UniqueConstraint(fields=('siret', 'organisme'), name='entreprise_siret_unique_par_centre'),)
 
     def __str__(self):
         return self.raison_sociale

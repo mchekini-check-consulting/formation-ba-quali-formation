@@ -149,7 +149,7 @@ class EntrepriseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Entreprise
-        fields = ('id', 'raison_sociale', 'siret', 'ville', 'opco', 'interlocuteur', 'nombre_salaries')
+        fields = ('id', 'raison_sociale', 'siret', 'ville', 'opco', 'interlocuteur', 'nombre_salaries')  # liste SCRUM-120
 
     def get_interlocuteur(self, entreprise):
         return f'{entreprise.interlocuteur_prenom} {entreprise.interlocuteur_nom}'.strip()
@@ -207,6 +207,67 @@ class FormateurCreationSerializer(PersonneCreationSerializer):
         if chiffres and not re.fullmatch(r'\d{11}', chiffres):
             raise serializers.ValidationError(MSG_NDA)
         return chiffres
+
+
+MSG_OBLIGATOIRE = 'Champ obligatoire'
+MSG_SIRET = 'Le SIRET doit contenir 14 chiffres'
+MSG_EMAIL = "Format d'e-mail invalide"
+
+
+def _obligatoire(longueur):
+    return serializers.CharField(max_length=longueur, error_messages={
+        'required': MSG_OBLIGATOIRE, 'blank': MSG_OBLIGATOIRE, 'null': MSG_OBLIGATOIRE})
+
+
+def _facultatif(longueur):
+    return serializers.CharField(max_length=longueur, required=False, allow_blank=True, default='')
+
+
+def _email_facultatif():
+    return serializers.EmailField(max_length=255, required=False, allow_blank=True, default='',
+                                  error_messages={'invalid': MSG_EMAIL})
+
+
+class EntrepriseCreationSerializer(serializers.Serializer):
+    """SCRUM-113 : écriture d'une entreprise cliente. Obligatoires : raison sociale, SIRET (14 chiffres, espaces
+    ignorés), adresse, code postal, ville, et l'adresse de facturation si elle n'est pas identique. Facultatifs : forme
+    juridique, code NAF, e-mail de l'entreprise, interlocuteur principal (e-mail valide, téléphone à 10 chiffres)."""
+
+    raison_sociale = _obligatoire(255)
+    siret = _obligatoire(30)
+    forme_juridique = _facultatif(100)
+    code_naf = _facultatif(10)
+    adresse = _obligatoire(255)
+    code_postal = _obligatoire(10)
+    ville = _obligatoire(255)
+    adresse_facturation_identique = serializers.BooleanField(required=False, default=True)
+    adresse_facturation = _facultatif(255)
+    email = _email_facultatif()
+    interlocuteur_prenom = _facultatif(100)
+    interlocuteur_nom = _facultatif(100)
+    interlocuteur_role = serializers.ChoiceField(choices=Entreprise.Role.choices, required=False, allow_blank=True, default='')
+    interlocuteur_email = _email_facultatif()
+    interlocuteur_telephone = serializers.CharField(max_length=30, required=False, allow_blank=True, default='')
+
+    def validate_siret(self, siret):
+        chiffres = re.sub(r'\s', '', siret)
+        if not re.fullmatch(r'\d{14}', chiffres):
+            raise serializers.ValidationError(MSG_SIRET)
+        return chiffres
+
+    def validate_interlocuteur_telephone(self, telephone):
+        chiffres = re.sub(r'[\s.-]', '', telephone)
+        if chiffres and not re.fullmatch(r'\d{10}', chiffres):
+            raise serializers.ValidationError(MSG_TELEPHONE)
+        return chiffres
+
+    def validate(self, attrs):
+        identique = attrs.pop('adresse_facturation_identique')
+        if identique:
+            attrs['adresse_facturation'] = ''
+        elif not attrs['adresse_facturation'].strip():
+            raise serializers.ValidationError({'adresse_facturation': [MSG_OBLIGATOIRE]})
+        return attrs
 
 
 class SessionPlanningSerializer(serializers.ModelSerializer):
