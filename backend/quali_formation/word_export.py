@@ -17,15 +17,19 @@ from docx.shared import Pt, RGBColor
 DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 
 TITRES = {'h1': 'Heading 1', 'h2': 'Heading 2', 'h3': 'Heading 3', 'h4': 'Heading 3'}
-BLOCS = {'p', 'div', 'blockquote', *TITRES}
+BLOCS = {'p', 'blockquote', *TITRES}  # un paragraphe chacun ; <div> : conteneur
+PUCES, NUMEROS = 'ul', 'ol'
+STYLE_PUCE, STYLE_NUMERO = 'List Bullet', 'List Number'
+# Mise en forme du texte en cours (clés du format)
+GRAS, ITALIQUE, SOULIGNE, BARRE, COULEUR = 'gras', 'italique', 'souligne', 'barre', 'couleur'
 IGNOREES = {'script', 'style', 'iframe', 'object', 'embed', 'template', 'noscript', 'head', 'title'}
 VIDES = {'br', 'img', 'hr', 'input', 'meta', 'link', 'wbr', 'col', 'source'}
 ALIGNEMENTS = {'left': WD_ALIGN_PARAGRAPH.LEFT, 'center': WD_ALIGN_PARAGRAPH.CENTER,
                'right': WD_ALIGN_PARAGRAPH.RIGHT, 'justify': WD_ALIGN_PARAGRAPH.JUSTIFY}
 # Mise en forme portée par une balise : <b>, <strong> = gras...
-MARQUES = {'b': 'gras', 'strong': 'gras', 'i': 'italique', 'em': 'italique', 'u': 'souligne',
-           's': 'barre', 'strike': 'barre', 'del': 'barre'}
-HEX = re.compile(r'^#([0-9a-f]{3}|[0-9a-f]{6})$', re.IGNORECASE)
+MARQUES = {'b': GRAS, 'strong': GRAS, 'i': ITALIQUE, 'em': ITALIQUE, 'u': SOULIGNE,
+           's': BARRE, 'strike': BARRE, 'del': BARRE}
+HEX = re.compile(r'^#([\da-f]{3}|[\da-f]{6})$', re.IGNORECASE)
 RGB = re.compile(r'^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$', re.IGNORECASE)
 MARGE = re.compile(r'^(\d{1,3})px$')
 ESPACES = re.compile(r'\s+')
@@ -109,11 +113,11 @@ class _Redacteur:
         balise = noeud.balise
         if balise == 'br':
             self._retour_a_la_ligne()
-        elif balise in ('ul', 'ol'):
+        elif balise in (PUCES, NUMEROS):
             self._liste(noeud, format_texte, alignement)
         elif balise == 'li':
             self._puce(noeud, format_texte, alignement)
-        elif balise in BLOCS and balise != 'div':
+        elif balise in BLOCS:
             self._bloc(noeud, format_texte, alignement, TITRES.get(balise), style)
         elif self._conteneur(noeud):
             # Conteneur (dont l'en-tête des modèles d'origine : logo puis coordonnées) : un paragraphe par bloc
@@ -141,7 +145,7 @@ class _Redacteur:
         if noeud.balise in MARQUES:
             nouveau[MARQUES[noeud.balise]] = True
         if (couleur := _couleur(style.get('color'))) is not None:
-            nouveau['couleur'] = couleur
+            nouveau[COULEUR] = couleur
         return nouveau
 
     def _fermer(self):
@@ -163,12 +167,12 @@ class _Redacteur:
             self._nouveau(None, alignement)
         self.paragraphe_puce = None
         morceau = self.paragraphe.add_run(texte)  # un {{code}} reste dans un seul morceau (RG9)
-        morceau.bold = format_texte.get('gras')
-        morceau.italic = format_texte.get('italique')
-        morceau.underline = format_texte.get('souligne')
-        morceau.font.strike = format_texte.get('barre')
-        if 'couleur' in format_texte:
-            morceau.font.color.rgb = format_texte['couleur']
+        morceau.bold = format_texte.get(GRAS)
+        morceau.italic = format_texte.get(ITALIQUE)
+        morceau.underline = format_texte.get(SOULIGNE)
+        morceau.font.strike = format_texte.get(BARRE)
+        if COULEUR in format_texte:
+            morceau.font.color.rgb = format_texte[COULEUR]
 
     def _bloc(self, noeud, format_texte, alignement, titre, style):
         if self.paragraphe_puce is not None and titre is None:
@@ -189,7 +193,10 @@ class _Redacteur:
         self._fermer()
         niveau = min(len(self.listes), 2)
         style = self._style_liste(noeud.balise, niveau)
-        numerotation = _numerotation(self.document, style) if noeud.balise == 'ol' else _numero_du_style(self.document, style)
+        if noeud.balise == NUMEROS:
+            numerotation = _numerotation(self.document, style)
+        else:
+            numerotation = _numero_du_style(self.document, style)
         self.listes.append((noeud.balise, numerotation))
         self._enfants(noeud, format_texte, alignement)
         self.listes.pop()
@@ -197,13 +204,13 @@ class _Redacteur:
 
     @staticmethod
     def _style_liste(balise, niveau):
-        nom = 'List Number' if balise == 'ol' else 'List Bullet'
+        nom = STYLE_NUMERO if balise == NUMEROS else STYLE_PUCE
         return nom if niveau == 0 else f'{nom} {niveau + 1}'
 
     def _puce(self, noeud, format_texte, alignement):
         self._fermer()
         if not self.listes:  # <li> hors liste : une puce simple
-            self.listes.append(('ul', _numero_du_style(self.document, 'List Bullet')))
+            self.listes.append((PUCES, _numero_du_style(self.document, STYLE_PUCE)))
             self._puce(noeud, format_texte, alignement)
             self.listes.pop()
             return
