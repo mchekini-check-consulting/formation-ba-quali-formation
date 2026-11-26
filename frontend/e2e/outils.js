@@ -48,7 +48,7 @@ export async function creerPersonnesExemplesParApi(requete) {
   }
   for (const [prenom, nom] of APPRENANTS) {
     const email = `${sansAccent(prenom)}.${sansAccent(nom)}@acme.fr`
-    expect((await requete.post('/api/apprenants/', { data: { prenom, nom, email, entreprise: 'Acme' } })).status()).toBe(201)
+    expect((await requete.post('/api/apprenants/', { data: { prenom, nom, email, entreprise: 'Acme', statut: 'SALARIE' } })).status()).toBe(201)
   }
 }
 

@@ -28,11 +28,22 @@ async function appel(chemin, corps) {
 
 export const listerSessions = () => appel('/sessions/')
 export const listerFormateurs = () => appel('/formateurs/')
-export const listerApprenants = () => appel('/apprenants/')
+// SCRUM-112 : apprenants du centre triés par nom, filtrés par `recherche` (nom, e-mail ou entreprise)
+export const listerApprenants = (recherche = '') =>
+  appel(recherche.trim() ? `/apprenants/?recherche=${encodeURIComponent(recherche.trim())}` : '/apprenants/')
+// Entreprises clientes du centre (liste « Entreprise » de « Nouvel apprenant », SCRUM-112)
+export const listerEntreprises = () => appel('/entreprises/')
 // POST {prenom, nom, email} : formateur (SCRUM-26) ou apprenant (SCRUM-27)
-const creerPersonne = (chemin) => (p) => appel(chemin, { prenom: p.prenom.trim(), nom: p.nom.trim(), email: p.email.trim() })
-export const creerFormateur = creerPersonne('/formateurs/')
-export const creerApprenant = creerPersonne('/apprenants/')
+const identite = (p) => ({ prenom: p.prenom.trim(), nom: p.nom.trim(), email: p.email.trim() })
+export const creerFormateur = (p) => appel('/formateurs/', identite(p))
+// Apprenant : + téléphone, statut, entreprise cliente et poste (ces deux derniers pour un salarié seulement, SCRUM-112)
+export function creerApprenant(p) {
+  const salarie = p.statut === 'SALARIE'
+  return appel('/apprenants/', {
+    ...identite(p), telephone: p.telephone.trim(), statut: p.statut,
+    entreprise_id: salarie && p.entreprise_id ? Number(p.entreprise_id) : null, poste: salarie ? p.poste.trim() : '',
+  })
+}
 
 // Formations proposées dans le formulaire : identifiant, intitulé, durée et modalité (reprises dans la session, SCRUM-166)
 export async function listerFormations() {

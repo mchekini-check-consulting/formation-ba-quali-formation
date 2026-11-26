@@ -18,6 +18,9 @@ function remplir({ prenom = 'Camille', nom = 'Leroy', email = 'camille.leroy@exe
   saisir('Prénom', prenom)
   saisir('Nom', nom)
   saisir('E-mail', email)
+  // Apprenant : statut obligatoire depuis SCRUM-112
+  const statut = screen.queryByLabelText(/^Statut/)
+  if (statut) fireEvent.change(statut, { target: { value: 'PARTICULIER' } })
 }
 // Remplit l'étape 1 de « Nouvelle session » et passe à l'étape suivante
 async function allerEtape2() {
@@ -33,11 +36,14 @@ async function allerEtape2() {
   fireEvent.click(bouton('Suivant'))
 }
 
-// Les mêmes critères d'acceptation pour SCRUM-26 (formateur) et SCRUM-27 (apprenant)
+// Les mêmes critères d'acceptation pour SCRUM-26 (formateur) et SCRUM-27 (apprenant). Fenêtre « Nouvel apprenant »
+// complétée par SCRUM-112 (maquette : pas de bandeau « Corrigez les champs », téléphone, statut, entreprise, poste).
+const IDENTITE = { prenom: 'Camille', nom: 'Leroy', email: 'camille.leroy@exemple.fr' }
 describe.each([
-  { us: 'SCRUM-26', titre: 'Nouveau formateur', chemin: '/formateurs/', le: 'le formateur', Le: 'Le formateur' },
-  { us: 'SCRUM-27', titre: 'Nouvel apprenant', chemin: '/apprenants/', le: 'l’apprenant', Le: 'L’apprenant' },
-])('$titre ($us)', ({ titre, chemin, le, Le }) => {
+  { us: 'SCRUM-26', titre: 'Nouveau formateur', chemin: '/formateurs/', le: 'le formateur', Le: 'Le formateur', id: 'pa', corps: IDENTITE },
+  { us: 'SCRUM-27', titre: 'Nouvel apprenant', chemin: '/apprenants/', le: null, Le: 'L’apprenant', id: 'app',
+    corps: { ...IDENTITE, telephone: '', statut: 'PARTICULIER', entreprise_id: null, poste: '' } },
+])('$titre ($us)', ({ titre, chemin, le, Le, id, corps }) => {
   const panneau = () => screen.queryByRole('dialog', { name: titre })
   const posts = (fetch) => fetch.mock.calls.filter(([url, o]) => url.endsWith(chemin) && o?.method === 'POST')
   const ouvrir = () => {
@@ -89,7 +95,8 @@ describe.each([
     await ouvrirPanneau()
     fireEvent.click(bouton('Enregistrer'))
     const p = within(panneau())
-    expect(p.getByRole('alert').textContent).toBe(`Corrigez les champs indiqués pour enregistrer ${le}.`)
+    if (le) expect(p.getByRole('alert').textContent).toBe(`Corrigez les champs indiqués pour enregistrer ${le}.`)
+    else expect(p.queryByRole('alert')).toBeNull()
     expect(p.getByText('Indiquez le prénom.')).toBeTruthy()
     expect(p.getByText('Indiquez le nom.')).toBeTruthy()
     expect(p.getByText("Indiquez l'e-mail.")).toBeTruthy()
@@ -105,7 +112,7 @@ describe.each([
     await ouvrirPanneau()
     remplir({ email: 'camille.leroy' })
     fireEvent.click(bouton('Enregistrer'))
-    expect(document.getElementById('pa-email-err').textContent).toBe("Format d'e-mail invalide")
+    expect(document.getElementById(`${id}-email-err`).textContent).toBe("Format d'e-mail invalide")
     expect(posts(fetch)).toHaveLength(0)
   })
 
@@ -116,7 +123,7 @@ describe.each([
     fireEvent.click(bouton('Enregistrer'))
     expect((await screen.findByRole('status')).textContent).toBe(`${Le} « Camille Leroy » a été créé. Vous pouvez maintenant l’ajouter à une session.`)
     expect(panneau()).toBeNull()
-    expect(JSON.parse(posts(fetch)[0][1].body)).toEqual({ prenom: 'Camille', nom: 'Leroy', email: 'camille.leroy@exemple.fr' })
+    expect(JSON.parse(posts(fetch)[0][1].body)).toEqual(corps)
   })
 
   it('affiche les erreurs renvoyées par le serveur', async () => {
@@ -125,7 +132,7 @@ describe.each([
     await ouvrirPanneau()
     remplir()
     fireEvent.click(bouton('Enregistrer'))
-    await waitFor(() => expect(document.getElementById('pa-email-err').textContent).toBe("Format d'e-mail invalide"))
+    await waitFor(() => expect(document.getElementById(`${id}-email-err`).textContent).toBe("Format d'e-mail invalide"))
     reponse = repondre(500, null)
     fireEvent.click(bouton('Enregistrer'))
     await waitFor(() => expect(within(panneau()).getByRole('alert').textContent).toBe('Certaines informations sont invalides.'))

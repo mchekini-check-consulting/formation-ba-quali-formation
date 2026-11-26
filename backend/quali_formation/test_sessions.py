@@ -40,7 +40,8 @@ class SessionsPlanningTests(TestCase):
         self.assertEqual(set(formateurs[0]), {'id', 'prenom', 'nom', 'email', 'specialites', 'entreprise'})
         apprenants = self.client.get('/apprenants/').json()
         self.assertEqual(len(apprenants), 8)
-        self.assertEqual(set(apprenants[0]), {'id', 'prenom', 'nom', 'email', 'entreprise'})
+        self.assertEqual(set(apprenants[0]), {'id', 'prenom', 'nom', 'email', 'telephone', 'statut', 'entreprise',
+                                              'entreprise_id', 'poste', 'nombre_sessions'})
         # Apprenants d'exemple rattachés à l'entreprise Acme (migration 0009)
         self.assertEqual({a['entreprise'] for a in apprenants}, {'Acme'})
 
@@ -151,6 +152,7 @@ class CreationApprenantTests(TestCase):
         self.compte = connecter(self.client)
 
     def poster(self, **corps):
+        corps.setdefault('statut', 'PARTICULIER')  # obligatoire depuis SCRUM-112
         return self.client.post('/apprenants/', corps, content_type='application/json')
 
     def test_cree_un_apprenant_nettoye(self):
@@ -163,9 +165,10 @@ class CreationApprenantTests(TestCase):
         self.assertIn('lucas.girard@acme.fr', [a['email'] for a in self.client.get('/apprenants/').json()])
 
     def test_refuse_les_champs_obligatoires_vides(self):
-        reponse = self.poster(prenom=' ', nom='')
+        reponse = self.poster(prenom=' ', nom='', statut='')
         self.assertEqual(reponse.status_code, 400)
-        self.assertEqual(reponse.json(), {'prenom': ['Indiquez le prénom.'], 'nom': ['Indiquez le nom.'], 'email': ["Indiquez l'e-mail."]})
+        self.assertEqual(reponse.json(), {'prenom': ['Indiquez le prénom.'], 'nom': ['Indiquez le nom.'], 'email': ["Indiquez l'e-mail."],
+                                          'statut': ['Le statut est obligatoire']})
         self.assertEqual(Apprenant.objects.count(), 8)
 
     def test_enregistre_l_entreprise(self):

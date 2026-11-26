@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import PanneauApprenant from '../apprenants/PanneauApprenant'
 import Icone from '../components/Icone'
 import { Modal } from '../components/Modal'
 import { verifierPersonne } from './regles'
@@ -50,9 +51,15 @@ function Champ({ id, label, erreur, children }) {
   )
 }
 
-// Panneau latéral « Nouveau formateur » (SCRUM-26) ou « Nouvel apprenant » (SCRUM-27).
+// Panneau latéral « Nouveau formateur » (SCRUM-26) ou « Nouvel apprenant » (SCRUM-27, complété par SCRUM-112).
 // « Annuler », la croix, Échap ou un clic à côté le ferment. onCree(personne) : appelé après l'enregistrement.
 export function PanneauPartiePrenante({ type, onFermer, onCree }) {
+  return type === 'apprenant'
+    ? <PanneauApprenant onFermer={onFermer} onCree={onCree} />
+    : <PanneauPersonne type={type} onFermer={onFermer} onCree={onCree} />
+}
+
+function PanneauPersonne({ type, onFermer, onCree }) {
   const t = PARTIES_PRENANTES[type]
   const [p, setP] = useState(VIDE)
   const [erreurs, setErreurs] = useState({})

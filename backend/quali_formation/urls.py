@@ -40,6 +40,8 @@ urlpatterns = [
     path('sessions/', views.sessions_planning),
     path('formateurs/', views.formateurs),
     path('apprenants/', views.apprenants),
+    # Entreprises clientes du centre (SCRUM-112)
+    path('entreprises/', views.entreprises),
     # Informations du centre à la première connexion (SCRUM-221)
     path('organisme/', views.organisme),
     # Recherche d'une entreprise par SIRET (service partagé : SCRUM-221, puis SCRUM-113)
