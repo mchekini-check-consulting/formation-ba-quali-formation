@@ -37,7 +37,8 @@ class SessionsPlanningTests(TestCase):
     def test_liste_les_formateurs_et_les_apprenants(self):
         formateurs = self.client.get('/formateurs/').json()
         self.assertEqual(len(formateurs), 4)
-        self.assertEqual(set(formateurs[0]), {'id', 'prenom', 'nom', 'email', 'specialites', 'entreprise'})
+        self.assertEqual(set(formateurs[0]), {'id', 'prenom', 'nom', 'email', 'specialites', 'entreprise', 'statut',
+                                              'numero_nda', 'nombre_sessions'})
         apprenants = self.client.get('/apprenants/').json()
         self.assertEqual(len(apprenants), 8)
         self.assertEqual(set(apprenants[0]), {'id', 'prenom', 'nom', 'email', 'telephone', 'statut', 'entreprise',
@@ -194,7 +195,8 @@ class CreationFormateurTests(TestCase):
         reponse = self.poster(prenom=' Camille ', nom=' Leroy ', email='camille.leroy@exemple.fr')
         self.assertEqual(reponse.status_code, 201)
         self.assertEqual(reponse.json(), {'id': reponse.json()['id'], 'prenom': 'Camille', 'nom': 'Leroy',
-                                          'email': 'camille.leroy@exemple.fr', 'specialites': '', 'entreprise': ''})
+                                          'email': 'camille.leroy@exemple.fr', 'specialites': '', 'entreprise': '',
+                                          'statut': '', 'numero_nda': '', 'nombre_sessions': 0})
         # Il est proposé à l'étape 2 de « Nouvelle session »
         self.assertIn('camille.leroy@exemple.fr', [f['email'] for f in self.client.get('/formateurs/').json()])
 

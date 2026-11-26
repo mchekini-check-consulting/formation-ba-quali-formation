@@ -19,7 +19,7 @@ function remplir({ prenom = 'Camille', nom = 'Leroy', email = 'camille.leroy@exe
   saisir('Nom', nom)
   saisir('E-mail', email)
   // Apprenant : statut obligatoire depuis SCRUM-112
-  const statut = screen.queryByLabelText(/^Statut/)
+  const statut = screen.queryByRole('combobox', { name: /^Statut/ })
   if (statut) fireEvent.change(statut, { target: { value: 'PARTICULIER' } })
 }
 // Remplit l'étape 1 de « Nouvelle session » et passe à l'étape suivante
@@ -36,11 +36,13 @@ async function allerEtape2() {
   fireEvent.click(bouton('Suivant'))
 }
 
-// Les mêmes critères d'acceptation pour SCRUM-26 (formateur) et SCRUM-27 (apprenant). Fenêtre « Nouvel apprenant »
-// complétée par SCRUM-112 (maquette : pas de bandeau « Corrigez les champs », téléphone, statut, entreprise, poste).
+// Les mêmes critères d'acceptation pour SCRUM-26 (formateur) et SCRUM-27 (apprenant). Fenêtres complétées par SCRUM-112
+// (apprenant : téléphone, statut, entreprise, poste) et SCRUM-119 (formateur : statut, NDA, documents) ; maquettes : pas de
+// bandeau « Corrigez les champs ».
 const IDENTITE = { prenom: 'Camille', nom: 'Leroy', email: 'camille.leroy@exemple.fr' }
 describe.each([
-  { us: 'SCRUM-26', titre: 'Nouveau formateur', chemin: '/formateurs/', le: 'le formateur', Le: 'Le formateur', id: 'pa', corps: IDENTITE },
+  { us: 'SCRUM-26', titre: 'Nouveau formateur', chemin: '/formateurs/', le: null, Le: 'Le formateur', id: 'frm',
+    corps: { ...IDENTITE, statut: '', numero_nda: '' } },
   { us: 'SCRUM-27', titre: 'Nouvel apprenant', chemin: '/apprenants/', le: null, Le: 'L’apprenant', id: 'app',
     corps: { ...IDENTITE, telephone: '', statut: 'PARTICULIER', entreprise_id: null, poste: '' } },
 ])('$titre ($us)', ({ titre, chemin, le, Le, id, corps }) => {

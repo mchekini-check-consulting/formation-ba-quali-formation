@@ -1,6 +1,7 @@
 """Règles de gestion du module Formations (RG01 à RG38), indépendantes de l'API pour être testées seules."""
 
 import re
+from pathlib import Path
 
 import mammoth
 import nh3
@@ -19,6 +20,7 @@ from quali_formation.models import (
     Apprenant,
     Entreprise,
     Formateur,
+    FormateurDocument,
     Formation,
     FormationHistorique,
     Item,
@@ -261,6 +263,13 @@ class FormationService:
 formation_service = FormationService()
 
 
+# SCRUM-119 : documents d'un formateur (CV, diplômes)
+FORMATS_DOCUMENT = ('pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx')
+TAILLE_MAX_DOCUMENT = 10 * 1024 * 1024
+MAX_CV = 1
+MAX_DIPLOMES = 5
+
+
 class SessionService:
     """Règles de gestion de Sessions et planning (SCRUM-25)."""
 
@@ -271,9 +280,19 @@ class SessionService:
                 .select_related('formation').prefetch_related('formateurs', 'apprenants'))
 
     @log_metier("service", champs=["resultat.taille"])
-    def lister_formateurs(self, utilisateur):
-        # SCRUM-221 : seulement les formateurs du centre (aucun tant que le centre n'est pas renseigné)
-        return Formateur.objects.filter(organisme_id=utilisateur.organisme_id) if utilisateur.organisme_id else Formateur.objects.none()
+    def lister_formateurs(self, utilisateur, recherche=''):
+        """Formateurs du centre (SCRUM-221 ; aucun tant que le centre n'est pas renseigné), triés par nom, avec leur
+        nombre de sessions (SCRUM-119). `recherche` : garde ceux dont le prénom et nom ou l'e-mail contient ce texte."""
+        if not utilisateur.organisme_id:
+            return Formateur.objects.none()
+        formateurs = (Formateur.objects.filter(organisme_id=utilisateur.organisme_id)
+                      .annotate(nombre_sessions=Count('sessions', distinct=True),
+                                nom_complet=Concat('prenom', Value(' '), 'nom'))
+                      .order_by(Lower('nom'), Lower('prenom'), 'id'))
+        recherche = (recherche or '').strip()
+        if recherche:
+            formateurs = formateurs.filter(Q(nom_complet__icontains=recherche) | Q(email__icontains=recherche))
+        return formateurs
 
     @log_metier("service", champs=["resultat.taille"])
     def lister_apprenants(self, utilisateur, recherche=''):
@@ -303,10 +322,39 @@ class SessionService:
                 message="La société {utilisateur.organisme.raison_sociale} a créé le formateur "
                         "n° {resultat.id} : création réussie",
                 message_echec="La société {utilisateur.organisme.raison_sociale} n'a pas pu créer de formateur")
-    def creer_formateur(self, utilisateur, prenom, nom, email, entreprise=''):
-        """Enregistre un formateur du centre (SCRUM-26) ; il est ensuite proposé à l'étape 2 de « Nouvelle session »."""
+    def creer_formateur(self, utilisateur, prenom, nom, email, entreprise='', statut='', numero_nda=''):
+        """Enregistre un formateur du centre (SCRUM-26) ; il est ensuite proposé à l'étape 2 de « Nouvelle session ».
+        SCRUM-119 : statut facultatif ; le NDA n'est gardé que pour un sous-traitant."""
+        if statut != Formateur.Statut.SOUS_TRAITANT:
+            numero_nda = ''
         return Formateur.objects.create(organisme=_organisme_requis(utilisateur), prenom=prenom, nom=nom,
-                                        email=email, entreprise=entreprise)
+                                        email=email, entreprise=entreprise, statut=statut, numero_nda=numero_nda)
+
+    def ajouter_document(self, utilisateur, formateur_id, type_document, fichier):
+        """SCRUM-119 : enregistre un document (CV ou diplôme) d'un formateur du centre, appelé pour chaque fichier
+        juste après sa création. PDF, JPG, PNG ou Word, 10 Mo au plus ; 1 CV et 5 diplômes au plus.
+        404 FORMATEUR_INTROUVABLE (absent ou d'un autre centre) ; 400 sinon, avec un message qui nomme le fichier."""
+        formateur = (Formateur.objects.filter(pk=formateur_id, organisme_id=utilisateur.organisme_id).first()
+                     if utilisateur.organisme_id else None)
+        if formateur is None:
+            raise ErreurMetier('FORMATEUR_INTROUVABLE', 'Formateur introuvable', 404)
+        if type_document not in FormateurDocument.Type.values:
+            raise ErreurMetier('TYPE_INVALIDE', 'Indiquez le type du document : CV ou DIPLOME.')
+        if fichier is None:
+            raise ErreurMetier('FICHIER_REQUIS', 'Ajoutez un fichier.')
+        nom = fichier.name[:255]
+        extension = Path(nom).suffix.lower().lstrip('.')
+        if extension not in FORMATS_DOCUMENT:
+            raise ErreurMetier('FORMAT_INVALIDE', f'« {nom} » refusé : format non accepté (PDF, JPG, PNG ou Word)')
+        if fichier.size > TAILLE_MAX_DOCUMENT:
+            raise ErreurMetier('FICHIER_TROP_VOLUMINEUX', f'« {nom} » refusé : plus de 10 Mo')
+        deja = formateur.documents.filter(type=type_document).count()
+        if type_document == FormateurDocument.Type.CV and deja >= MAX_CV:
+            raise ErreurMetier('CV_DEJA_PRESENT', f'« {nom} » refusé : 1 CV maximum')
+        if type_document == FormateurDocument.Type.DIPLOME and deja >= MAX_DIPLOMES:
+            raise ErreurMetier('TROP_DE_DIPLOMES', f'« {nom} » refusé : 5 diplômes maximum')
+        return FormateurDocument.objects.create(formateur=formateur, type=type_document, nom_fichier=nom,
+                                                format=extension, taille=fichier.size, contenu=fichier.read())
 
     @log_metier("service", champs=["resultat.id"])
     def creer_apprenant(self, utilisateur, prenom, nom, email, statut, entreprise='', telephone='',

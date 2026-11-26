@@ -6,9 +6,12 @@ export const FORMATIONS = [
   { id: 2, intitule: 'Management d’équipe — les fondamentaux', duree_heures: '21.00', modalite: 'PRESENTIEL' },
   { id: 3, intitule: 'Anglais professionnel', duree_heures: null, modalite: 'MIXTE' },
 ]
+// SCRUM-119 : triés par nom, avec statut, NDA et nombre de sessions
 export const FORMATEURS = [
-  { id: 1, prenom: 'Sarah', nom: 'Dubois', email: 'sarah.dubois@exemple.fr', specialites: 'Management, bureautique', entreprise: '' },
-  { id: 4, prenom: 'Julien', nom: 'Lefèvre', email: 'julien.lefevre@exemple.fr', specialites: 'Management', entreprise: 'Cap Conseil' },
+  { id: 1, prenom: 'Sarah', nom: 'Dubois', email: 'sarah.dubois@exemple.fr', specialites: 'Management, bureautique', entreprise: '',
+    statut: '', numero_nda: '', nombre_sessions: 3 },
+  { id: 4, prenom: 'Julien', nom: 'Lefèvre', email: 'julien.lefevre@exemple.fr', specialites: 'Management', entreprise: 'Cap Conseil',
+    statut: 'SALARIE', numero_nda: '', nombre_sessions: 1 },
 ]
 // SCRUM-112 : triés par nom, avec téléphone, statut, entreprise (cliente ou ancien texte), poste et nombre de sessions
 const apprenant = (id, prenom, nom, email, entreprise, autres = {}) => ({
@@ -23,10 +26,11 @@ export const APPRENANTS = [
 ]
 export const ENTREPRISES = [{ id: 7, raison_sociale: 'Société Durand' }, { id: 8, raison_sociale: 'Globex' }]
 
-// Même recherche que le backend : prénom et nom, e-mail ou entreprise, sans tenir compte des majuscules
-const rechercher = (personnes, texte) => {
+// Même recherche que le backend, sans tenir compte des majuscules : prénom et nom, e-mail, et entreprise pour un apprenant
+const rechercher = (personnes, texte, avecEntreprise) => {
   const r = texte.toLowerCase()
-  return personnes.filter((p) => [`${p.prenom} ${p.nom}`, p.email, p.entreprise].some((t) => (t || '').toLowerCase().includes(r)))
+  return personnes.filter((p) => [`${p.prenom} ${p.nom}`, p.email, avecEntreprise ? p.entreprise : '']
+    .some((t) => (t || '').toLowerCase().includes(r)))
 }
 export const SESSION_EXCEL = {
   id: 1, formation: 1, formation_intitule: 'Excel avancé', date_debut: '2026-11-18', date_fin: '2026-11-19', heure_debut: '09:00:00', heure_fin: '17:00:00',
@@ -38,22 +42,32 @@ export const repondre = (status, corps) => ({ ok: status < 400, status, json: as
 // reponsePost(corps) : réponse du POST /sessions/ (par défaut 201 avec la session créée)
 // reponsePersonne(corps) : réponse du POST /formateurs/ ou /apprenants/ (par défaut 201, ajouté à la liste)
 // entreprises : entreprises clientes du centre (GET /entreprises/, SCRUM-112)
-export function installerFauxBackend({ sessions = [SESSION_EXCEL], formations = FORMATIONS, entreprises = ENTREPRISES, reponsePost, reponsePersonne } = {}) {
+// reponseDocument(type, fichier) : réponse du POST /formateurs/<id>/documents/ (par défaut 201, SCRUM-119)
+export function installerFauxBackend({
+  sessions = [SESSION_EXCEL], formations = FORMATIONS, entreprises = ENTREPRISES, reponsePost, reponsePersonne, reponseDocument,
+} = {}) {
   const liste = [...sessions]
   const personnes = { '/formateurs/': [...FORMATEURS], '/apprenants/': [...APPRENANTS] }
   const fetch = vi.fn(async (url, options) => {
     const [chemin, requete] = url.replace(/^\/api/, '').split('?')
+    const documents = /^\/formateurs\/(\d+)\/documents\/$/.exec(chemin)
+    if (documents) {
+      const [type, fichier] = [options.body.get('type'), options.body.get('fichier')]
+      if (reponseDocument) return reponseDocument(type, fichier)
+      return repondre(201, { id: 1, type, nom_fichier: fichier.name, format: fichier.name.split('.').pop(), taille: fichier.size })
+    }
     if (options?.method === 'POST' && personnes[chemin]) {
       const corps = JSON.parse(options.body)
       if (reponsePersonne) return reponsePersonne(corps)
       const entreprise = entreprises.find((e) => e.id === corps.entreprise_id)?.raison_sociale || ''
       const cree = { specialites: '', ...corps, entreprise, id: 50, nombre_sessions: 0 }
+      if (chemin === '/formateurs/') cree.entreprise = ''
       personnes[chemin].push(cree)
       return repondre(201, cree)
     }
     if (chemin === '/entreprises/') return repondre(200, entreprises)
     const recherche = new URLSearchParams(requete).get('recherche')
-    if (recherche && personnes[chemin]) return repondre(200, rechercher(personnes[chemin], recherche))
+    if (recherche && personnes[chemin]) return repondre(200, rechercher(personnes[chemin], recherche, chemin === '/apprenants/'))
     if (options?.method === 'POST') {
       const corps = JSON.parse(options.body)
       if (reponsePost) return reponsePost(corps)

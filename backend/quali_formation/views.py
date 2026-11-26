@@ -17,6 +17,8 @@ from quali_formation.serializers import (
     ApprenantCreationSerializer,
     ApprenantSerializer,
     EntrepriseSerializer,
+    FormateurCreationSerializer,
+    FormateurDocumentSerializer,
     FormateurSerializer,
     FormationEcritureSerializer,
     FormationSerializer,
@@ -230,9 +232,25 @@ def _personnes(request, utilisateur, lister, creer, serializer, creation=Personn
 @log_metier("controller", champs=["resultat.id"])
 @_connexion_requise
 def formateurs(request, utilisateur):
-    """Formateurs du centre (création : SCRUM-26) ; 401 NON_CONNECTE."""
+    """Formateurs du centre (création : SCRUM-26 ; liste, recherche ?recherche=, statut et NDA : SCRUM-119) ;
+    401 NON_CONNECTE."""
+    filtres = {'recherche': request.query_params.get('recherche', '')} if request.method == 'GET' else {}
     return _personnes(request, utilisateur, session_service.lister_formateurs, session_service.creer_formateur,
-                      FormateurSerializer)
+                      FormateurSerializer, FormateurCreationSerializer, **filtres)
+
+
+@api_view(["POST"])
+@_connexion_requise
+def formateur_documents(request, utilisateur, pk):
+    """SCRUM-119 : POST /formateurs/<id>/documents/ (multipart : « fichier » et « type » CV ou DIPLOME), un fichier par
+    appel -> 201 le document enregistré (sans son contenu) ; 400 (format, taille, nombre), 401, 404. Pas de log
+    métier pour l'instant (à décider par la BA)."""
+    try:
+        document = session_service.ajouter_document(utilisateur, pk, request.data.get('type', ''),
+                                                    request.FILES.get('fichier'))
+    except ErreurMetier as e:
+        return _erreur(e)
+    return Response(FormateurDocumentSerializer(document).data, status=status.HTTP_201_CREATED)
 
 
 @api_view(["GET", "POST"])
