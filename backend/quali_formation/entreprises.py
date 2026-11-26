@@ -20,6 +20,7 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
+from quali_formation.formes_juridiques import CATEGORIES_JURIDIQUES
 from quali_formation.logging.log_metier import log_metier
 
 # Adresse de l'API, remplaçable par la variable d'environnement RECHERCHE_ENTREPRISES_URL (tests, autre fournisseur)
@@ -124,15 +125,22 @@ class RechercheEntreprises:
             raise ServiceEntreprisesIndisponible(_code_panne(e)) from e
 
 
-# Forme juridique : l'API donne le code INSEE de la catégorie juridique (4 chiffres) ; libellés courts des plus courantes
+# Forme juridique : l'API donne le code INSEE de la catégorie juridique (4 chiffres). Libellé court pour les formes
+# courantes, sinon libellé officiel INSEE (les 260 codes, formes_juridiques.py), sinon celui de la famille du code
 FORMES_JURIDIQUES = {'1000': 'Entrepreneur individuel', '5498': 'EURL', '5499': 'SARL', '5710': 'SAS', '5720': 'SASU',
                      '5202': 'SNC', '6540': 'SCI', '9220': 'Association'}
 FORMES_PAR_FAMILLE = {'54': 'SARL', '55': 'SA', '56': 'SA', '57': 'SAS', '65': 'Société civile', '92': 'Association'}
 
 
+LONGUEUR_MAX_FORME = 100  # taille du champ forme_juridique de la table entreprise
+
+
 def forme_juridique(code):
     code = str(code or '')
-    return FORMES_JURIDIQUES.get(code) or FORMES_PAR_FAMILLE.get(code[:2], '')
+    libelle = FORMES_JURIDIQUES.get(code) or CATEGORIES_JURIDIQUES.get(code) or FORMES_PAR_FAMILLE.get(code[:2], '')
+    if len(libelle) > LONGUEUR_MAX_FORME:  # 5 libellés INSEE trop longs : leur sigle officiel, donné entre parenthèses
+        libelle = libelle[libelle.rindex('(') + 1:-1]
+    return libelle
 
 
 def _fiche(entreprise, etab):

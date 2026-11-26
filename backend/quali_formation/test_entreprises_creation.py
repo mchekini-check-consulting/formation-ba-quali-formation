@@ -16,6 +16,7 @@ from quali_formation.entreprises import (
     forme_juridique,
     recherche_entreprises,
 )
+from quali_formation.formes_juridiques import CATEGORIES_JURIDIQUES
 from quali_formation.models import Entreprise
 from quali_formation.tests import connecter, creer_centre
 
@@ -99,8 +100,19 @@ class RechercheAnnuaireTests(SimpleTestCase):
             RechercheEntreprises(ouvrir).chercher('durand', UTILISATEUR)
 
     def test_formes_juridiques(self):
-        self.assertEqual([forme_juridique(c) for c in ('5710', '5720', '5499', '5485', '1000', '5599', '9999', None)],
-                         ['SAS', 'SASU', 'SARL', 'SARL', 'Entrepreneur individuel', 'SA', '', ''])
+        # Libellé court des formes courantes, sinon libellé officiel INSEE (ex. : SIRET 13002526500013, code 7120)
+        self.assertEqual([forme_juridique(c) for c in ('5710', '5720', '5499', '6540', '1000', '7120', '2110', '5599')],
+                         ['SAS', 'SASU', 'SARL', 'SCI', 'Entrepreneur individuel', "Service central d'un ministère",
+                          'Indivision entre personnes physiques', "SA à conseil d'administration (s.a.i.)"])
+        # Code hors nomenclature : libellé de sa famille, sinon vide
+        self.assertEqual([forme_juridique(c) for c in ('5799', '9999', None)], ['SAS', '', ''])
+
+    def test_toutes_les_formes_juridiques_ont_un_libelle_enregistrable(self):
+        self.assertEqual(len(CATEGORIES_JURIDIQUES), 260)
+        for code in CATEGORIES_JURIDIQUES:
+            self.assertTrue(len(code) == 4 and code.isdigit() and 0 < len(forme_juridique(code)) <= 100, code)
+        # Libellé trop long pour le champ : sigle officiel
+        self.assertEqual([forme_juridique(c) for c in ('5570', '5770')], ["SPFPL SA à conseil d'administration", 'SPFPL SAS'])
 
 
 class AnnuaireVueTests(TestCase):
