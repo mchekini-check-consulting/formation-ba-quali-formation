@@ -1,19 +1,19 @@
 """SCRUM-211 « Disposer de 4 modèles d'origine conformes à la réglementation » (RG1, RG3, RG12)."""
 
 import json
+from pathlib import Path
 
 from django.test import TestCase
 
 from quali_formation.models import ModeleGenerique, ModeleOrigine, TypeModele
 from quali_formation.services import (
-    FICHIER_VARIABLES,
     dictionnaire_variables,
     modele_service,
     variables_du_contenu,
 )
 from quali_formation.tests import connecter
 
-FICHIER_MODELES = FICHIER_VARIABLES.parent / 'modeles-origine.json'
+FICHIER_MODELES = Path(__file__).resolve().parent / 'donnees_modeles' / 'modeles-origine.json'
 MODELES_FICHIER = json.loads(FICHIER_MODELES.read_text(encoding='utf-8'))
 ORIGINE = ModeleGenerique.Statut.ORIGINE
 

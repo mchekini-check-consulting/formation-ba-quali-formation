@@ -1,4 +1,5 @@
 from functools import wraps
+from pathlib import Path
 
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -36,6 +37,7 @@ from quali_formation.services import (
     modele_service,
     organisme_service,
     session_service,
+    variable_service,
 )
 
 
@@ -332,11 +334,36 @@ def _ouvrir_modele(request, utilisateur, type_modele):
 def _modifier_modele(request, utilisateur, type_modele):
     """PUT /modeles/<type> {contenu} -> le modèle enregistré (PERSONNALISE) et nb_formations_utilisant /
     nb_formations (RG6) ; 400 CONTENU_INVALIDE, 401, 404. Journalisé par le service (jamais le contenu)."""
-    contenu = request.data.get('contenu') if isinstance(request.data, dict) else None
+    donnees = request.data if isinstance(request.data, dict) else {}
     try:
-        return Response(modele_service.modifier(utilisateur, type_modele, contenu))
+        return Response(modele_service.modifier(utilisateur, type_modele, donnees.get('contenu'),
+                                                donnees.get('nom_fichier_importe')))
     except ErreurMetier as e:
         return _erreur(e)
+
+
+@api_view(["POST"])
+@_connexion_requise
+def importer_modele(request, utilisateur, type_modele):
+    """SCRUM-215 : POST /modeles/<type>/import (multipart, champ « fichier ») -> {contenu, nom_fichier} : le .docx
+    converti pour l'éditeur, rien n'est enregistré (RG8) ; 400 FORMAT_INVALIDE / FICHIER_TROP_VOLUMINEUX /
+    FICHIER_ILLISIBLE, 401, 404. Journalisé par le service (sans le nom du fichier)."""
+    fichier = request.FILES.get('fichier')
+    nom = fichier.name if fichier is not None else ''
+    taille = fichier.size if fichier is not None else 0
+    try:
+        resultat = modele_service.importer_word(utilisateur, type_modele, fichier, Path(nom).suffix.lower(), taille)
+    except ErreurMetier as e:
+        return _erreur(e)
+    return Response({**resultat, 'nom_fichier': nom[:255]})
+
+
+@api_view(["GET"])
+@_connexion_requise
+def variables(request, utilisateur):
+    """SCRUM-214 : GET /variables/ -> [{code, libelle, categorie, exemple}] triées selon RG10 ; 401.
+    Simple lecture : pas de log métier."""
+    return Response(variable_service.lister())
 
 
 # ---- Créer un compte (SCRUM-15) et se connecter (SCRUM-16) ----

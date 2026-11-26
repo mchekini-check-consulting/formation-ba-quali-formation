@@ -32,7 +32,7 @@ class ConsulterModelesGeneriquesTests(TestCase):
         modeles = self.lister()['modeles']
         self.assertEqual([m['type'] for m in modeles], TYPES)
         for modele in modeles:
-            self.assertEqual(set(modele), {'type', 'nom', 'statut', 'contenu', 'date_maj', 'variables'})
+            self.assertEqual(set(modele), {'type', 'nom', 'statut', 'contenu', 'date_maj', 'nom_fichier_importe', 'variables'})
             # Miniature : le contenu réel du document et le libellé de ses variables
             self.assertEqual(modele['contenu'], ModeleOrigine.objects.get(type=modele['type']).contenu)
             self.assertTrue(modele['variables'], modele['type'])

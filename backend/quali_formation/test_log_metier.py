@@ -155,6 +155,50 @@ class LogMetierTests(SimpleTestCase):
             log_metier("vue")
 
 
+class Createur:
+    @log_metier("service", champs=["formule", "resultat.prix"],
+                message="La formule {formule} donne un prix de {resultat.prix}",
+                message_echec="La formule {formule} est sans prix")
+    def tarifer(self, formule):
+        if formule == "inconnue":
+            raise ErreurMetier("FORMULE_INCONNUE", "formule inconnue", 404)
+        return {"prix": 12}
+
+
+class MessageLisibleTests(SimpleTestCase):
+    def test_message_de_reussite_avec_les_champs(self):
+        with self.assertLogs("quali_formation.metier", level="INFO") as logs:
+            Createur().tarifer("confort")
+        (record,) = logs.records
+        self.assertEqual(record.getMessage(), "La formule confort donne un prix de 12")
+        # Les champs restent écrits à côté de la phrase (filtres Grafana)
+        self.assertEqual((record.layer, record.formule, getattr(record, "resultat.prix")),
+                         ("service", "confort", "12"))
+
+    def test_message_d_echec_sans_le_resultat(self):
+        with self.assertLogs("quali_formation.metier", level="INFO") as logs, self.assertRaises(ErreurMetier):
+            Createur().tarifer("inconnue")
+        (record,) = logs.records
+        self.assertEqual(record.getMessage(), "La formule inconnue est sans prix")
+        self.assertEqual((record.levelname, record.errorCode), ("WARNING", "FORMULE_INCONNUE"))
+
+    def test_trou_illisible_remplace_par_un_point_d_interrogation(self):
+        class SansValeur:
+            @log_metier("service", champs=["resultat.prix"], message="Prix : {resultat.prix}")
+            def tarifer(self):
+                return {}
+
+        with self.assertLogs("quali_formation.metier", level="INFO") as logs:
+            SansValeur().tarifer()
+        self.assertEqual(logs.records[0].getMessage(), "Prix : ?")
+
+    def test_refuse_un_trou_hors_champs_approuves_et_le_controller(self):
+        with self.assertRaisesRegex(ValueError, "trous absents des champs approuvés : formule"):
+            log_metier("service", champs=[], message="La formule {formule}")(lambda formule: formule)
+        with self.assertRaisesRegex(ValueError, "réservé aux couches service et db"):
+            log_metier("controller", champs=[], message="Une phrase")(lambda request: None)
+
+
 class ControleurTests(SimpleTestCase):
     def requete(self, chemin="/formations/7/"):
         requete = RequestFactory().post(chemin, {"action": "brouillon"}, content_type="application/json")

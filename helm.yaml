@@ -12,8 +12,8 @@ applications:
     # Garder une valeur par ligne, sans commentaire en fin de ligne : Kargo
     # remplace tout jusqu'à la fin de la ligne.
     tag:
-      dev: "5654507"
-      qualif: "5654507"
+      dev: cd840ed
+      qualif: c94b2dc
       preprod: ""
       prod: ""
     containerPort: 8000
@@ -64,8 +64,8 @@ applications:
     # Garder une valeur par ligne, sans commentaire en fin de ligne : Kargo
     # remplace tout jusqu'à la fin de la ligne.
     tag:
-      dev: "5654507"
-      qualif: "5654507"
+      dev: 2231e4b
+      qualif: 2231e4b
       preprod: ""
       prod: ""
     containerPort: 8080

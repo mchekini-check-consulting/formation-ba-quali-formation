@@ -334,3 +334,30 @@ class ModeleGenerique(models.Model):
     def __str__(self):
         return f'{self.type} ({self.statut})'
 
+
+
+class Variable(models.Model):
+    """Variable d'un modèle de document (SCRUM-214), écrite {{code}} dans le texte (RG9) et remplacée par la
+    vraie information à la génération du document. Liste du dictionnaire de données (variables.json)."""
+
+    class Categorie(models.TextChoices):  # RG10 : dans l'ordre d'affichage du panneau Variables
+        SESSION = 'Session'
+        FORMATION = 'Formation'
+        APPRENANT = 'Apprenant'
+        CLIENT = 'Client'
+        PRIX = 'Prix'
+        FIN_DE_FORMATION = 'Fin de formation'
+        DOCUMENT = 'Document'
+        ORGANISME = 'Organisme'
+
+    code = models.CharField(max_length=60, unique=True)
+    libelle = models.CharField(max_length=120)
+    categorie = models.CharField(max_length=20, choices=Categorie.choices)
+    ordre = models.PositiveSmallIntegerField()  # ordre dans sa catégorie
+    exemple = models.CharField(max_length=255, blank=True, default='')  # valeur de l'aperçu (SCRUM-214)
+
+    class Meta:
+        db_table = 'variable'
+
+    def __str__(self):
+        return self.code

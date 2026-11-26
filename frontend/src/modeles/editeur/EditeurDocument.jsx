@@ -1,6 +1,8 @@
 import { EditorContent, useEditor, useEditorState } from '@tiptap/react'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
+import { DocumentModele } from '../DocumentModele'
 import { depuisEditeur, extensionsEditeur, versEditeur } from './extensions'
+import { GLISSER_VARIABLE, PanneauVariables } from './PanneauVariables'
 
 // SCRUM-213 « Modifier un modèle dans l'éditeur » (maquette SCRUM-213-1) : barre de mise en forme et document A4.
 // Réutilisable : modèle générique (SCRUM-213) et modèle de la formation (SCRUM-219). Rien n'est enregistré ici
@@ -50,6 +52,7 @@ const ALIGNEMENTS = [
   { valeur: 'justify', libelle: 'Justifier', icone: 'justifie' },
 ]
 const HEXA = /^#[0-9a-f]{6}$/i
+const CODE = /^[A-Za-z0-9_]+$/
 
 function etatBarre({ editor: e }) {
   let style = 'p'
@@ -65,7 +68,8 @@ function etatBarre({ editor: e }) {
   }
 }
 
-function BarreMiseEnForme({ editor }) {
+// Pendant l'aperçu (SCRUM-214), les outils sont inactifs : le document n'est pas modifiable
+function BarreMiseEnForme({ editor, apercu, onApercu }) {
   const etat = useEditorState({ editor, selector: etatBarre })
   const suite = () => editor.chain().focus()
   const choisirStyle = (valeur) => {
@@ -74,6 +78,7 @@ function BarreMiseEnForme({ editor }) {
   }
   return (
     <div className="edt-barre" role="toolbar" aria-label="Mise en forme">
+      <fieldset className="edt-outils" disabled={apercu}>
       <Bouton libelle="Annuler" raccourci="Ctrl+Z" icone="annuler" inactif={!etat.annuler} action={() => suite().undo().run()} />
       <Bouton libelle="Rétablir" raccourci="Ctrl+Y" icone="retablir" inactif={!etat.retablir} action={() => suite().redo().run()} />
       <span className="edt-sep" aria-hidden="true" />
@@ -103,25 +108,64 @@ function BarreMiseEnForme({ editor }) {
       <span className="edt-sep" aria-hidden="true" />
       <Bouton libelle="Effacer la mise en forme" icone="effacer"
         action={() => suite().unsetAllMarks().clearNodes().unsetTextAlign().run()} />
+      </fieldset>
+      <label className="edt-apercu-case">
+        <input type="checkbox" checked={apercu} onChange={(e) => onApercu(e.target.checked)} />
+        Aperçu avec des données d’exemple
+      </label>
     </div>
   )
 }
 
-// `contenu` : HTML du modèle ({{code}} pour les variables) ; `variables` : [{ code, libelle }] pour les étiquettes.
+// SCRUM-214 (CA2) : une variable du panneau lâchée dans le document s'insère à l'endroit du lâcher
+function lacherVariable(view, event) {
+  const code = event.dataTransfer?.getData(GLISSER_VARIABLE)
+  if (!CODE.test(code || '')) return false
+  event.preventDefault()
+  const position = view.posAtCoords({ left: event.clientX, top: event.clientY })
+  if (!position) return true
+  view.dispatch(view.state.tr.insert(position.pos, view.state.schema.nodes.variable.create({ code })))
+  view.focus()
+  return true
+}
+
+// `contenu` : HTML du modèle ({{code}} pour les variables) ; `variables` : [{ code, libelle }] des variables du
+// document ; `catalogue` : [{ code, libelle, categorie, exemple }] (GET /variables/), affiché dans le panneau
+// Variables quand il est fourni (SCRUM-214) ; `avantPanneau` : contenu au-dessus du panneau.
 // Le contenu n'est lu qu'à l'ouverture : pour un autre document, changer la `key` du composant.
-export function EditeurDocument({ contenu, variables = [], onModification, nom = 'Document' }) {
-  const libelles = useMemo(() => Object.fromEntries(variables.map((v) => [v.code, v.libelle])), [variables])
+export function EditeurDocument({ contenu, variables = [], catalogue, avantPanneau, onModification, nom = 'Document' }) {
+  // Libellé de chaque variable : le dictionnaire, sinon celui reçu avec le document ; inconnue : son code
+  const libelles = useMemo(() => Object.fromEntries([...variables, ...(catalogue || [])].map((v) => [v.code, v.libelle])),
+    [variables, catalogue])
+  const [apercu, setApercu] = useState(false)
   const editor = useEditor({
     extensions: extensionsEditeur(libelles),
     content: versEditeur(contenu),
-    editorProps: { attributes: { class: 'doc-feuille edt-feuille', role: 'textbox', 'aria-multiline': 'true', 'aria-label': nom } },
+    editorProps: {
+      attributes: { class: 'doc-feuille edt-feuille', role: 'textbox', 'aria-multiline': 'true', 'aria-label': nom },
+      handleDrop: lacherVariable,
+    },
     onUpdate: ({ editor: e }) => onModification?.(depuisEditeur(e.getHTML())),
   }, [])
   if (!editor) return null
+  // RG9 : l'aperçu affiche les exemples sans jamais les écrire dans le document
+  const exemples = (catalogue || []).map((v) => ({ code: v.code, libelle: v.exemple || v.libelle }))
+  const inserer = (code) => editor.chain().focus().insertContent({ type: 'variable', attrs: { code } }).run()
   return (
-    <div className="edt">
-      <BarreMiseEnForme editor={editor} />
-      <div className="doc-zone edt-zone"><EditorContent editor={editor} /></div>
+    <div className="mod-editeur">
+      <div className="edt">
+        <BarreMiseEnForme editor={editor} apercu={apercu} onApercu={setApercu} />
+        <div className="doc-zone edt-zone" hidden={apercu}><EditorContent editor={editor} /></div>
+        {apercu && (
+          <div className="doc-zone edt-zone edt-apercu">
+            <DocumentModele contenu={depuisEditeur(editor.getHTML())} variables={exemples} nom={`${nom} (aperçu)`} />
+          </div>
+        )}
+      </div>
+      <aside className="mod-variables" aria-label="Variables">
+        {avantPanneau}
+        {catalogue && <PanneauVariables variables={catalogue} onInserer={inserer} inactif={apercu} />}
+      </aside>
     </div>
   )
 }
