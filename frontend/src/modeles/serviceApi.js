@@ -56,6 +56,18 @@ export const obtenirOrigine = (type) => lire(`/modeles/${encodeURIComponent(type
 export const retablirOrigine = (type) => lire(`/modeles/${encodeURIComponent(type)}/reinitialiser`, { method: 'POST' })
 export const MESSAGE_RETABLI = 'Modèle d’origine rétabli. Les modèles de la formation déjà créés ne changent pas.'
 
+// SCRUM-218 : GET /modeles/<type>/formations -> { disponibles, deja_crees : [{ id, intitule }] } (hors archivées)
+export const formationsPourDuplication = (type) => lire(`/modeles/${encodeURIComponent(type)}/formations`)
+
+// SCRUM-218 : POST /formations/<id>/modeles/<type>/ { contenu, nom_fichier_importe? } -> 201 le modèle de la formation ;
+// 409 MODELE_FORMATION_EXISTANT si elle a déjà le sien (RG16)
+export const creerModeleFormation = (formation, type, contenu, nomFichierImporte = null) => lire(
+  `/formations/${encodeURIComponent(formation)}/modeles/${encodeURIComponent(type)}/`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(nomFichierImporte ? { contenu, nom_fichier_importe: nomFichierImporte } : { contenu }),
+  })
+export const messageCreationFormation = (intitule) => `Modèle de la formation « ${intitule} » créé. Il remplace le modèle générique pour les sessions de cette formation.`
+
 // SCRUM-216 : GET /modeles/<type>/export.docx -> la dernière version ENREGISTRÉE en Word (variables {{code}}, RG9)
 export const adresseExportWord = (type) => `/modeles/${encodeURIComponent(type)}/export.docx`
 export const nomFichierWord = (nom) => `Modèle - ${nom}.docx`

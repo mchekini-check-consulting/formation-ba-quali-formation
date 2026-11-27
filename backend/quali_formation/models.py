@@ -394,6 +394,25 @@ class ModeleGenerique(models.Model):
         return f'{self.type} ({self.statut})'
 
 
+class ModeleFormation(models.Model):
+    """Modèle de la formation (SCRUM-218) : copie d'un modèle générique faite pour une formation, puis indépendante
+    (RG17 : les modifications futures du modèle générique ne s'y appliquent pas). RG16 : au plus un par document."""
+
+    formation = models.ForeignKey(Formation, on_delete=models.CASCADE, related_name='modeles')
+    type = models.CharField(max_length=12, choices=TypeModele.choices)
+    contenu = models.TextField()  # HTML, variables {{code}} (RG9)
+    nom_fichier_importe = models.CharField(max_length=255, null=True, blank=True)
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_maj = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'modele_formation'
+        constraints = (models.UniqueConstraint(fields=('formation', 'type'), name='modele_formation_formation_type'),)
+
+    def __str__(self):
+        return f'{self.type} ({self.formation_id})'
+
+
 
 class Variable(models.Model):
     """Variable d'un modèle de document (SCRUM-214), écrite {{code}} dans le texte (RG9) et remplacée par la

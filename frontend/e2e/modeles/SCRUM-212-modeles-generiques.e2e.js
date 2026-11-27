@@ -17,7 +17,7 @@ test('un nouveau compte voit ses 4 modèles génériques et ouvre la convocation
     const carte = page.getByRole('article', { name: nom })
     await expect(carte.getByRole('link', { name: `Ouvrir ${nom}` }).locator('.doc-variable').first()).toBeAttached()
     await expect(carte).toContainText('Modèle d’origine')
-    await expect(carte.getByRole('button', { name: 'Dupliquer' })).toBeDisabled()
+    await expect(carte.getByRole('button', { name: 'Dupliquer' })).toBeEnabled() // SCRUM-218
     await expect(carte.getByRole('button', { name: /Rétablir/ })).toHaveCount(0)
   }
 

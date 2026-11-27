@@ -26,6 +26,7 @@ from quali_formation.models import (
     Formation,
     FormationHistorique,
     Item,
+    ModeleFormation,
     ModeleGenerique,
     ModeleOrigine,
     Organisme,
@@ -525,6 +526,31 @@ def variables_du_contenu(contenu):
     return list(dict.fromkeys(VARIABLE.findall(contenu)))
 
 
+def _verifier_contenu(contenu, nom_fichier_importe):
+    """RG12 : aucun contrôle ni blocage sur le contenu (mentions légales, variables) ; seulement un texte lisible
+    de taille raisonnable."""
+    if not isinstance(contenu, str):
+        raise ContenuModeleInvalide('Le document envoyé est vide ou illisible.')
+    if len(contenu) > TAILLE_MAX_CONTENU:
+        raise ContenuModeleInvalide('Le document est trop volumineux pour être enregistré.')
+    if nom_fichier_importe is not None and not isinstance(nom_fichier_importe, str):
+        raise ContenuModeleInvalide('Le nom du document importé est illisible.')
+
+
+class ModeleFormationExistant(ErreurMetier):
+    """409 : la formation a déjà son modèle pour ce document (RG16, SCRUM-218)."""
+
+    def __init__(self):
+        super().__init__('MODELE_FORMATION_EXISTANT', 'Cette formation a déjà son modèle pour ce document.', 409)
+
+
+class FormationArchivee(ErreurMetier):
+    """400 : une formation archivée ne reçoit plus de nouveau modèle (RG27)."""
+
+    def __init__(self):
+        super().__init__('FORMATION_ARCHIVEE', 'Cette formation est archivée : elle ne peut plus recevoir de modèle.')
+
+
 class ModeleService:
     """Modèles de documents (épic Modèles SCRUM-125). Le modèle d'origine n'est jamais écrit (RG3) : un compte
     utilise son modèle générique s'il en a un, sinon le modèle d'origine (statut ORIGINE)."""
@@ -575,12 +601,7 @@ class ModeleService:
         origine = ModeleOrigine.objects.filter(type=str(type_modele).upper()).first()
         if origine is None:
             raise ModeleIntrouvable()
-        if not isinstance(contenu, str):
-            raise ContenuModeleInvalide('Le document envoyé est vide ou illisible.')
-        if len(contenu) > TAILLE_MAX_CONTENU:
-            raise ContenuModeleInvalide('Le document est trop volumineux pour être enregistré.')
-        if nom_fichier_importe is not None and not isinstance(nom_fichier_importe, str):
-            raise ContenuModeleInvalide('Le nom du document importé est illisible.')
+        _verifier_contenu(contenu, nom_fichier_importe)
         existant = ModeleGenerique.objects.filter(proprietaire=utilisateur, type=origine.type).first()
         if nom_fichier_importe:
             statut, nom_fichier = ModeleGenerique.Statut.IMPORTE, nom_fichier_importe[:255]
@@ -635,6 +656,48 @@ class ModeleService:
             raise ModeleIntrouvable()
         ModeleGenerique.objects.filter(proprietaire=utilisateur, type=origine.type).delete()
         return self._decrire(origine, None, dictionnaire_variables())
+
+    def formations_pour_duplication(self, utilisateur, type_modele):
+        """SCRUM-218 : fenêtre « Dupliquer » : les formations de l'organisme sans modèle pour ce document
+        (`disponibles`, seules proposées, RG16) et celles qui en ont déjà un (`deja_crees`), hors archivées (RG27)."""
+        origine = ModeleOrigine.objects.filter(type=str(type_modele).upper()).first()
+        if origine is None:
+            raise ModeleIntrouvable()
+        formations = formations_visibles(utilisateur).exclude(statut=Formation.Statut.ARCHIVEE).order_by('intitule', 'id')
+        avec_modele = set(ModeleFormation.objects.filter(formation__in=formations, type=origine.type)
+                          .values_list('formation_id', flat=True))
+        resultat = {'disponibles': [], 'deja_crees': []}
+        for f in formations:
+            resultat['deja_crees' if f.pk in avec_modele else 'disponibles'].append({'id': f.pk, 'intitule': f.intitule})
+        return resultat
+
+    @log_metier("service", champs=[CHAMP_ORGANISME, "formation_id", CHAMP_TYPE_MODELE],
+                message="Modèle de la formation créé")
+    def creer_modele_formation(self, utilisateur, formation_id, type_modele, contenu, nom_fichier_importe=None):
+        """SCRUM-218 : « Enregistrer » le nouveau modèle de la formation (RG8 : rien n'est créé avant). RG17 : le
+        contenu envoyé part du modèle générique, puis il est indépendant. RG16 : 409 si la formation a déjà le sien.
+        404 : formation d'un autre organisme ou document inconnu."""
+        formation = formations_visibles(utilisateur).filter(pk=formation_id).first()
+        if formation is None:
+            raise FormationIntrouvable()
+        origine = ModeleOrigine.objects.filter(type=str(type_modele).upper()).first()
+        if origine is None:
+            raise ModeleIntrouvable()
+        if formation.statut == Formation.Statut.ARCHIVEE:
+            raise FormationArchivee()
+        _verifier_contenu(contenu, nom_fichier_importe)
+        if ModeleFormation.objects.filter(formation=formation, type=origine.type).exists():
+            raise ModeleFormationExistant()
+        try:
+            with transaction.atomic():
+                modele = ModeleFormation.objects.create(formation=formation, type=origine.type, contenu=contenu,
+                                                        nom_fichier_importe=nom_fichier_importe[:255] if nom_fichier_importe else None)
+        except IntegrityError as exc:  # deux créations en même temps : la contrainte d'unicité tranche (RG16)
+            raise ModeleFormationExistant() from exc
+        return {'id': modele.pk, 'formation': {'id': formation.pk, 'intitule': formation.intitule},
+                'type': modele.type, 'nom': origine.nom, 'statut': 'FORMATION', 'contenu': modele.contenu,
+                'nom_fichier_importe': modele.nom_fichier_importe, 'date_creation': modele.date_creation,
+                'date_maj': modele.date_maj}
 
     def formations_utilisant(self, utilisateur, type_modele):
         """RG6 : (formations qui utilisent le modèle générique de ce type, formations du compte), hors archivées.
