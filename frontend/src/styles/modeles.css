@@ -165,3 +165,6 @@
 .mod-vide h2{margin:0;font-size:15px;font-weight:700;color:var(--ink)}
 .mod-vide p{margin:0;max-width:420px;font-size:13px;color:var(--ink-3)}
 .mod-vide-texte{color:var(--ink-3)}
+/* SCRUM-219 RG18 bis : mention calculée sous le statut d'un modèle de la formation */
+.mod-mention{display:block;margin-top:6px;font-size:12.5px;color:var(--ink-3)}
+.mod-mention-different{color:var(--warn)}

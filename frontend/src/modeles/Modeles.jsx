@@ -14,7 +14,7 @@ import { BoutonImportWord } from './editeur/BoutonImportWord'
 import {
   adresseExportWord, adresseExportWordFormation, creerModeleFormation, dossierFormation, enregistrerModele,
   enregistrerModeleFormation, formationsPourDuplication, importerWord, listerModeles, listerModelesParFormation,
-  listerVariables, MESSAGE_GENERIQUE_RETABLI, messageCreationFormation, messageEnregistrementFormation, messageEnregistrement,
+  listerVariables, messageCreationFormation, messageGeneriqueRetabli, messageEnregistrementFormation, messageEnregistrement,
   nomFichierWord, obtenirModele, obtenirModeleFormation, resumeModeles, retablirGenerique, STATUTS, telechargerWord,
 } from './serviceApi'
 import '../styles/modeles.css'
@@ -374,8 +374,6 @@ export function ModeleFormationNouveau() {
 // SCRUM-219 (maquette SCRUM-219-1) : « Modèles par formation » : un dossier par formation de l'organisme (hors
 // archivées), avec « N modèle(s) de la formation » ou « Modèles génériques appliqués »
 const chargerParFormation = () => listerModelesParFormation()
-// Ordre des documents (RG2, comme les modèles génériques)
-const ORDRE_DOCUMENTS = ['CONVENTION', 'CONTRAT', 'CONVOCATION', 'ATTESTATION']
 
 export function ModelesParFormation() {
   const { donnee, erreur } = useChargement(chargerParFormation)
@@ -395,7 +393,8 @@ export function ModelesParFormation() {
   return <DossierModeles titre="Modèles par formation">{contenu}</DossierModeles>
 }
 
-// SCRUM-219 (maquette SCRUM-219-3) : « Rétablir le modèle générique ? » (RG19) ; « Annuler » ne change rien
+// SCRUM-219 (maquette SCRUM-219-3) : « Rétablir le modèle générique ? » ; « Annuler » ne change rien. RG19 (décision BA
+// du 2026-11-27) : le contenu est remplacé par le modèle générique actuel, le modèle reste dans le dossier
 function ConfirmerRetablirGenerique({ formation, modele, onAnnuler, onRetabli }) {
   const [envoi, setEnvoi] = useState(false)
   const [erreur, setErreur] = useState(null)
@@ -403,8 +402,7 @@ function ConfirmerRetablirGenerique({ formation, modele, onAnnuler, onRetabli })
     setEnvoi(true)
     setErreur(null)
     try {
-      await retablirGenerique(formation.id, modele.type)
-      onRetabli()
+      onRetabli(await retablirGenerique(formation.id, modele.type))
     } catch (e) {
       setErreur(e.message)
       setEnvoi(false)
@@ -415,7 +413,7 @@ function ConfirmerRetablirGenerique({ formation, modele, onAnnuler, onRetabli })
       <dialog open className="mod-fenetre mod-dup" aria-modal="true" aria-labelledby="mod-rg-titre">
         <div className="mod-dup-corps">
           <h2 id="mod-rg-titre">Rétablir le modèle générique ?</h2>
-          <p>Le modèle de la formation « {formation.intitule} » ({modele.nom.toLowerCase()}) sera supprimé. La formation utilisera de nouveau le modèle générique. Les documents déjà générés ne sont pas modifiés.</p>
+          <p>Le contenu du modèle de la formation « {formation.intitule} » ({modele.nom.toLowerCase()}) sera remplacé par le modèle générique actuel. Le modèle reste dans le dossier de la formation. Les documents déjà générés ne sont pas modifiés.</p>
           {erreur && <p className="mod-erreur" role="alert">{erreur}</p>}
         </div>
         <footer className="mod-fenetre-pied">
@@ -428,7 +426,9 @@ function ConfirmerRetablirGenerique({ formation, modele, onAnnuler, onRetabli })
 }
 
 // SCRUM-219 (maquettes SCRUM-219-2/4) : dossier d'une formation : ses modèles de la formation (RG18 : statut
-// « Modèle de la formation », lien « Rétablir le modèle générique »), puis « Modèle générique appliqué : … ».
+// « Modèle de la formation » ; RG18 bis : « Identique au modèle générique » ou « Différent du modèle générique », et
+// lien « Rétablir le modèle générique » seulement si différent — écart voulu avec les maquettes), puis
+// « Modèle générique appliqué : … ».
 // Aucun bouton « Dupliquer » ici (RG14). RG7 : un clic sur un modèle l'ouvre directement dans l'éditeur.
 export function DossierFormation() {
   const { formation: id } = useParams()
@@ -437,13 +437,11 @@ export function DossierFormation() {
   const charger = useCallback(() => dossierFormation(id), [id])
   const { donnee, erreur } = useChargement(charger)
   const [aRetablir, setARetablir] = useState(null)
-  // Documents rétablis depuis l'ouverture du dossier : leur carte disparaît, ils passent dans « Modèle générique appliqué »
-  const [retablis, setRetablis] = useState([])
+  // Modèles rétablis depuis l'ouverture du dossier (par type) : la carte reste, avec le contenu du modèle générique
+  const [retablis, setRetablis] = useState({})
   if (!donnee) return <PageEnChargement erreur={erreur} texte="Chargement du dossier…" />
-  const { formation } = donnee
-  const modeles = donnee.modeles.filter((m) => !retablis.includes(m.type))
-  const appliques = [...donnee.generiques_appliques, ...donnee.modeles.filter((m) => retablis.includes(m.type))]
-    .sort((x, y) => ORDRE_DOCUMENTS.indexOf(x.type) - ORDRE_DOCUMENTS.indexOf(y.type))
+  const { formation, generiques_appliques: appliques } = donnee
+  const modeles = donnee.modeles.map((m) => retablis[m.type] || m)
   return (
     <div className="wrap modeles">
       <div className="page-head"><h1>Modèles</h1></div>
@@ -462,9 +460,14 @@ export function DossierFormation() {
             <div className="mod-grille">
               {modeles.map((m) => (
                 <CarteDocument key={m.type} modele={m} lien={`/modeles/formations/${formation.id}/${m.type.toLowerCase()}`}>
-                  <div className="mod-modele-actions">
-                    <button type="button" className="mod-retablir" onClick={() => setARetablir(m)}>Rétablir le modèle générique</button>
-                  </div>
+                  <span className={`mod-mention ${m.identique_generique ? 'mod-mention-identique' : 'mod-mention-different'}`}>
+                    {m.identique_generique ? 'Identique au modèle générique' : 'Différent du modèle générique'}
+                  </span>
+                  {!m.identique_generique && (
+                    <div className="mod-modele-actions">
+                      <button type="button" className="mod-retablir" onClick={() => setARetablir(m)}>Rétablir le modèle générique</button>
+                    </div>
+                  )}
                 </CarteDocument>
               ))}
             </div>
@@ -474,7 +477,11 @@ export function DossierFormation() {
         )}
       {aRetablir && (
         <ConfirmerRetablirGenerique formation={formation} modele={aRetablir} onAnnuler={() => setARetablir(null)}
-          onRetabli={() => { setRetablis((r) => [...r, aRetablir.type]); setARetablir(null); toast(MESSAGE_GENERIQUE_RETABLI) }} />
+          onRetabli={(retabli) => {
+            setRetablis((r) => ({ ...r, [retabli.type]: retabli }))
+            setARetablir(null)
+            toast(messageGeneriqueRetabli(formation.intitule))
+          }} />
       )}
     </div>
   )

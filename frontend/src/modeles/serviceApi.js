@@ -86,9 +86,10 @@ export const enregistrerModeleFormation = (formation, type, contenu, nomFichierI
 })
 export const messageEnregistrementFormation = (intitule) => `Document enregistré pour la formation « ${intitule} ».`
 
-// SCRUM-219 : DELETE /formations/<id>/modeles/<type>/ -> 204 ; la formation utilise de nouveau le modèle générique (RG19)
-export const retablirGenerique = (formation, type) => lire(adresseModeleFormation(formation, type), { method: 'DELETE' })
-export const MESSAGE_GENERIQUE_RETABLI = 'Modèle générique rétabli pour cette formation.'
+// SCRUM-219 : POST /formations/<id>/modeles/<type>/reinitialiser -> le modèle de la formation, dont le contenu est
+// maintenant celui du modèle générique actuel (RG19) ; il reste dans le dossier de la formation
+export const retablirGenerique = (formation, type) => lire(`${adresseModeleFormation(formation, type)}reinitialiser`, { method: 'POST' })
+export const messageGeneriqueRetabli = (intitule) => `Modèle générique rétabli pour la formation « ${intitule} ».`
 
 // SCRUM-219 : GET /formations/<id>/modeles/<type>/export.docx -> le modèle de la formation enregistré en Word
 export const adresseExportWordFormation = (formation, type) => `${adresseModeleFormation(formation, type)}export.docx`

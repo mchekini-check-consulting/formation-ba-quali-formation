@@ -67,8 +67,10 @@ urlpatterns = [
     path('modeles/<str:type_modele>/formations', views.formations_pour_duplication),
     path('formations/<int:pk>/modeles/<str:type_modele>/', views.modele_formation),
     # Modèles de la formation (SCRUM-219) : liste « Modèles par formation », dossier d'une formation, modèle de la
-    # formation (GET / PUT / DELETE ci-dessus) et son téléchargement en Word
+    # formation (GET / PUT ci-dessus), « Rétablir le modèle générique » (RG19 : contenu remplacé par le modèle
+    # générique actuel) et téléchargement en Word
     path('formations/<int:pk>/modeles/', views.dossier_formation),
+    path('formations/<int:pk>/modeles/<str:type_modele>/reinitialiser', views.retablir_modele_formation),
     path('formations/<int:pk>/modeles/<str:type_modele>/export.docx', views.exporter_modele_formation),
     # Variables du panneau de l'éditeur (SCRUM-214) : GET /variables/
     path('variables/', views.variables),
