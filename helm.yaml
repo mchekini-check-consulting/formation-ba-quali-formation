@@ -13,7 +13,7 @@ applications:
     # remplace tout jusqu'à la fin de la ligne.
     tag:
       dev: e3837fd
-      qualif: a6bc87b
+      qualif: e3837fd
       preprod: ""
       prod: ""
     containerPort: 8000
@@ -65,7 +65,7 @@ applications:
     # remplace tout jusqu'à la fin de la ligne.
     tag:
       dev: e3837fd
-      qualif: a6bc87b
+      qualif: e3837fd
       preprod: ""
       prod: ""
     containerPort: 8080
