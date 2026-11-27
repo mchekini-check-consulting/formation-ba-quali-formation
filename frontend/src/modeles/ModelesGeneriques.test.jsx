@@ -62,8 +62,8 @@ describe('Modèles génériques (SCRUM-212)', () => {
     const convocation = await carte('Convocation')
     expect(within(convocation).getByText('Mon document').className).toContain('mod-statut-importe')
     for (const c of [convention, convocation]) {
-      // Visible, inactif tant que SCRUM-217 n'est pas faite
-      expect(within(c).getByRole('button', { name: 'Rétablir le modèle d’origine' }).disabled).toBe(true)
+      // Actif depuis SCRUM-217
+      expect(within(c).getByRole('button', { name: 'Rétablir le modèle d’origine' }).disabled).toBe(false)
     }
   })
 

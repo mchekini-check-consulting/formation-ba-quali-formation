@@ -430,6 +430,28 @@ def exporter_modele(request, utilisateur, type_modele):
 
 @api_view(["GET"])
 @_connexion_requise
+def modele_origine(request, utilisateur, type_modele):
+    """SCRUM-217 : GET /modeles/<type>/origine -> le modèle d'origine en lecture seule (contenu, variables) ;
+    401, 404. Simple lecture : pas de log métier."""
+    try:
+        return Response(modele_service.origine(type_modele))
+    except ErreurMetier as e:
+        return _erreur(e)
+
+
+@api_view(["POST"])
+@_connexion_requise
+def retablir_modele(request, utilisateur, type_modele):
+    """SCRUM-217 : POST /modeles/<type>/reinitialiser -> le modèle rétabli (statut ORIGINE) ; 401, 404.
+    Journalisé par le service (« Modèle générique rétabli »)."""
+    try:
+        return Response(modele_service.retablir(utilisateur, type_modele))
+    except ErreurMetier as e:
+        return _erreur(e)
+
+
+@api_view(["GET"])
+@_connexion_requise
 def variables(request, utilisateur):
     """SCRUM-214 : GET /variables/ -> [{code, libelle, categorie, exemple}] triées selon RG10 ; 401.
     Simple lecture : pas de log métier."""

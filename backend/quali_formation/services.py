@@ -617,6 +617,25 @@ class ModeleService:
             champs_log[CHAMP_ORGANISME] = str(utilisateur.organisme_id)
         return fichier_word(modele['contenu'], modele['nom'], champs_log)
 
+    def origine(self, type_modele):
+        """SCRUM-217 : le modèle d'origine (lecture seule), avec le libellé de chacune de ses variables."""
+        origine = ModeleOrigine.objects.filter(type=str(type_modele).upper()).first()
+        if origine is None:
+            raise ModeleIntrouvable()
+        return self._decrire(origine, None, dictionnaire_variables())
+
+    @log_metier("service", champs=[CHAMP_ORGANISME, CHAMP_TYPE_MODELE], message="Modèle générique rétabli")
+    def retablir(self, utilisateur, type_modele):
+        """SCRUM-217 : « Rétablir le modèle d'origine », après confirmation dans la fenêtre (RG5, RG8 : sans passer
+        par « Enregistrer »). Le modèle générique du compte est supprimé : le compte utilise de nouveau le modèle
+        d'origine (statut ORIGINE, plus de document importé) et les formations sans leur propre modèle aussi (RG6).
+        RG5 : les modèles de la formation (SCRUM-218) ne sont jamais touchés."""
+        origine = ModeleOrigine.objects.filter(type=str(type_modele).upper()).first()
+        if origine is None:
+            raise ModeleIntrouvable()
+        ModeleGenerique.objects.filter(proprietaire=utilisateur, type=origine.type).delete()
+        return self._decrire(origine, None, dictionnaire_variables())
+
     def formations_utilisant(self, utilisateur, type_modele):
         """RG6 : (formations qui utilisent le modèle générique de ce type, formations du compte), hors archivées.
         Tant que les modèles de la formation n'existent pas (SCRUM-219), toutes l'utilisent."""

@@ -6,6 +6,7 @@ import Icone from '../components/Icone'
 import { useToast } from '../components/toastContext'
 import { pluriel } from '../formations/catalogue'
 import { DocumentModele } from './DocumentModele'
+import { FenetreOrigine } from './FenetreOrigine'
 import { EditeurDocument } from './editeur/EditeurDocument'
 import { BoutonImportWord } from './editeur/BoutonImportWord'
 import {
@@ -86,10 +87,13 @@ export function DossierModeles({ titre, children }) {
 }
 
 // SCRUM-212 : carte d'un modèle générique (maquette SCRUM-212-1) : miniature du vrai document (« Ouvrir » au survol),
-// nom avec son repère de couleur, statut (RG4), « Rétablir le modèle d'origine » si modifié (SCRUM-217) et
-// « Dupliquer » (SCRUM-218), visibles mais inactifs tant que ces US ne sont pas faites.
+// nom avec son repère de couleur, statut (RG4), « Rétablir le modèle d'origine » si modifié (SCRUM-217 : fenêtre
+// du modèle d'origine, statut mis à jour après rétablissement) et « Dupliquer » (SCRUM-218), visible mais inactif.
 // RG7 : un clic sur la miniature ou le nom ouvre directement le modèle (éditeur : SCRUM-213).
-function CarteModele({ modele }) {
+function CarteModele({ modele: initial }) {
+  const navigate = useNavigate()
+  const [modele, setModele] = useState(initial)
+  const [fenetre, setFenetre] = useState(false)
   const lien = `/modeles/generiques/${modele.type.toLowerCase()}`
   return (
     <article className="mod-modele" aria-label={modele.nom}>
@@ -104,10 +108,14 @@ function CarteModele({ modele }) {
         <span className={`mod-statut-pastille mod-statut-${modele.statut.toLowerCase()}`}>{STATUTS[modele.statut] || modele.statut}</span>
         <div className="mod-modele-actions">
           {modele.statut !== 'ORIGINE'
-            && <button type="button" className="mod-retablir" disabled title="Bientôt disponible">Rétablir le modèle d’origine</button>}
+            && <button type="button" className="mod-retablir" onClick={() => setFenetre(true)}>Rétablir le modèle d’origine</button>}
           <button type="button" className="btn btn-line btn-sm" disabled title="Bientôt disponible">Dupliquer</button>
         </div>
       </div>
+      {fenetre && (
+        <FenetreOrigine modele={modele} onFermer={() => setFenetre(false)} onPersonnaliser={() => navigate(lien)}
+          onRetabli={(retabli) => { setModele(retabli); setFenetre(false) }} />
+      )}
     </article>
   )
 }
@@ -129,7 +137,8 @@ export function ModelesGeneriques() {
 
 // SCRUM-213 (maquettes SCRUM-213-1/2) : le modèle générique dans l'éditeur. RG8 : rien n'est envoyé avant
 // « Enregistrer » ; « ← Retour » quitte sans rien envoyer. RG3 : seul le modèle générique du compte est écrit.
-// Inactif en attendant son US : Voir le modèle d'origine (217).
+// SCRUM-217 : « Voir le modèle d'origine » ouvre la fenêtre du modèle d'origine ; après rétablissement, l'éditeur
+// affiche le modèle d'origine (modifications non enregistrées perdues : l'utilisateur a confirmé).
 // SCRUM-215 : guide affiché après un import Word (maquette SCRUM-215-1), fermé par « J'ai compris »
 function GuideImport({ onFermer }) {
   return (
@@ -166,6 +175,11 @@ function EditeurModeleGenerique({ modele, catalogue }) {
   const [nonEnregistre, setNonEnregistre] = useState(false)
   const [confirmerExport, setConfirmerExport] = useState(false)
   const [telechargement, setTelechargement] = useState(false)
+  // SCRUM-217 : dernière version enregistrée (statut, document importé) pour la fenêtre du modèle d'origine
+  const [enregistre, setEnregistre] = useState(modele)
+  const [variables, setVariables] = useState(modele.variables)
+  // Fenêtre ouverte : { maVersion } = le document affiché dans l'éditeur au moment de l'ouverture
+  const [fenetreOrigine, setFenetreOrigine] = useState(null)
 
   function importe({ contenu: html, nomFichier }) {
     contenu.current = html
@@ -198,7 +212,9 @@ function EditeurModeleGenerique({ modele, catalogue }) {
     setEnvoi(true)
     setErreur(null)
     try {
-      toast(messageEnregistrement(await enregistrerModele(modele.type, contenu.current, importAEnregistrer)))
+      const resultat = await enregistrerModele(modele.type, contenu.current, importAEnregistrer)
+      setEnregistre(resultat)
+      toast(messageEnregistrement(resultat))
       setImportAEnregistrer(null)
       setNonEnregistre(false)
     } catch (e) {
@@ -206,6 +222,19 @@ function EditeurModeleGenerique({ modele, catalogue }) {
     } finally {
       setEnvoi(false)
     }
+  }
+
+  // Modèle d'origine rétabli : l'éditeur repart du modèle d'origine, sans document importé ni modification en cours
+  function retabli(origine) {
+    contenu.current = origine.contenu
+    setAffiche((d) => ({ contenu: origine.contenu, cle: d.cle + 1 }))
+    setVariables(origine.variables)
+    setEnregistre(origine)
+    setFichierImporte(null)
+    setImportAEnregistrer(null)
+    setGuide(false)
+    setNonEnregistre(false)
+    setFenetreOrigine(null)
   }
 
   return (
@@ -219,7 +248,7 @@ function EditeurModeleGenerique({ modele, catalogue }) {
             onClick={() => (nonEnregistre ? setConfirmerExport(true) : telecharger())}>
             {telechargement ? 'Téléchargement…' : 'Télécharger en Word'}
           </button>
-          <button type="button" className="btn btn-line" disabled title="Bientôt disponible">Voir le modèle d’origine</button>
+          <button type="button" className="btn btn-line" onClick={() => setFenetreOrigine({ maVersion: contenu.current })}>Voir le modèle d’origine</button>
           <button type="button" className="btn btn-primary" onClick={enregistrer} disabled={envoi}>Enregistrer</button>
         </div>
         {erreur && <p className="mod-erreur" role="alert">{erreur}</p>}
@@ -230,8 +259,12 @@ function EditeurModeleGenerique({ modele, catalogue }) {
           action="Télécharger quand même" icone="alert" fondIcone="var(--warn-soft)" couleurIcone="var(--warn)"
           onAnnuler={() => setConfirmerExport(false)} onOk={telecharger} />
       )}
+      {fenetreOrigine && (
+        <FenetreOrigine modele={{ ...modele, ...enregistre, nom: modele.nom, variables }} maVersion={fenetreOrigine.maVersion}
+          onFermer={() => setFenetreOrigine(null)} onRetabli={retabli} />
+      )}
       {guide && <GuideImport onFermer={() => setGuide(false)} />}
-      <EditeurDocument key={affiche.cle} contenu={affiche.contenu} variables={modele.variables} catalogue={catalogue}
+      <EditeurDocument key={affiche.cle} contenu={affiche.contenu} variables={variables} catalogue={catalogue}
         nom={modele.nom} onModification={(html) => { contenu.current = html; setNonEnregistre(true) }}
         avantPanneau={(
           <>

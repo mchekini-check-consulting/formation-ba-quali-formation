@@ -49,6 +49,13 @@ export function importerWord(type, fichier) {
   return lire(`/modeles/${encodeURIComponent(type)}/import`, { method: 'POST', body: formulaire })
 }
 
+// SCRUM-217 : GET /modeles/<type>/origine -> le modèle d'origine en lecture seule { type, nom, statut, contenu, variables }
+export const obtenirOrigine = (type) => lire(`/modeles/${encodeURIComponent(type)}/origine`)
+
+// SCRUM-217 : POST /modeles/<type>/reinitialiser -> le modèle rétabli (statut ORIGINE), sans passer par « Enregistrer » (RG8)
+export const retablirOrigine = (type) => lire(`/modeles/${encodeURIComponent(type)}/reinitialiser`, { method: 'POST' })
+export const MESSAGE_RETABLI = 'Modèle d’origine rétabli. Les modèles de la formation déjà créés ne changent pas.'
+
 // SCRUM-216 : GET /modeles/<type>/export.docx -> la dernière version ENREGISTRÉE en Word (variables {{code}}, RG9)
 export const adresseExportWord = (type) => `/modeles/${encodeURIComponent(type)}/export.docx`
 export const nomFichierWord = (nom) => `Modèle - ${nom}.docx`
