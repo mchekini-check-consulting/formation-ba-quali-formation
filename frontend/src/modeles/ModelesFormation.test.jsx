@@ -4,13 +4,13 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { routes } from '../App'
 
 // SCRUM-219 « Consulter et rétablir les modèles d'une formation » (RG7, RG14, RG18, RG19) : GET /modeles/formations/,
-// GET /formations/<id>/modeles/, GET / PUT / DELETE /formations/<id>/modeles/<type>/ simulés, compte connecté
+// GET /formations/<id>/modeles/, GET / PUT /formations/<id>/modeles/<type>/ et POST .../reinitialiser simulés
 const VARIABLES = [{ code: 'apprenant_nom', libelle: 'Nom' }]
 const CATALOGUE = [{ code: 'apprenant_nom', libelle: 'Nom', categorie: 'Apprenant', exemple: 'Martin' }]
 const EXCEL = { id: 7, intitule: 'Excel intermédiaire' }
 const AGILE = { id: 8, intitule: 'Gestion de projet agile' }
 const CONVOCATION = {
-  id: 1, formation: EXCEL, type: 'CONVOCATION', nom: 'Convocation', statut: 'FORMATION', nom_fichier_importe: null,
+  id: 1, formation: EXCEL, type: 'CONVOCATION', nom: 'Convocation', statut: 'FORMATION', nom_fichier_importe: null, identique_generique: false,
   contenu: '<h1>CONVOCATION EXCEL</h1><p>Bonjour {{apprenant_nom}}</p>', variables: VARIABLES,
 }
 const GENERIQUE = { type: 'CONVOCATION', nom: 'Convocation', statut: 'PERSONNALISE', contenu: '<h1>CONVOCATION GÉNÉRIQUE</h1>', variables: [] }
@@ -18,7 +18,10 @@ const AUTRES = [{ type: 'CONVENTION', nom: 'Convention de formation' }, { type: 
   { type: 'ATTESTATION', nom: 'Attestation de fin de formation' }]
 const ok = (json, status = 200) => ({ ok: status < 400, status, json: async () => json })
 
-function simulerBackend({ modele = CONVOCATION, supprimer = () => ({ ok: true, status: 204, json: async () => null }), enregistrer } = {}) {
+// RG19 : « Rétablir » renvoie le modèle de la formation avec le contenu du modèle générique actuel
+const RETABLI = { ...CONVOCATION, contenu: '<h1>CONVOCATION GÉNÉRIQUE</h1>', variables: [], identique_generique: true }
+
+function simulerBackend({ modele = CONVOCATION, retablir = () => ok(RETABLI), enregistrer } = {}) {
   const fetchMock = vi.fn(async (url, options = {}) => {
     if (url.endsWith('/auth/moi')) return ok({ id: 1, email: 'camille@organisme.fr' })
     if (url.endsWith('/variables/')) return ok(CATALOGUE)
@@ -28,8 +31,8 @@ function simulerBackend({ modele = CONVOCATION, supprimer = () => ({ ok: true, s
     if (url.endsWith('/formations/7/modeles/')) return ok({ formation: EXCEL, modeles: [modele], generiques_appliques: AUTRES })
     if (url.endsWith('/formations/8/modeles/')) return ok({ formation: AGILE, modeles: [], generiques_appliques: [...AUTRES, { type: 'CONVOCATION', nom: 'Convocation' }] })
     if (url.endsWith('/formations/99/modeles/')) return ok({ code: 'FORMATION_INTROUVABLE', detail: 'Formation introuvable' }, 404)
+    if (url.endsWith('/formations/7/modeles/CONVOCATION/reinitialiser') && options.method === 'POST') return retablir()
     if (url.endsWith('/formations/7/modeles/CONVOCATION/')) {
-      if (options.method === 'DELETE') return supprimer()
       if (options.method === 'PUT') return enregistrer ? enregistrer() : ok({ ...modele, contenu: JSON.parse(options.body).contenu })
       return ok(modele)
     }
@@ -104,6 +107,21 @@ describe('Modèles par formation (SCRUM-219)', () => {
     await waitFor(() => expect(router.state.location.pathname).toBe('/modeles/generiques'))
   })
 
+  it('RG18 bis : modèle différent du modèle générique : mention « Différent du modèle générique » et lien « Rétablir »', async () => {
+    const { carte } = await ouvrirDossier()
+    expect(within(carte).getByText('Différent du modèle générique').className).toContain('mod-mention-different')
+    expect(within(carte).queryByText('Identique au modèle générique')).toBeNull()
+    expect(within(carte).getByRole('button', { name: 'Rétablir le modèle générique' })).toBeTruthy()
+  })
+
+  it('RG18 bis : modèle identique au modèle générique : mention « Identique au modèle générique », pas de lien « Rétablir »', async () => {
+    const { carte } = await ouvrirDossier({ modele: { ...CONVOCATION, identique_generique: true } })
+    expect(within(carte).getByText('Modèle de la formation')).toBeTruthy()
+    expect(within(carte).getByText('Identique au modèle générique')).toBeTruthy()
+    expect(within(carte).queryByText('Différent du modèle générique')).toBeNull()
+    expect(within(carte).queryByRole('button', { name: 'Rétablir le modèle générique' })).toBeNull()
+  })
+
   it('CA2 / RG18 : carte « Modèle de la formation » et phrase avec les 3 autres documents ; pas de « Dupliquer » (RG14)', async () => {
     const { carte } = await ouvrirDossier()
     expect(within(carte).getByText('Modèle de la formation').className).toContain('mod-statut-formation')
@@ -121,39 +139,47 @@ describe('Modèles par formation (SCRUM-219)', () => {
     expect(screen.queryByRole('dialog')).toBeNull()
   })
 
-  it('CA4 / RG19 : « Rétablir le modèle générique » + confirmation : DELETE, la carte disparaît, le document passe dans la phrase', async () => {
+  it('CA4 / RG19 : « Rétablir le modèle générique » + confirmation : la carte reste, avec le contenu du modèle générique actuel', async () => {
     const { fetchMock, carte } = await ouvrirDossier()
     fireEvent.click(within(carte).getByRole('button', { name: 'Rétablir le modèle générique' }))
     const fenetre = await screen.findByRole('dialog', { name: 'Rétablir le modèle générique ?' })
-    expect(within(fenetre).getByText('Le modèle de la formation « Excel intermédiaire » (convocation) sera supprimé. La formation utilisera de nouveau le modèle générique. Les documents déjà générés ne sont pas modifiés.')).toBeTruthy()
+    expect(within(fenetre).getByText('Le contenu du modèle de la formation « Excel intermédiaire » (convocation) sera remplacé par le modèle générique actuel. Le modèle reste dans le dossier de la formation. Les documents déjà générés ne sont pas modifiés.')).toBeTruthy()
+    expect(within(fenetre).getByRole('button', { name: 'Annuler' })).toBeTruthy()
     fireEvent.click(within(fenetre).getByRole('button', { name: 'Rétablir le modèle générique' }))
-    expect(await screen.findByText('Modèle générique rétabli pour cette formation.')).toBeTruthy()
-    await waitFor(() => expect(screen.queryByRole('article', { name: 'Convocation' })).toBeNull())
-    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(await screen.findByText('Modèle générique rétabli pour la formation « Excel intermédiaire ».')).toBeTruthy()
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    // La carte reste « Modèle de la formation », sa miniature montre le modèle générique
+    const apres = screen.getByRole('article', { name: 'Convocation' })
+    expect(within(apres).getByText('Modèle de la formation')).toBeTruthy()
+    expect(within(apres).getByText('CONVOCATION GÉNÉRIQUE')).toBeTruthy()
+    expect(within(apres).queryByText('CONVOCATION EXCEL')).toBeNull()
+    // RG18 bis : maintenant identique au modèle générique, le lien « Rétablir » disparaît
+    expect(within(apres).getByText('Identique au modèle générique').className).toContain('mod-mention-identique')
+    expect(within(apres).queryByRole('button', { name: 'Rétablir le modèle générique' })).toBeNull()
+    expect(screen.getByText('Modèle générique appliqué : Convention de formation, Contrat de formation, Attestation de fin de formation.')).toBeTruthy()
     const [[adresse, options]] = ecritures(fetchMock)
-    expect(adresse).toMatch(/\/formations\/7\/modeles\/CONVOCATION\/$/)
-    expect(options.method).toBe('DELETE')
-    // Dernière carte rétablie : le dossier est vide
-    expect(screen.getByRole('heading', { name: 'Aucun modèle de la formation' })).toBeTruthy()
+    expect(adresse).toMatch(/\/formations\/7\/modeles\/CONVOCATION\/reinitialiser$/)
+    expect(options.method).toBe('POST')
   })
 
-  it('CA4 : avec d’autres modèles, le document rétabli rejoint « Modèle générique appliqué » dans l’ordre des documents', async () => {
+  it('CA4 : avec d’autres modèles, seul le document rétabli change', async () => {
     const fetchMock = simulerBackend()
-    const contrat = { ...CONVOCATION, id: 2, type: 'CONTRAT', nom: 'Contrat de formation' }
+    const contrat = { ...CONVOCATION, id: 2, type: 'CONTRAT', nom: 'Contrat de formation', contenu: '<h1>CONTRAT EXCEL</h1>' }
     fetchMock.mockImplementation(async (url, options = {}) => {
       if (url.endsWith('/auth/moi')) return ok({ id: 1, email: 'camille@organisme.fr' })
       if (url.endsWith('/formations/7/modeles/')) {
         return ok({ formation: EXCEL, modeles: [contrat, CONVOCATION], generiques_appliques: [AUTRES[0], AUTRES[2]] })
       }
-      if (options.method === 'DELETE') return { ok: true, status: 204, json: async () => null }
+      if (options.method === 'POST') return ok(RETABLI)
       return ok([])
     })
     afficher('/modeles/formations/7')
     const carte = await screen.findByRole('article', { name: 'Convocation' })
     fireEvent.click(within(carte).getByRole('button', { name: 'Rétablir le modèle générique' }))
     fireEvent.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Rétablir le modèle générique' }))
-    expect(await screen.findByText('Modèle générique appliqué : Convention de formation, Convocation, Attestation de fin de formation.')).toBeTruthy()
-    expect(screen.getByRole('article', { name: 'Contrat de formation' })).toBeTruthy()
+    await waitFor(() => expect(within(screen.getByRole('article', { name: 'Convocation' })).getByText('CONVOCATION GÉNÉRIQUE')).toBeTruthy())
+    expect(within(screen.getByRole('article', { name: 'Contrat de formation' })).getByText('CONTRAT EXCEL')).toBeTruthy()
+    expect(screen.getByText('Modèle générique appliqué : Convention de formation, Attestation de fin de formation.')).toBeTruthy()
   })
 
   it('CA5 : « Annuler » ne modifie rien', async () => {
@@ -166,12 +192,12 @@ describe('Modèles par formation (SCRUM-219)', () => {
   })
 
   it('échec du rétablissement : message dans la fenêtre, la carte reste', async () => {
-    const { carte } = await ouvrirDossier({ supprimer: () => ok({ code: 'ERREUR', detail: 'Le modèle n’a pas pu être rétabli.' }, 500) })
+    const { carte } = await ouvrirDossier({ retablir: () => ok({ code: 'ERREUR', detail: 'Le modèle n’a pas pu être rétabli.' }, 500) })
     fireEvent.click(within(carte).getByRole('button', { name: 'Rétablir le modèle générique' }))
     const fenetre = await screen.findByRole('dialog')
     fireEvent.click(within(fenetre).getByRole('button', { name: 'Rétablir le modèle générique' }))
     expect((await within(fenetre).findByRole('alert')).textContent).toBe('Le modèle n’a pas pu être rétabli.')
-    expect(screen.getByRole('article', { name: 'Convocation' })).toBeTruthy()
+    expect(within(screen.getByRole('article', { name: 'Convocation' })).getByText('CONVOCATION EXCEL')).toBeTruthy()
   })
 
   it('formation d’un autre organisme (404) : message', async () => {

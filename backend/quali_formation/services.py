@@ -16,6 +16,7 @@ from django.utils import timezone
 from rest_framework.exceptions import APIException
 
 from quali_formation.blocs import blocs_manquants
+from quali_formation.comparaison import meme_document
 from quali_formation.logging.log_metier import log_metier
 from quali_formation.logging.loggable import error_fields
 from quali_formation.models import (
@@ -689,7 +690,7 @@ class ModeleService:
                                                         nom_fichier_importe=nom_fichier_importe[:255] if nom_fichier_importe else None)
         except IntegrityError as exc:  # deux créations en même temps : la contrainte d'unicité tranche (RG16)
             raise ModeleFormationExistant() from exc
-        return self._decrire_formation(origine, modele, dictionnaire_variables())
+        return self._decrire_formation(utilisateur, origine, modele, dictionnaire_variables())
 
     # ---- Modèles de la formation (SCRUM-219) ----
 
@@ -712,13 +713,21 @@ class ModeleService:
             raise ModeleIntrouvable()
         return formation, origine, modele
 
-    @staticmethod
-    def _decrire_formation(origine, modele, dictionnaire):
-        """Un modèle de la formation (RG18 : statut FORMATION), avec le libellé de chacune de ses variables."""
+    def _contenu_generique(self, utilisateur, origine, generiques=None):
+        """Contenu ACTUEL du modèle générique du compte pour ce document : sa version personnalisée ou importée,
+        sinon le modèle d'origine."""
+        generique = (self._modeles_du_compte(utilisateur) if generiques is None else generiques).get(origine.type)
+        return generique.contenu if generique is not None else origine.contenu
+
+    def _decrire_formation(self, utilisateur, origine, modele, dictionnaire, generiques=None):
+        """Un modèle de la formation (RG18 : statut FORMATION), avec le libellé de chacune de ses variables.
+        RG18 bis (décision BA du 2026-11-27) : `identique_generique`, calculé (pas enregistré) : même document à l'écran
+        que le modèle générique actuel (comparaison du texte nettoyé, comparaison.py)."""
         return {'id': modele.pk, 'formation': {'id': modele.formation_id, 'intitule': modele.formation.intitule},
                 'type': modele.type, 'nom': origine.nom, 'statut': 'FORMATION', 'contenu': modele.contenu,
                 'nom_fichier_importe': modele.nom_fichier_importe, 'date_creation': modele.date_creation,
                 'date_maj': modele.date_maj,
+                'identique_generique': meme_document(modele.contenu, self._contenu_generique(utilisateur, origine, generiques)),
                 'variables': [{'code': c, 'libelle': dictionnaire.get(c, c)} for c in variables_du_contenu(modele.contenu)]}
 
     def formations_avec_modeles(self, utilisateur):
@@ -737,15 +746,17 @@ class ModeleService:
         origines = {m.type: m for m in ModeleOrigine.objects.all()}
         siens = {m.type: m for m in ModeleFormation.objects.filter(formation=formation).select_related('formation')}
         dictionnaire = dictionnaire_variables()
+        generiques = self._modeles_du_compte(utilisateur)
         types = [t for t in TypeModele.values if t in origines]
         return {'formation': {'id': formation.pk, 'intitule': formation.intitule},
-                'modeles': [self._decrire_formation(origines[t], siens[t], dictionnaire) for t in types if t in siens],
+                'modeles': [self._decrire_formation(utilisateur, origines[t], siens[t], dictionnaire, generiques)
+                            for t in types if t in siens],
                 'generiques_appliques': [{'type': t, 'nom': origines[t].nom} for t in types if t not in siens]}
 
     def obtenir_modele_formation(self, utilisateur, formation_id, type_modele):
         """SCRUM-219 : un modèle de la formation pour l'éditeur (RG7) ; 404 si la formation n'en a pas pour ce document."""
         _, origine, modele = self._modele_formation(utilisateur, formation_id, type_modele)
-        return self._decrire_formation(origine, modele, dictionnaire_variables())
+        return self._decrire_formation(utilisateur, origine, modele, dictionnaire_variables())
 
     @log_metier("service", champs=[CHAMP_ORGANISME, "formation_id", CHAMP_TYPE_MODELE],
                 message="Modèle de la formation modifié")
@@ -758,15 +769,20 @@ class ModeleService:
         if nom_fichier_importe:
             modele.nom_fichier_importe = nom_fichier_importe[:255]
         modele.save()
-        return self._decrire_formation(origine, modele, dictionnaire_variables())
+        return self._decrire_formation(utilisateur, origine, modele, dictionnaire_variables())
 
     @log_metier("service", champs=[CHAMP_ORGANISME, "formation_id", CHAMP_TYPE_MODELE],
-                message="Modèle de la formation rétabli (supprimé)")
+                message="Modèle de la formation rétabli")
     def retablir_generique(self, utilisateur, formation_id, type_modele):
-        """SCRUM-219 : « Rétablir le modèle générique », après confirmation (RG19) : le modèle de la formation est
-        supprimé, la formation utilise de nouveau le modèle générique. RG22 : les documents déjà générés ne changent pas."""
-        _, _, modele = self._modele_formation(utilisateur, formation_id, type_modele)
-        modele.delete()
+        """SCRUM-219 : « Rétablir le modèle générique », après confirmation (RG19, décision BA du 2026-11-27) : le contenu
+        du modèle de la formation est remplacé par le contenu ACTUEL du modèle générique du compte (sa version
+        personnalisée ou importée, sinon le modèle d'origine) ; le modèle reste dans le dossier de la formation et le nom
+        du fichier importé est effacé. RG22 : les documents déjà générés ne changent pas."""
+        _, origine, modele = self._modele_formation(utilisateur, formation_id, type_modele)
+        modele.contenu = self._contenu_generique(utilisateur, origine)
+        modele.nom_fichier_importe = None
+        modele.save()
+        return self._decrire_formation(utilisateur, origine, modele, dictionnaire_variables())
 
     def exporter_word_formation(self, utilisateur, formation_id, type_modele):
         """SCRUM-219 : le modèle de la formation ENREGISTRÉ en .docx (même générateur que SCRUM-216, RG9)."""

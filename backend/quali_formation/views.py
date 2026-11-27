@@ -480,7 +480,7 @@ def dossier_formation(request, utilisateur, pk):
         return _erreur(e)
 
 
-@api_view(["GET", "POST", "PUT", "DELETE"])
+@api_view(["GET", "POST", "PUT"])
 @_connexion_requise
 def modele_formation(request, utilisateur, pk, type_modele):
     """Un modèle de la formation : /formations/<id>/modeles/<type>/
@@ -488,7 +488,6 @@ def modele_formation(request, utilisateur, pk, type_modele):
     - POST (SCRUM-218) {contenu, nom_fichier_importe?} : 201 le modèle créé ; 400 CONTENU_INVALIDE /
       FORMATION_ARCHIVEE, 401, 404, 409 MODELE_FORMATION_EXISTANT.
     - PUT (SCRUM-219) {contenu, nom_fichier_importe?} : 200 le modèle enregistré ; 400, 401, 404.
-    - DELETE (SCRUM-219, RG19) : 204, la formation utilise de nouveau le modèle générique ; 401, 404.
     Créations, modifications et suppressions journalisées par le service (jamais le contenu)."""
     contenu, nom_fichier = request.data.get('contenu'), request.data.get('nom_fichier_importe')
     try:
@@ -497,10 +496,19 @@ def modele_formation(request, utilisateur, pk, type_modele):
             return Response(modele, status=status.HTTP_201_CREATED)
         if request.method == 'PUT':
             return Response(modele_service.modifier_modele_formation(utilisateur, pk, type_modele, contenu, nom_fichier))
-        if request.method == 'DELETE':
-            modele_service.retablir_generique(utilisateur, pk, type_modele)
-            return Response(status=status.HTTP_204_NO_CONTENT)
         return Response(modele_service.obtenir_modele_formation(utilisateur, pk, type_modele))
+    except ErreurMetier as e:
+        return _erreur(e)
+
+
+@api_view(["POST"])
+@_connexion_requise
+def retablir_modele_formation(request, utilisateur, pk, type_modele):
+    """SCRUM-219 : POST /formations/<id>/modeles/<type>/reinitialiser -> le modèle de la formation, dont le contenu est
+    maintenant celui du modèle générique actuel (RG19) ; 401, 404. Journalisé par le service (« Modèle de la
+    formation rétabli »)."""
+    try:
+        return Response(modele_service.retablir_generique(utilisateur, pk, type_modele))
     except ErreurMetier as e:
         return _erreur(e)
 
