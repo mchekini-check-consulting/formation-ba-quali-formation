@@ -55,12 +55,12 @@ function selectionner(editeur, texte) {
 }
 
 describe('Éditeur d’un modèle générique (SCRUM-213)', () => {
-  it('en-tête de la maquette : titre, consigne, boutons inactifs des US suivantes, panneau Variables', async () => {
+  it('en-tête de la maquette : titre, consigne, boutons actifs, panneau Variables', async () => {
     simulerBackend()
     await ouvrir()
     expect(screen.getByRole('heading', { level: 1, name: 'Convention de formation' })).toBeTruthy()
     expect(screen.getByText(/Modifiez le texte librement/)).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Voir le modèle d’origine' }).disabled).toBe(true)
+    expect(screen.getByRole('button', { name: 'Voir le modèle d’origine' }).disabled).toBe(false) // SCRUM-217
     expect(screen.getByRole('button', { name: 'Télécharger en Word' }).disabled).toBe(false) // SCRUM-216
     expect(screen.getByRole('button', { name: 'Utiliser mon propre document Word' }).disabled).toBe(false) // SCRUM-215
     expect(screen.getByRole('button', { name: 'Enregistrer' }).disabled).toBe(false)
