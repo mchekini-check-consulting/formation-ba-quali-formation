@@ -1,10 +1,12 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { routes } from '../App'
-import { installerFauxBackend, repondre } from '../sessions/fauxBackend'
+import { installerFauxBackend, repondre, SESSION_EXCEL } from '../sessions/fauxBackend'
 
-afterEach(() => { cleanup(); vi.unstubAllGlobals() })
+// SCRUM-167 : la liste range les sessions selon la date du jour ; on la fixe au 17/11/2026 (sessions de test à venir)
+beforeEach(() => { vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-11-17T10:00:00+01:00') }) })
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.useRealTimers() })
 
 function afficher(adresse = '/sessions') {
   const router = createMemoryRouter(routes, { initialEntries: [adresse] })
@@ -41,20 +43,48 @@ async function allerEtape3() {
 }
 
 describe('Page Sessions et planning', () => {
-  it('liste les sessions avec leur statut', async () => {
+  it('liste les sessions : dates, formation et avancement, lieu, formateur, inscrits (SCRUM-167)', async () => {
     installerFauxBackend()
     afficher()
-    const ligne = (await screen.findByText('Excel avancé')).closest('li')
-    expect(ligne.textContent).toContain('Du 18/11/2026 au 19/11/2026 · 09 h – 17 h')
-    expect(within(ligne).getByText('3 / 8 apprenants')).toBeTruthy()
-    expect(within(ligne).getByText('Prévue')).toBeTruthy()
-    expect(within(ligne).getByText('NOV.')).toBeTruthy()
+    const ligne = (await screen.findByText('Excel avancé')).closest('tr')
+    expect([...ligne.cells].map((c) => c.textContent)).toEqual(['18 – 19 nov.', 'Excel avancéDemain', 'Lyon', 'Nadia Haddad', '3 / 8'])
+    expect(within(ligne).getByRole('progressbar', { name: 'Inscrits : 3 / 8' }).getAttribute('aria-valuenow')).toBe('38')
+    expect(screen.getAllByRole('columnheader').map((c) => c.textContent)).toEqual(['Dates', 'Formation', 'Lieu', 'Formateur', 'Inscrits'])
+  })
+
+  it('onglets avec leur nombre ; « Passées » : la plus récente en tête, absente de « Toutes » (SCRUM-167)', async () => {
+    const s = (id, intitule, date_debut, date_fin, autres = {}) => ({
+      ...SESSION_EXCEL, id, formation_intitule: intitule, date_debut, date_fin, ...autres,
+    })
+    installerFauxBackend({ sessions: [
+      s(1, 'Excel avancé', '2026-11-18', '2026-11-19'),
+      s(2, 'Accueil téléphonique', '2026-11-16', '2026-11-18', { modalite: 'DISTANCIEL', lieu: '' }),
+      s(3, 'Word', '2026-11-02', '2026-11-03'),
+      s(4, 'Sauveteur secouriste', '2026-11-12', '2026-11-16'),
+    ] })
+    afficher()
+    await screen.findByText('Excel avancé')
+    const onglet = (nom) => screen.getByRole('tab', { name: new RegExp(`^${nom}`) })
+    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Toutes2', 'En cours1', 'À venir1', 'Passées2'])
+    expect(onglet('Toutes').getAttribute('aria-selected')).toBe('true')
+    const formations = () => screen.getAllByRole('link', { name: /./ }).filter((l) => l.className === 'sp-formation').map((l) => l.textContent)
+    expect(formations()).toEqual(['Accueil téléphonique', 'Excel avancé'])
+    expect(screen.getByText('Jour 2 sur 3').className).toContain('en-cours')
+    expect(screen.getByText('Distanciel')).toBeTruthy()
+
+    fireEvent.click(onglet('Passées'))
+    expect(onglet('Passées').getAttribute('aria-selected')).toBe('true')
+    expect(formations()).toEqual(['Sauveteur secouriste', 'Word'])
+    expect(screen.getAllByText('Terminée')).toHaveLength(2)
+    fireEvent.click(onglet('En cours'))
+    expect(formations()).toEqual(['Accueil téléphonique'])
   })
 
   it('indique quand il n’y a aucune session', async () => {
     installerFauxBackend({ sessions: [] })
     afficher()
-    expect(await screen.findByText("Aucune session pour l'instant")).toBeTruthy()
+    expect(await screen.findByText('Aucune session')).toBeTruthy()
+    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual(['Toutes0', 'En cours0', 'À venir0', 'Passées0'])
   })
 
   it('signale un backend injoignable', async () => {
@@ -280,9 +310,9 @@ describe('Nouvelle session (SCRUM-25, SCRUM-166)', () => {
     expect(message.textContent).toBe('La session « Management d’équipe — les fondamentaux » du 18/11/2026 a été créée avec le statut « Prévue ».')
     const post = fetch.mock.calls.find(([, o]) => o?.method === 'POST')
     expect(JSON.parse(post[1].body)).toMatchObject({ formation: 2, formateurs: [4], apprenants: [1, 2], duree_heures: '21' })
-    const ligne = (await screen.findByText('Management d’équipe — les fondamentaux')).closest('li')
+    const ligne = (await screen.findByText('Management d’équipe — les fondamentaux')).closest('tr')
     expect(ligne.classList.contains('nouvelle')).toBe(true)
-    expect(within(ligne).getByText('2 / 10 apprenants')).toBeTruthy()
+    expect(within(ligne).getByText('2 / 10')).toBeTruthy()
     fireEvent.click(bouton('Fermer le message'))
     expect(screen.queryByRole('status')).toBeNull()
   })

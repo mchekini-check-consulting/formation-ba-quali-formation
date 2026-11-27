@@ -46,6 +46,7 @@ const rechercher = (personnes, texte, avecEntreprise) => {
 export const SESSION_EXCEL = {
   id: 1, formation: 1, formation_intitule: 'Excel avancé', date_debut: '2026-11-18', date_fin: '2026-11-19', heure_debut: '09:00:00', heure_fin: '17:00:00',
   duree_heures: '14.00', modalite: 'PRESENTIEL', lieu: 'Lyon', lien_classe_virtuelle: '', nombre_places: 8, statut: 'PREVUE', formateurs: [1], apprenants: [1, 2, 3], nombre_apprenants: 3,
+  formateurs_noms: [{ id: 1, prenom: 'Nadia', nom: 'Haddad' }], // SCRUM-167
 }
 
 export const repondre = (status, corps) => ({ ok: status < 400, status, json: async () => corps })

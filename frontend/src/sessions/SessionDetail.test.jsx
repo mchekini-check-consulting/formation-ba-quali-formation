@@ -180,11 +180,13 @@ describe('Page d’une session, onglet Documents (SCRUM-220)', () => {
   })
 
   it('le planning ouvre la page de la session ; « ← Retour » revient au planning', async () => {
+    vi.useFakeTimers({ toFake: ['Date'], now: new Date('2026-11-20T10:00:00+01:00') }) // session à venir (SCRUM-167)
     simulerBackend()
     const router = afficher('/sessions')
     fireEvent.click(await screen.findByRole('link', { name: /Excel intermédiaire/ }))
     await waitFor(() => expect(router.state.location.pathname).toBe('/sessions/5'))
     fireEvent.click(await screen.findByRole('button', { name: '← Retour' }))
     await waitFor(() => expect(router.state.location.pathname).toBe('/sessions'))
+    vi.useRealTimers()
   })
 })

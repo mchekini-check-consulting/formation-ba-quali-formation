@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { routes } from '../App'
 import { emailValide, verifierPersonne } from '../sessions/regles'
 import { installerFauxBackend, repondre } from '../sessions/fauxBackend'
+import { messageCreation } from '../sessions/typesPersonnes'
 
 afterEach(() => { cleanup(); vi.unstubAllGlobals() })
 
@@ -65,7 +66,9 @@ describe.each([
     expect(menu.getAttribute('aria-expanded')).toBe('false')
     fireEvent.click(menu)
     expect(menu.getAttribute('aria-expanded')).toBe('true')
-    expect(screen.getAllByRole('menuitem').map((m) => m.disabled)).toEqual([false, false])
+    // SCRUM-167 : 3 choix, dans l'ordre de la maquette
+    expect(screen.getAllByRole('menuitem').map((m) => m.textContent))
+      .toEqual(['Nouvel apprenant', 'Nouveau formateur', 'Nouvelle entreprise cliente'])
     fireEvent.click(screen.getByRole('menuitem', { name: new RegExp(titre) }))
     expect(panneau()).toBeTruthy()
     expect(screen.queryByRole('menu')).toBeNull()
@@ -176,6 +179,25 @@ describe('Parties prenantes dans « Nouvelle session »', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: /Julien Lefèvre/ }))
     fireEvent.click(bouton('Suivant'))
     expect(screen.getByRole('checkbox', { name: /Lucas Girard/ })).toBeTruthy()
+  })
+})
+
+describe('Nouvelle entreprise cliente depuis Sessions et planning (SCRUM-167)', () => {
+  it('« Parties prenantes » puis « Nouvelle entreprise cliente » ouvre le panneau existant (SCRUM-113)', async () => {
+    installerFauxBackend()
+    afficher()
+    fireEvent.click(await screen.findByRole('button', { name: /Parties prenantes/ }))
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Nouvelle entreprise cliente' }))
+    expect(screen.getByRole('dialog', { name: /Nouvelle entreprise cliente/ })).toBeTruthy()
+    expect(screen.queryByRole('menu')).toBeNull()
+    fireEvent.click(bouton('Fermer'))
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+  })
+
+  it('message de confirmation après la création', () => {
+    expect(messageCreation('entreprise', { raison_sociale: 'Acme' })).toBe('L’entreprise cliente « Acme » a été créée.')
+    expect(messageCreation('apprenant', { prenom: 'Lucas', nom: 'Girard' }))
+      .toBe('L’apprenant « Lucas Girard » a été créé. Vous pouvez maintenant l’ajouter à une session.')
   })
 })
 

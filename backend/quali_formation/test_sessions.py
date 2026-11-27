@@ -67,6 +67,18 @@ class SessionsPlanningTests(TestCase):
         self.assertEqual(len(liste), 1)
         self.assertEqual(liste[0]['formateurs'], [self.formateur.pk])
 
+    def test_la_liste_donne_le_prenom_et_le_nom_des_formateurs_tries_par_nom(self):
+        # SCRUM-167 : colonne « Formateur » de la liste des sessions
+        autre = Formateur.objects.create(prenom='Nadia', nom='Haddad', email='nadia@exemple.fr',
+                                         organisme=self.compte.organisme)
+        self.poster(formateurs=[self.formateur.pk, autre.pk])
+        session = self.client.get('/sessions/').json()[0]
+        self.assertEqual(session['formateurs_noms'], [
+            {'id': autre.pk, 'prenom': 'Nadia', 'nom': 'Haddad'},
+            {'id': self.formateur.pk, 'prenom': self.formateur.prenom, 'nom': self.formateur.nom},
+        ])
+        self.assertEqual((session['nombre_apprenants'], session['nombre_places']), (2, 10))
+
     def test_distanciel_demande_le_lien(self):
         reponse = self.poster(modalite='DISTANCIEL', lieu='')
         self.assertEqual(reponse.status_code, 400)
