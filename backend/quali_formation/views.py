@@ -461,18 +461,58 @@ def formations_pour_duplication(request, utilisateur, type_modele):
         return _erreur(e)
 
 
-@api_view(["POST"])
+@api_view(["GET"])
 @_connexion_requise
-def creer_modele_formation(request, utilisateur, pk, type_modele):
-    """SCRUM-218 : POST /formations/<id>/modeles/<type>/ {contenu, nom_fichier_importe?} -> 201 le modèle de la
-    formation (statut FORMATION) ; 400 CONTENU_INVALIDE / FORMATION_ARCHIVEE, 401, 404, 409
-    MODELE_FORMATION_EXISTANT. Journalisé par le service (« Modèle de la formation créé »)."""
+def modeles_par_formation(request, utilisateur):
+    """SCRUM-219 : GET /modeles/formations/ -> {formations: [{id, intitule, nb_modeles}]} de l'organisme, hors
+    archivées ; 401. Simple lecture : pas de log métier."""
+    return Response(modele_service.formations_avec_modeles(utilisateur))
+
+
+@api_view(["GET"])
+@_connexion_requise
+def dossier_formation(request, utilisateur, pk):
+    """SCRUM-219 : GET /formations/<id>/modeles/ -> {formation, modeles, generiques_appliques} ; 401, 404.
+    Simple lecture : pas de log métier."""
     try:
-        modele = modele_service.creer_modele_formation(utilisateur, pk, type_modele, request.data.get('contenu'),
-                                                       request.data.get('nom_fichier_importe'))
+        return Response(modele_service.dossier_formation(utilisateur, pk))
     except ErreurMetier as e:
         return _erreur(e)
-    return Response(modele, status=status.HTTP_201_CREATED)
+
+
+@api_view(["GET", "POST", "PUT", "DELETE"])
+@_connexion_requise
+def modele_formation(request, utilisateur, pk, type_modele):
+    """Un modèle de la formation : /formations/<id>/modeles/<type>/
+    - GET (SCRUM-219) : le modèle pour l'éditeur ; 401, 404.
+    - POST (SCRUM-218) {contenu, nom_fichier_importe?} : 201 le modèle créé ; 400 CONTENU_INVALIDE /
+      FORMATION_ARCHIVEE, 401, 404, 409 MODELE_FORMATION_EXISTANT.
+    - PUT (SCRUM-219) {contenu, nom_fichier_importe?} : 200 le modèle enregistré ; 400, 401, 404.
+    - DELETE (SCRUM-219, RG19) : 204, la formation utilise de nouveau le modèle générique ; 401, 404.
+    Créations, modifications et suppressions journalisées par le service (jamais le contenu)."""
+    contenu, nom_fichier = request.data.get('contenu'), request.data.get('nom_fichier_importe')
+    try:
+        if request.method == 'POST':
+            modele = modele_service.creer_modele_formation(utilisateur, pk, type_modele, contenu, nom_fichier)
+            return Response(modele, status=status.HTTP_201_CREATED)
+        if request.method == 'PUT':
+            return Response(modele_service.modifier_modele_formation(utilisateur, pk, type_modele, contenu, nom_fichier))
+        if request.method == 'DELETE':
+            modele_service.retablir_generique(utilisateur, pk, type_modele)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(modele_service.obtenir_modele_formation(utilisateur, pk, type_modele))
+    except ErreurMetier as e:
+        return _erreur(e)
+
+
+@api_view(["GET"])
+@_connexion_requise
+def exporter_modele_formation(request, utilisateur, pk, type_modele):
+    """SCRUM-219 : GET /formations/<id>/modeles/<type>/export.docx -> « Modèle - <nom>.docx » ; 401, 404."""
+    try:
+        return fichier_word_reponse(modele_service.exporter_word_formation(utilisateur, pk, type_modele))
+    except ErreurMetier as e:
+        return _erreur(e)
 
 
 @api_view(["GET"])

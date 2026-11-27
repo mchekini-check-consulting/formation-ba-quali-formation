@@ -26,13 +26,15 @@ test('dupliquer la Convocation pour une formation, enregistrer : la formation n�
   await expect(page.getByRole('status')).toContainText('Nouveau modèle de la formation « Management d’équipe », créé à partir du modèle générique.')
   expect(creations).toEqual([])
 
-  // CA4 : « Enregistrer » crée le modèle de la formation ; message, retour aux modèles génériques
+  // CA4 : « Enregistrer » crée le modèle de la formation ; message, dossier de la formation (SCRUM-219)
   await page.getByRole('button', { name: 'Enregistrer' }).click()
   await expect(page.getByText('Modèle de la formation « Management d’équipe » créé. Il remplace le modèle générique pour les sessions de cette formation.')).toBeVisible()
-  await expect(page).toHaveURL(/\/modeles\/generiques$/)
+  await expect(page).toHaveURL(/\/modeles\/formations\/\d+$/)
+  await expect(page.getByRole('article', { name: 'Convocation' })).toContainText('Modèle de la formation')
   expect(creations).toHaveLength(1)
 
   // CA5 / RG16 : la formation n'est plus proposée pour la convocation
+  await page.goto('/modeles/generiques')
   await carte.getByRole('button', { name: 'Dupliquer' }).click()
   fenetre = page.getByRole('dialog', { name: 'Dupliquer « Convocation »' })
   await expect(fenetre.getByRole('combobox', { name: 'Formation' }).getByRole('option')).toHaveText(['Excel intermédiaire'])

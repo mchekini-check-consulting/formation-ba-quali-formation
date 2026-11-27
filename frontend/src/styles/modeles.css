@@ -156,3 +156,12 @@
 .mod-bandeau{display:flex;align-items:flex-start;gap:10px;margin:0 0 14px;padding:10px 14px;border:1px solid var(--brand-line);border-radius:10px;background:var(--brand-soft);color:var(--brand-text);font-size:13px}
 .mod-bandeau svg{flex:none;margin-top:2px}
 .mod-bandeau p{margin:0}
+
+/* SCRUM-219 : « Modèles par formation » (maquette 219-1), dossier d'une formation (219-2/4) */
+.mod-carte-en-avant{color:var(--brand-text)!important;font-weight:600}
+.mod-statut-formation{background:var(--ok-soft);color:var(--ok)}
+.mod-appliques{margin:14px 0 0;font-size:13px;color:var(--ink-3)}
+.mod-vide{display:flex;flex-direction:column;align-items:center;gap:8px;padding:32px 20px;border:1px dashed var(--line-strong);border-radius:16px;background:var(--surface);text-align:center;color:var(--brand-text)}
+.mod-vide h2{margin:0;font-size:15px;font-weight:700;color:var(--ink)}
+.mod-vide p{margin:0;max-width:420px;font-size:13px;color:var(--ink-3)}
+.mod-vide-texte{color:var(--ink-3)}

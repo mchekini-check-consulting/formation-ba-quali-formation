@@ -197,12 +197,31 @@ describe('Rétablir le modèle d’origine (SCRUM-217)', () => {
     expect(await within(fenetre).findByText(/Modèle introuvable/)).toBeTruthy()
   })
 
-  it('CA4 / RG5 : le rétablissement ne vise que le modèle générique (modèles de la formation : à compléter avec SCRUM-218)', async () => {
+  it('CA4 / RG5 : le rétablissement ne vise que le modèle générique : aucun appel aux modèles de la formation', async () => {
     const fetchMock = simulerBackend()
     await expect(retablirOrigine('CONVENTION')).resolves.toEqual(ORIGINE)
     await obtenirOrigine('CONVENTION')
     const [[adresse, options]] = retablissements(fetchMock)
     expect(adresse).toMatch(/\/modeles\/CONVENTION\/reinitialiser$/)
     expect(options).toEqual({ credentials: 'include', method: 'POST' })
+  })
+
+  it('CA4 / RG5 : complété avec SCRUM-218/219 : après rétablissement, le modèle de la formation reste dans son dossier', async () => {
+    const { fetchMock, fenetre } = await ouvrirDepuisCarte()
+    fireEvent.click(bouton(fenetre, 'Rétablir le modèle d’origine'))
+    await screen.findByText(MESSAGE)
+    // Aucune écriture sur les modèles de la formation (/formations/<id>/modeles/...)
+    expect(fetchMock.mock.calls.filter(([u, o]) => u.includes('/formations/') && o?.method)).toEqual([])
+    cleanup()
+    const SIENNE = { ...modele('PERSONNALISE', '<h1>CONVENTION DE LA FORMATION</h1>'), statut: 'FORMATION', formation: { id: 3, intitule: 'Excel' } }
+    vi.stubGlobal('fetch', vi.fn(async (url) => {
+      if (url.endsWith('/auth/moi')) return ok({ id: 1, email: 'camille@organisme.fr' })
+      if (url.endsWith('/formations/3/modeles/')) return ok({ formation: SIENNE.formation, modeles: [SIENNE], generiques_appliques: [] })
+      return ok([])
+    }))
+    afficher('/modeles/formations/3')
+    const carte = await screen.findByRole('article', { name: 'Convention de formation' })
+    expect(within(carte).getByText('Modèle de la formation')).toBeTruthy()
+    expect(within(carte).getByText('CONVENTION DE LA FORMATION')).toBeTruthy()
   })
 })
