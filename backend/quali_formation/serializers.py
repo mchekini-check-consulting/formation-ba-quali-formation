@@ -271,7 +271,9 @@ class EntrepriseCreationSerializer(serializers.Serializer):
 
 
 class SessionPlanningSerializer(serializers.ModelSerializer):
-    """Lecture : une session de la page Sessions et planning."""
+    """Lecture : une session de la page Sessions et planning (liste par onglets : SCRUM-167).
+
+    Le classement par onglet (en cours, à venir, passées) se fait à l'écran, à partir des dates."""
 
     formation_intitule = serializers.CharField(source='formation.intitule', read_only=True)
     nombre_apprenants = serializers.SerializerMethodField()
