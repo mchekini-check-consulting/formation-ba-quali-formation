@@ -13,7 +13,7 @@ applications:
     # remplace tout jusqu'à la fin de la ligne.
     tag:
       dev: 1e784c1
-      qualif: a567ea6
+      qualif: 1e784c1
       preprod: ""
       prod: ""
     containerPort: 8000
@@ -65,7 +65,7 @@ applications:
     # remplace tout jusqu'à la fin de la ligne.
     tag:
       dev: 1e784c1
-      qualif: a567ea6
+      qualif: 1e784c1
       preprod: ""
       prod: ""
     containerPort: 8080
