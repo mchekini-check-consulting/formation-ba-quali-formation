@@ -1,18 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { PageEnChargement } from '../components/ErreurChargement'
-import { ConfirmDialog } from '../components/Modal'
+import { ConfirmDialog, Modal } from '../components/Modal'
 import Icone from '../components/Icone'
 import { useToast } from '../components/toastContext'
 import { pluriel } from '../formations/catalogue'
 import { DocumentModele } from './DocumentModele'
 import { FenetreDupliquer } from './FenetreDupliquer'
+import { FenetreGenerique } from './FenetreGenerique'
 import { FenetreOrigine } from './FenetreOrigine'
 import { EditeurDocument } from './editeur/EditeurDocument'
 import { BoutonImportWord } from './editeur/BoutonImportWord'
 import {
-  adresseExportWord, creerModeleFormation, enregistrerModele, formationsPourDuplication, messageCreationFormation, importerWord, listerModeles, listerVariables, messageEnregistrement, nomFichierWord,
-  obtenirModele, resumeModeles, STATUTS, telechargerWord,
+  adresseExportWord, adresseExportWordFormation, creerModeleFormation, dossierFormation, enregistrerModele,
+  enregistrerModeleFormation, formationsPourDuplication, importerWord, listerModeles, listerModelesParFormation,
+  listerVariables, MESSAGE_GENERIQUE_RETABLI, messageCreationFormation, messageEnregistrementFormation, messageEnregistrement,
+  nomFichierWord, obtenirModele, obtenirModeleFormation, resumeModeles, retablirGenerique, STATUTS, telechargerWord,
 } from './serviceApi'
 import '../styles/modeles.css'
 
@@ -30,11 +33,11 @@ function useChargement(charger) {
 }
 
 // Carte cliquable : icône, nom en gras, information en gris, chevron à droite
-function Carte({ lien, icone, nom, info }) {
+function Carte({ lien, icone, nom, info, infoEnAvant = false }) {
   return (
     <Link className="mod-carte" to={lien}>
       <span className="mod-carte-ic" aria-hidden="true"><Icone nom={icone} taille={20} /></span>
-      <span className="mod-carte-t"><b>{nom}</b><span>{info}</span></span>
+      <span className="mod-carte-t"><b>{nom}</b><span className={infoEnAvant ? 'mod-carte-en-avant' : undefined}>{info}</span></span>
       <span className="mod-carte-chev" aria-hidden="true"><Icone nom="chevDroite" taille={16} /></span>
     </Link>
   )
@@ -93,12 +96,8 @@ export function DossierModeles({ titre, children }) {
 // du modèle d'origine, statut mis à jour après rétablissement) et « Dupliquer » (SCRUM-218 : fenêtre de choix de la
 // formation, RG14 : seulement depuis les modèles génériques).
 // RG7 : un clic sur la miniature ou le nom ouvre directement le modèle (éditeur : SCRUM-213).
-function CarteModele({ modele: initial }) {
-  const navigate = useNavigate()
-  const [modele, setModele] = useState(initial)
-  const [fenetre, setFenetre] = useState(false)
-  const [dupliquer, setDupliquer] = useState(false)
-  const lien = `/modeles/generiques/${modele.type.toLowerCase()}`
+// Carte d'un document (modèle générique ou modèle de la formation) : miniature, nom, statut, puis `actions`
+function CarteDocument({ modele, lien, children }) {
   return (
     <article className="mod-modele" aria-label={modele.nom}>
       <Link className="mod-mini" to={lien} aria-label={`Ouvrir ${modele.nom}`}>
@@ -110,18 +109,31 @@ function CarteModele({ modele: initial }) {
       <div className="mod-modele-corps">
         <Link className={`mod-modele-nom mod-type-${modele.type.toLowerCase()}`} to={lien}>{modele.nom}</Link>
         <span className={`mod-statut-pastille mod-statut-${modele.statut.toLowerCase()}`}>{STATUTS[modele.statut] || modele.statut}</span>
-        <div className="mod-modele-actions">
-          {modele.statut !== 'ORIGINE'
-            && <button type="button" className="mod-retablir" onClick={() => setFenetre(true)}>Rétablir le modèle d’origine</button>}
-          <button type="button" className="btn btn-line btn-sm" onClick={() => setDupliquer(true)}>Dupliquer</button>
-        </div>
+        {children}
+      </div>
+    </article>
+  )
+}
+
+function CarteModele({ modele: initial }) {
+  const navigate = useNavigate()
+  const [modele, setModele] = useState(initial)
+  const [fenetre, setFenetre] = useState(false)
+  const [dupliquer, setDupliquer] = useState(false)
+  const lien = `/modeles/generiques/${modele.type.toLowerCase()}`
+  return (
+    <CarteDocument modele={modele} lien={lien}>
+      <div className="mod-modele-actions">
+        {modele.statut !== 'ORIGINE'
+          && <button type="button" className="mod-retablir" onClick={() => setFenetre(true)}>Rétablir le modèle d’origine</button>}
+        <button type="button" className="btn btn-line btn-sm" onClick={() => setDupliquer(true)}>Dupliquer</button>
       </div>
       {fenetre && (
         <FenetreOrigine modele={modele} onFermer={() => setFenetre(false)} onPersonnaliser={() => navigate(lien)}
           onRetabli={(retabli) => { setModele(retabli); setFenetre(false) }} />
       )}
       {dupliquer && <FenetreDupliquer modele={modele} onFermer={() => setDupliquer(false)} />}
-    </article>
+    </CarteDocument>
   )
 }
 
@@ -164,7 +176,14 @@ function GuideImport({ onFermer }) {
   )
 }
 
-function EditeurModeleGenerique({ modele, catalogue, formation = null }) {
+// Phrase sous le titre de l'éditeur : modèle générique, nouveau modèle de la formation ou modèle de la formation
+function sousTitre(formation, nouveau) {
+  if (!formation) return 'Modifiez le texte librement. Glissez les variables à droite dans le document : elles seront remplacées par les vraies informations.'
+  if (nouveau) return `Nouveau modèle de la formation « ${formation.intitule} ».`
+  return `Modèle de la formation « ${formation.intitule} ». Il remplace le modèle générique pour toutes les sessions de cette formation.`
+}
+
+function EditeurModeleGenerique({ modele, catalogue, formation = null, nouveau = false }) {
   const toast = useToast()
   const navigate = useNavigate()
   const contenu = useRef(modele.contenu)
@@ -173,7 +192,8 @@ function EditeurModeleGenerique({ modele, catalogue, formation = null }) {
   // SCRUM-215 : document affiché (remplacé par un import, l'éditeur est alors rouvert avec une nouvelle clé),
   // nom du fichier importé (encadré « Document importé ») et import à enregistrer avec « Enregistrer » (RG8)
   const [affiche, setAffiche] = useState({ contenu: modele.contenu, cle: 0 })
-  const [fichierImporte, setFichierImporte] = useState(modele.statut === 'IMPORTE' ? modele.nom_fichier_importe : null)
+  const [fichierImporte, setFichierImporte] = useState(
+    modele.statut === 'IMPORTE' || modele.statut === 'FORMATION' ? modele.nom_fichier_importe : null)
   const [importAEnregistrer, setImportAEnregistrer] = useState(null)
   const [guide, setGuide] = useState(false)
   // Refus d'un import (format, taille, fichier illisible) : affiché sous le bouton d'import, pas en haut de la page
@@ -188,6 +208,10 @@ function EditeurModeleGenerique({ modele, catalogue, formation = null }) {
   const [variables, setVariables] = useState(modele.variables)
   // Fenêtre ouverte : { maVersion } = le document affiché dans l'éditeur au moment de l'ouverture
   const [fenetreOrigine, setFenetreOrigine] = useState(null)
+  // SCRUM-219 : modèle de la formation déjà enregistré (et pas le nouveau de SCRUM-218)
+  const deLaFormation = formation && !nouveau
+  const dossier = formation && `/modeles/formations/${formation.id}`
+  const [fenetreGenerique, setFenetreGenerique] = useState(false)
 
   function importe({ contenu: html, nomFichier }) {
     contenu.current = html
@@ -208,7 +232,8 @@ function EditeurModeleGenerique({ modele, catalogue, formation = null }) {
     setTelechargement(true)
     setErreur(null)
     try {
-      await telechargerWord(adresseExportWord(modele.type), nomFichierWord(modele.nom))
+      const adresse = deLaFormation ? adresseExportWordFormation(formation.id, modele.type) : adresseExportWord(modele.type)
+      await telechargerWord(adresse, nomFichierWord(modele.nom))
     } catch (e) {
       setErreur(e.message)
     } finally {
@@ -220,11 +245,18 @@ function EditeurModeleGenerique({ modele, catalogue, formation = null }) {
     setEnvoi(true)
     setErreur(null)
     try {
-      if (formation) {
+      if (nouveau) {
         // RG17 : le modèle de la formation part du document affiché (modèle générique, « Mon document » compris)
         await creerModeleFormation(formation.id, modele.type, contenu.current, fichierImporte)
         toast(messageCreationFormation(formation.intitule))
-        navigate('/modeles/generiques')
+        navigate(dossier)
+        return
+      }
+      if (deLaFormation) {
+        await enregistrerModeleFormation(formation.id, modele.type, contenu.current, importAEnregistrer)
+        toast(messageEnregistrementFormation(formation.intitule))
+        setImportAEnregistrer(null)
+        setNonEnregistre(false)
         return
       }
       const resultat = await enregistrerModele(modele.type, contenu.current, importAEnregistrer)
@@ -254,14 +286,12 @@ function EditeurModeleGenerique({ modele, catalogue, formation = null }) {
 
   return (
     <div className="wrap modeles">
-      <FilAriane retour="/modeles/generiques" etapes={formation
-        ? [MODELES, PAR_FORMATION, { libelle: formation.intitule, lien: PAR_FORMATION.lien }, { libelle: modele.nom }]
+      <FilAriane retour={deLaFormation ? dossier : '/modeles/generiques'} etapes={formation
+        ? [MODELES, PAR_FORMATION, { libelle: formation.intitule, lien: dossier }, { libelle: modele.nom }]
         : [MODELES, GENERIQUES, { libelle: modele.nom }]} />
       <div className="mod-entete">
         <h1>{modele.nom}{formation && <span className="mod-formation-pastille">{formation.intitule}</span>}</h1>
-        <p>{formation
-          ? `Nouveau modèle de la formation « ${formation.intitule} ».`
-          : 'Modifiez le texte librement. Glissez les variables à droite dans le document : elles seront remplacées par les vraies informations.'}</p>
+        <p>{sousTitre(formation, nouveau)}</p>
         <div className="mod-actions">
           <button type="button" className="btn btn-line" disabled={telechargement}
             onClick={() => (nonEnregistre ? setConfirmerExport(true) : telecharger())}>
@@ -269,11 +299,14 @@ function EditeurModeleGenerique({ modele, catalogue, formation = null }) {
           </button>
           {!formation
             && <button type="button" className="btn btn-line" onClick={() => setFenetreOrigine({ maVersion: contenu.current })}>Voir le modèle d’origine</button>}
+          {deLaFormation
+            && <button type="button" className="btn btn-line" onClick={() => setFenetreGenerique(true)}>Voir le modèle générique</button>}
           <button type="button" className="btn btn-primary" onClick={enregistrer} disabled={envoi}>Enregistrer</button>
         </div>
         {erreur && <p className="mod-erreur" role="alert">{erreur}</p>}
       </div>
-      {formation && (
+      {fenetreGenerique && <FenetreGenerique modele={modele} onFermer={() => setFenetreGenerique(false)} />}
+      {nouveau && (
         <div className="mod-bandeau" role="status">
           <Icone nom="info" taille={16} />
           <p>Nouveau modèle de la formation « {formation.intitule} », créé à partir du modèle générique. Il sera enregistré quand vous cliquerez sur <b>Enregistrer</b>. Si vous quittez sans enregistrer, rien n’est créé.</p>
@@ -335,5 +368,124 @@ export function ModeleFormationNouveau() {
       : 'Formation introuvable.'
     return <PageEnChargement erreur={new Error(message)} texte="" />
   }
-  return <EditeurModeleGenerique key={`${modele.type}-${formation.id}`} modele={modele} catalogue={catalogue} formation={formation} />
+  return <EditeurModeleGenerique key={`${modele.type}-${formation.id}`} modele={modele} catalogue={catalogue} formation={formation} nouveau />
+}
+
+// SCRUM-219 (maquette SCRUM-219-1) : « Modèles par formation » : un dossier par formation de l'organisme (hors
+// archivées), avec « N modèle(s) de la formation » ou « Modèles génériques appliqués »
+const chargerParFormation = () => listerModelesParFormation()
+// Ordre des documents (RG2, comme les modèles génériques)
+const ORDRE_DOCUMENTS = ['CONVENTION', 'CONTRAT', 'CONVOCATION', 'ATTESTATION']
+
+export function ModelesParFormation() {
+  const { donnee, erreur } = useChargement(chargerParFormation)
+  let contenu
+  if (!donnee) contenu = <PageEnChargement erreur={erreur} texte="Chargement des formations…" />
+  else if (donnee.formations.length === 0) contenu = <p className="mod-vide-texte">Aucune formation pour le moment.</p>
+  else {
+    contenu = (
+      <div className="mod-dossiers">
+        {donnee.formations.map((f) => (
+          <Carte key={f.id} lien={`/modeles/formations/${f.id}`} icone="dossier" nom={f.intitule} infoEnAvant={f.nb_modeles > 0}
+            info={f.nb_modeles > 0 ? `${f.nb_modeles} ${pluriel(f.nb_modeles, 'modèle')} de la formation` : 'Modèles génériques appliqués'} />
+        ))}
+      </div>
+    )
+  }
+  return <DossierModeles titre="Modèles par formation">{contenu}</DossierModeles>
+}
+
+// SCRUM-219 (maquette SCRUM-219-3) : « Rétablir le modèle générique ? » (RG19) ; « Annuler » ne change rien
+function ConfirmerRetablirGenerique({ formation, modele, onAnnuler, onRetabli }) {
+  const [envoi, setEnvoi] = useState(false)
+  const [erreur, setErreur] = useState(null)
+  async function retablir() {
+    setEnvoi(true)
+    setErreur(null)
+    try {
+      await retablirGenerique(formation.id, modele.type)
+      onRetabli()
+    } catch (e) {
+      setErreur(e.message)
+      setEnvoi(false)
+    }
+  }
+  return (
+    <Modal onFermer={onAnnuler}>
+      <dialog open className="mod-fenetre mod-dup" aria-modal="true" aria-labelledby="mod-rg-titre">
+        <div className="mod-dup-corps">
+          <h2 id="mod-rg-titre">Rétablir le modèle générique ?</h2>
+          <p>Le modèle de la formation « {formation.intitule} » ({modele.nom.toLowerCase()}) sera supprimé. La formation utilisera de nouveau le modèle générique. Les documents déjà générés ne sont pas modifiés.</p>
+          {erreur && <p className="mod-erreur" role="alert">{erreur}</p>}
+        </div>
+        <footer className="mod-fenetre-pied">
+          <button type="button" className="btn btn-line btn-sm" onClick={onAnnuler}>Annuler</button>
+          <button type="button" className="btn btn-primary btn-sm" onClick={retablir} disabled={envoi}>Rétablir le modèle générique</button>
+        </footer>
+      </dialog>
+    </Modal>
+  )
+}
+
+// SCRUM-219 (maquettes SCRUM-219-2/4) : dossier d'une formation : ses modèles de la formation (RG18 : statut
+// « Modèle de la formation », lien « Rétablir le modèle générique »), puis « Modèle générique appliqué : … ».
+// Aucun bouton « Dupliquer » ici (RG14). RG7 : un clic sur un modèle l'ouvre directement dans l'éditeur.
+export function DossierFormation() {
+  const { formation: id } = useParams()
+  const navigate = useNavigate()
+  const toast = useToast()
+  const charger = useCallback(() => dossierFormation(id), [id])
+  const { donnee, erreur } = useChargement(charger)
+  const [aRetablir, setARetablir] = useState(null)
+  // Documents rétablis depuis l'ouverture du dossier : leur carte disparaît, ils passent dans « Modèle générique appliqué »
+  const [retablis, setRetablis] = useState([])
+  if (!donnee) return <PageEnChargement erreur={erreur} texte="Chargement du dossier…" />
+  const { formation } = donnee
+  const modeles = donnee.modeles.filter((m) => !retablis.includes(m.type))
+  const appliques = [...donnee.generiques_appliques, ...donnee.modeles.filter((m) => retablis.includes(m.type))]
+    .sort((x, y) => ORDRE_DOCUMENTS.indexOf(x.type) - ORDRE_DOCUMENTS.indexOf(y.type))
+  return (
+    <div className="wrap modeles">
+      <div className="page-head"><h1>Modèles</h1></div>
+      <FilAriane retour={PAR_FORMATION.lien} etapes={[MODELES, PAR_FORMATION, { libelle: formation.intitule }]} />
+      {modeles.length === 0
+        ? (
+          <section className="mod-vide" aria-labelledby="mod-vide-titre">
+            <Icone nom="dossier" taille={22} />
+            <h2 id="mod-vide-titre">Aucun modèle de la formation</h2>
+            <p>Les modèles génériques sont appliqués. Pour créer un modèle propre à cette formation, cliquez sur « Dupliquer » dans Modèles génériques.</p>
+            <button type="button" className="btn btn-line btn-sm" onClick={() => navigate(GENERIQUES.lien)}>Aller aux modèles génériques</button>
+          </section>
+        )
+        : (
+          <>
+            <div className="mod-grille">
+              {modeles.map((m) => (
+                <CarteDocument key={m.type} modele={m} lien={`/modeles/formations/${formation.id}/${m.type.toLowerCase()}`}>
+                  <div className="mod-modele-actions">
+                    <button type="button" className="mod-retablir" onClick={() => setARetablir(m)}>Rétablir le modèle générique</button>
+                  </div>
+                </CarteDocument>
+              ))}
+            </div>
+            {appliques.length > 0
+              && <p className="mod-appliques">Modèle générique appliqué : {appliques.map((d) => d.nom).join(', ')}.</p>}
+          </>
+        )}
+      {aRetablir && (
+        <ConfirmerRetablirGenerique formation={formation} modele={aRetablir} onAnnuler={() => setARetablir(null)}
+          onRetabli={() => { setRetablis((r) => [...r, aRetablir.type]); setARetablir(null); toast(MESSAGE_GENERIQUE_RETABLI) }} />
+      )}
+    </div>
+  )
+}
+
+// SCRUM-219 : un modèle de la formation dans l'éditeur (RG7), avec les variables du panneau
+export function ModeleFormationOuvert() {
+  const { formation: id, type } = useParams()
+  const charger = useCallback(() => Promise.all([obtenirModeleFormation(id, type), listerVariables()]), [id, type])
+  const { donnee, erreur } = useChargement(charger)
+  if (!donnee) return <PageEnChargement erreur={erreur} texte="Chargement du modèle…" />
+  const [modele, catalogue] = donnee
+  return <EditeurModeleGenerique key={`${modele.type}-${modele.formation.id}`} modele={modele} catalogue={catalogue} formation={modele.formation} />
 }

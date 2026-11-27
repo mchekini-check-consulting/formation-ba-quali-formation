@@ -24,6 +24,9 @@ function simulerBackend({ modele = CONVOCATION, formations = { disponibles: [MAN
     if (/\/formations\/\d+\/modeles\/CONVOCATION\/$/.test(url) && options.method === 'POST') {
       return creer ? creer(url, options) : ok({ ...modele, statut: 'FORMATION', formation: MANAGEMENT }, 201)
     }
+    if (url.endsWith('/formations/7/modeles/')) {
+      return ok({ formation: MANAGEMENT, modeles: [{ ...modele, statut: 'FORMATION', formation: MANAGEMENT }], generiques_appliques: [] })
+    }
     if (url.endsWith('/modeles/')) return ok({ modeles: [modele] })
     if (url.endsWith('/modeles/convocation')) return ok(modele)
     return ok([])
@@ -137,12 +140,12 @@ describe('Dupliquer un modèle générique pour une formation (SCRUM-218)', () =
     expect(creations(fetchMock)).toHaveLength(0)
   })
 
-  it('CA4 : « Enregistrer » crée le modèle de la formation avec le document affiché, message, retour aux modèles génériques', async () => {
+  it('CA4 : « Enregistrer » crée le modèle de la formation avec le document affiché, message, dossier de la formation (SCRUM-219)', async () => {
     const { fetchMock, router } = await ouvrirEditeur()
     act(() => { editeur().editor.commands.insertContent(' PROPRE À LA FORMATION') })
     fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }))
     expect(await screen.findByText(MESSAGE)).toBeTruthy()
-    await waitFor(() => expect(router.state.location.pathname).toBe('/modeles/generiques'))
+    await waitFor(() => expect(router.state.location.pathname).toBe('/modeles/formations/7'))
     const [[adresse, options]] = creations(fetchMock)
     expect(adresse).toMatch(/\/formations\/7\/modeles\/CONVOCATION\/$/)
     const corps = JSON.parse(options.body)

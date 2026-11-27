@@ -4,8 +4,8 @@ import { apiBase } from '../api'
 import { pluriel } from '../formations/catalogue'
 import { ErreurMetier } from '../formations/service'
 
-// Statuts d'un modèle générique (RG4)
-export const STATUTS = { ORIGINE: 'Modèle d’origine', PERSONNALISE: 'Personnalisé', IMPORTE: 'Mon document' }
+// Statuts d'un modèle (RG4) ; FORMATION : modèle de la formation (RG18, SCRUM-219)
+export const STATUTS = { ORIGINE: 'Modèle d’origine', PERSONNALISE: 'Personnalisé', IMPORTE: 'Mon document', FORMATION: 'Modèle de la formation' }
 
 // Appel avec le cookie de connexion : le backend ne lit et n'écrit que les données du compte connecté
 async function lire(chemin, options = {}) {
@@ -67,6 +67,31 @@ export const creerModeleFormation = (formation, type, contenu, nomFichierImporte
     body: JSON.stringify(nomFichierImporte ? { contenu, nom_fichier_importe: nomFichierImporte } : { contenu }),
   })
 export const messageCreationFormation = (intitule) => `Modèle de la formation « ${intitule} » créé. Il remplace le modèle générique pour les sessions de cette formation.`
+
+// SCRUM-219 : GET /modeles/formations/ -> { formations: [{ id, intitule, nb_modeles }] } (hors archivées)
+export const listerModelesParFormation = () => lire('/modeles/formations/')
+
+// SCRUM-219 : GET /formations/<id>/modeles/ -> { formation, modeles (statut FORMATION), generiques_appliques: [{ type, nom }] }
+export const dossierFormation = (formation) => lire(`/formations/${encodeURIComponent(formation)}/modeles/`)
+
+const adresseModeleFormation = (formation, type) => `/formations/${encodeURIComponent(formation)}/modeles/${encodeURIComponent(type)}/`
+
+// SCRUM-219 : GET /formations/<id>/modeles/<type>/ -> le modèle de la formation (formation, contenu, variables…)
+export const obtenirModeleFormation = (formation, type) => lire(adresseModeleFormation(formation, type))
+
+// SCRUM-219 : PUT /formations/<id>/modeles/<type>/ { contenu, nom_fichier_importe? } -> le modèle enregistré
+export const enregistrerModeleFormation = (formation, type, contenu, nomFichierImporte = null) => lire(adresseModeleFormation(formation, type), {
+  method: 'PUT', headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(nomFichierImporte ? { contenu, nom_fichier_importe: nomFichierImporte } : { contenu }),
+})
+export const messageEnregistrementFormation = (intitule) => `Document enregistré pour la formation « ${intitule} ».`
+
+// SCRUM-219 : DELETE /formations/<id>/modeles/<type>/ -> 204 ; la formation utilise de nouveau le modèle générique (RG19)
+export const retablirGenerique = (formation, type) => lire(adresseModeleFormation(formation, type), { method: 'DELETE' })
+export const MESSAGE_GENERIQUE_RETABLI = 'Modèle générique rétabli pour cette formation.'
+
+// SCRUM-219 : GET /formations/<id>/modeles/<type>/export.docx -> le modèle de la formation enregistré en Word
+export const adresseExportWordFormation = (formation, type) => `${adresseModeleFormation(formation, type)}export.docx`
 
 // SCRUM-216 : GET /modeles/<type>/export.docx -> la dernière version ENREGISTRÉE en Word (variables {{code}}, RG9)
 export const adresseExportWord = (type) => `/modeles/${encodeURIComponent(type)}/export.docx`

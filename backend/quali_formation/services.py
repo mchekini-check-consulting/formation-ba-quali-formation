@@ -677,12 +677,7 @@ class ModeleService:
         """SCRUM-218 : « Enregistrer » le nouveau modèle de la formation (RG8 : rien n'est créé avant). RG17 : le
         contenu envoyé part du modèle générique, puis il est indépendant. RG16 : 409 si la formation a déjà le sien.
         404 : formation d'un autre organisme ou document inconnu."""
-        formation = formations_visibles(utilisateur).filter(pk=formation_id).first()
-        if formation is None:
-            raise FormationIntrouvable()
-        origine = ModeleOrigine.objects.filter(type=str(type_modele).upper()).first()
-        if origine is None:
-            raise ModeleIntrouvable()
+        formation, origine = self._formation_et_origine(utilisateur, formation_id, type_modele)
         if formation.statut == Formation.Statut.ARCHIVEE:
             raise FormationArchivee()
         _verifier_contenu(contenu, nom_fichier_importe)
@@ -694,16 +689,100 @@ class ModeleService:
                                                         nom_fichier_importe=nom_fichier_importe[:255] if nom_fichier_importe else None)
         except IntegrityError as exc:  # deux créations en même temps : la contrainte d'unicité tranche (RG16)
             raise ModeleFormationExistant() from exc
-        return {'id': modele.pk, 'formation': {'id': formation.pk, 'intitule': formation.intitule},
+        return self._decrire_formation(origine, modele, dictionnaire_variables())
+
+    # ---- Modèles de la formation (SCRUM-219) ----
+
+    @staticmethod
+    def _formation_et_origine(utilisateur, formation_id, type_modele):
+        """La formation (de l'organisme connecté, sinon 404) et le modèle d'origine du document (sinon 404)."""
+        formation = formations_visibles(utilisateur).filter(pk=formation_id).first()
+        if formation is None:
+            raise FormationIntrouvable()
+        origine = ModeleOrigine.objects.filter(type=str(type_modele).upper()).first()
+        if origine is None:
+            raise ModeleIntrouvable()
+        return formation, origine
+
+    def _modele_formation(self, utilisateur, formation_id, type_modele):
+        """(formation, modèle d'origine, modèle de la formation) ; 404 si la formation n'a pas ce modèle."""
+        formation, origine = self._formation_et_origine(utilisateur, formation_id, type_modele)
+        modele = ModeleFormation.objects.filter(formation=formation, type=origine.type).first()
+        if modele is None:
+            raise ModeleIntrouvable()
+        return formation, origine, modele
+
+    @staticmethod
+    def _decrire_formation(origine, modele, dictionnaire):
+        """Un modèle de la formation (RG18 : statut FORMATION), avec le libellé de chacune de ses variables."""
+        return {'id': modele.pk, 'formation': {'id': modele.formation_id, 'intitule': modele.formation.intitule},
                 'type': modele.type, 'nom': origine.nom, 'statut': 'FORMATION', 'contenu': modele.contenu,
                 'nom_fichier_importe': modele.nom_fichier_importe, 'date_creation': modele.date_creation,
-                'date_maj': modele.date_maj}
+                'date_maj': modele.date_maj,
+                'variables': [{'code': c, 'libelle': dictionnaire.get(c, c)} for c in variables_du_contenu(modele.contenu)]}
+
+    def formations_avec_modeles(self, utilisateur):
+        """SCRUM-219 : « Modèles par formation » : les formations de l'organisme, hors archivées (RG27, comme le
+        compteur de SCRUM-210), avec leur nombre de modèles de la formation."""
+        formations = (formations_visibles(utilisateur).exclude(statut=Formation.Statut.ARCHIVEE)
+                      .annotate(nb_modeles=Count('modeles')).order_by('intitule', 'id'))
+        return {'formations': [{'id': f.pk, 'intitule': f.intitule, 'nb_modeles': f.nb_modeles} for f in formations]}
+
+    def dossier_formation(self, utilisateur, formation_id):
+        """SCRUM-219 : dossier d'une formation (RG15, RG18) : ses modèles de la formation, puis les autres documents,
+        pour lesquels le modèle générique est appliqué ; dans l'ordre de TypeModele. 404 : autre organisme."""
+        formation = formations_visibles(utilisateur).filter(pk=formation_id).first()
+        if formation is None:
+            raise FormationIntrouvable()
+        origines = {m.type: m for m in ModeleOrigine.objects.all()}
+        siens = {m.type: m for m in ModeleFormation.objects.filter(formation=formation).select_related('formation')}
+        dictionnaire = dictionnaire_variables()
+        types = [t for t in TypeModele.values if t in origines]
+        return {'formation': {'id': formation.pk, 'intitule': formation.intitule},
+                'modeles': [self._decrire_formation(origines[t], siens[t], dictionnaire) for t in types if t in siens],
+                'generiques_appliques': [{'type': t, 'nom': origines[t].nom} for t in types if t not in siens]}
+
+    def obtenir_modele_formation(self, utilisateur, formation_id, type_modele):
+        """SCRUM-219 : un modèle de la formation pour l'éditeur (RG7) ; 404 si la formation n'en a pas pour ce document."""
+        _, origine, modele = self._modele_formation(utilisateur, formation_id, type_modele)
+        return self._decrire_formation(origine, modele, dictionnaire_variables())
+
+    @log_metier("service", champs=[CHAMP_ORGANISME, "formation_id", CHAMP_TYPE_MODELE],
+                message="Modèle de la formation modifié")
+    def modifier_modele_formation(self, utilisateur, formation_id, type_modele, contenu, nom_fichier_importe=None):
+        """SCRUM-219 : « Enregistrer » dans l'éditeur d'un modèle de la formation (RG8). Après un import Word, le nom
+        du nouveau fichier ; sinon celui déjà enregistré est gardé. Le modèle générique n'est jamais touché."""
+        _, origine, modele = self._modele_formation(utilisateur, formation_id, type_modele)
+        _verifier_contenu(contenu, nom_fichier_importe)
+        modele.contenu = contenu
+        if nom_fichier_importe:
+            modele.nom_fichier_importe = nom_fichier_importe[:255]
+        modele.save()
+        return self._decrire_formation(origine, modele, dictionnaire_variables())
+
+    @log_metier("service", champs=[CHAMP_ORGANISME, "formation_id", CHAMP_TYPE_MODELE],
+                message="Modèle de la formation rétabli (supprimé)")
+    def retablir_generique(self, utilisateur, formation_id, type_modele):
+        """SCRUM-219 : « Rétablir le modèle générique », après confirmation (RG19) : le modèle de la formation est
+        supprimé, la formation utilise de nouveau le modèle générique. RG22 : les documents déjà générés ne changent pas."""
+        _, _, modele = self._modele_formation(utilisateur, formation_id, type_modele)
+        modele.delete()
+
+    def exporter_word_formation(self, utilisateur, formation_id, type_modele):
+        """SCRUM-219 : le modèle de la formation ENREGISTRÉ en .docx (même générateur que SCRUM-216, RG9)."""
+        formation, origine, modele = self._modele_formation(utilisateur, formation_id, type_modele)
+        champs_log = {'class': 'ModeleService', 'method': 'exporter_word_formation', CHAMP_TYPE_MODELE: origine.type,
+                      'formation_id': str(formation.pk)}
+        if utilisateur.organisme_id is not None:
+            champs_log[CHAMP_ORGANISME] = str(utilisateur.organisme_id)
+        return fichier_word(modele.contenu, origine.nom, champs_log)
 
     def formations_utilisant(self, utilisateur, type_modele):
-        """RG6 : (formations qui utilisent le modèle générique de ce type, formations du compte), hors archivées.
-        Tant que les modèles de la formation n'existent pas (SCRUM-219), toutes l'utilisent."""
-        nb_formations = formations_visibles(utilisateur).exclude(statut=Formation.Statut.ARCHIVEE).count()
-        return nb_formations, nb_formations
+        """RG6 : (formations qui utilisent le modèle générique de ce type, formations du compte), hors archivées :
+        celles qui ont leur propre modèle pour ce document (SCRUM-218/219) ne l'utilisent pas."""
+        formations = formations_visibles(utilisateur).exclude(statut=Formation.Statut.ARCHIVEE)
+        utilisant = formations.exclude(modeles__type=str(type_modele).upper())
+        return utilisant.count(), formations.count()
 
     def modifier(self, utilisateur, type_modele, contenu, nom_fichier_importe=None):
         """SCRUM-213 : « Enregistrer » dans l'éditeur. Le modèle enregistré (statut PERSONNALISE, ou IMPORTE

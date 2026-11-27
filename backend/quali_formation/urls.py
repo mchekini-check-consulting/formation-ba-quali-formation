@@ -50,6 +50,7 @@ urlpatterns = [
     path('entreprises/<siret:siret>/', views.entreprise),
     # Modèles par dossiers (SCRUM-210)
     path('modeles/resume', views.modeles_resume),
+    path('modeles/formations/', views.modeles_par_formation),
     # Modèles d'origine et modèles génériques du compte (SCRUM-211)
     path('modeles/', views.modeles),
     path('modeles/<str:type_modele>', views.modele),
@@ -64,7 +65,11 @@ urlpatterns = [
     # Dupliquer un modèle générique pour une formation (SCRUM-218) : GET /modeles/<type>/formations (fenêtre
     # « Dupliquer »), POST /formations/<id>/modeles/<type>/ (création au clic sur « Enregistrer », RG8)
     path('modeles/<str:type_modele>/formations', views.formations_pour_duplication),
-    path('formations/<int:pk>/modeles/<str:type_modele>/', views.creer_modele_formation),
+    path('formations/<int:pk>/modeles/<str:type_modele>/', views.modele_formation),
+    # Modèles de la formation (SCRUM-219) : liste « Modèles par formation », dossier d'une formation, modèle de la
+    # formation (GET / PUT / DELETE ci-dessus) et son téléchargement en Word
+    path('formations/<int:pk>/modeles/', views.dossier_formation),
+    path('formations/<int:pk>/modeles/<str:type_modele>/export.docx', views.exporter_modele_formation),
     # Variables du panneau de l'éditeur (SCRUM-214) : GET /variables/
     path('variables/', views.variables),
 ]

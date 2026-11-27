@@ -13,7 +13,9 @@ import NouvelleSession from './pages/NouvelleSession'
 import SessionsPlanning from './pages/SessionsPlanning'
 import ListePartiesPrenantes from './pages/ListePartiesPrenantes'
 import LandingPage from './landing/LandingPage'
-import { DossierModeles, ModeleFormationNouveau, ModeleOuvert, ModelesAccueil, ModelesGeneriques } from './modeles/Modeles'
+import {
+  DossierFormation, ModeleFormationNouveau, ModeleFormationOuvert, ModeleOuvert, ModelesAccueil, ModelesGeneriques, ModelesParFormation,
+} from './modeles/Modeles'
 
 // Routes de l'application (utilisées par main.jsx et par les tests)
 export const routes = [
@@ -42,7 +44,10 @@ export const routes = [
       { path: '/modeles/generiques', element: <ModelesGeneriques /> },
       // Modèle générique ouvert (SCRUM-211) : texte et variables en étiquettes ; éditeur avec SCRUM-213
       { path: '/modeles/generiques/:type', element: <ModeleOuvert /> },
-      { path: '/modeles/formations', element: <DossierModeles titre="Modèles par formation" /> },
+      // SCRUM-219 : « Modèles par formation », dossier d'une formation, modèle de la formation dans l'éditeur
+      { path: '/modeles/formations', element: <ModelesParFormation /> },
+      { path: '/modeles/formations/:formation', element: <DossierFormation /> },
+      { path: '/modeles/formations/:formation/:type', element: <ModeleFormationOuvert /> },
       // SCRUM-218 : nouveau modèle de la formation, créé seulement à « Enregistrer » (RG8)
       { path: '/modeles/formations/:formation/:type/nouveau', element: <ModeleFormationNouveau /> },
       // Fonctionnalités du menu ou du profil pas encore développées (SCRUM-19)
