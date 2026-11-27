@@ -98,8 +98,8 @@ export const adresseExportWordFormation = (formation, type) => `${adresseModeleF
 export const adresseExportWord = (type) => `/modeles/${encodeURIComponent(type)}/export.docx`
 export const nomFichierWord = (nom) => `Modèle - ${nom}.docx`
 
-// Téléchargement d'un fichier Word du backend sous `nomFichier` (accents compris) ; réutilisable (SCRUM-219)
-export async function telechargerWord(chemin, nomFichier) {
+// Téléchargement d'un fichier du backend sous `nomFichier` (accents compris) ; réutilisable (SCRUM-219 ; PDF : SCRUM-220)
+export async function telechargerWord(chemin, nomFichier, messageErreur = 'Le fichier Word n’a pas pu être téléchargé. Réessayez.') {
   let reponse
   try {
     reponse = await fetch(`${apiBase()}${chemin}`, { credentials: 'include' })
@@ -108,7 +108,7 @@ export async function telechargerWord(chemin, nomFichier) {
   }
   if (!reponse.ok) {
     const json = await reponse.json().catch(() => null)
-    throw new ErreurMetier(json?.code || 'ERREUR', json?.detail || 'Le fichier Word n’a pas pu être téléchargé. Réessayez.')
+    throw new ErreurMetier(json?.code || 'ERREUR', json?.detail || messageErreur)
   }
   const adresse = URL.createObjectURL(await reponse.blob())
   const lien = document.createElement('a')

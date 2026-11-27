@@ -414,6 +414,34 @@ class ModeleFormation(models.Model):
 
 
 
+class DocumentGenere(models.Model):
+    """Document d'une session (SCRUM-220) : contenu rempli et PDF figés à la génération (RG22) ; modifier, rétablir ou
+    supprimer le modèle ensuite ne les change pas. Un par apprenant (contrat, convocation, attestation), un par
+    entreprise cliente (convention). Contient des données personnelles : servi seulement à l'organisme connecté."""
+
+    class Source(models.TextChoices):  # RG20 : colonne « Modèle utilisé »
+        FORMATION = 'FORMATION', 'Modèle de la formation'
+        GENERIQUE = 'GENERIQUE', 'Modèle générique'
+
+    session = models.ForeignKey(Session, on_delete=models.CASCADE, related_name='documents')
+    type = models.CharField(max_length=12, choices=TypeModele.choices)
+    source = models.CharField(max_length=10, choices=Source.choices)
+    apprenant = models.ForeignKey(Apprenant, on_delete=models.SET_NULL, null=True, blank=True, related_name='documents')
+    entreprise = models.ForeignKey(Entreprise, on_delete=models.SET_NULL, null=True, blank=True, related_name='documents')
+    destinataire = models.CharField(max_length=255)  # nom figé au moment de la génération
+    numero = models.CharField(max_length=20, unique=True, null=True, blank=True)  # TYPE-AAAA-NNNN, jamais réutilisé
+    contenu = models.TextField()  # HTML rempli, figé
+    fichier = models.BinaryField(null=True, blank=True)  # PDF figé (pas de disque permanent sur les serveurs)
+    date_generation = models.DateTimeField()
+
+    class Meta:
+        db_table = 'document_genere'
+        ordering = ('date_generation', 'id')
+
+    def __str__(self):
+        return self.numero or f'{self.type} ({self.session_id})'
+
+
 class Variable(models.Model):
     """Variable d'un modèle de document (SCRUM-214), écrite {{code}} dans le texte (RG9) et remplacée par la
     vraie information à la génération du document. Liste du dictionnaire de données (variables.json)."""

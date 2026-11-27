@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import ErreurChargement from '../components/ErreurChargement'
 import { messageFichiersNonEnregistres } from '../formateurs/formateurs'
 import '../formateurs/formateurs.css'
@@ -69,7 +69,7 @@ function SessionsPlanning() {
           {sessions.map((s) => (
             <li key={s.id} className={`sp-ligne${s.id === nouvelleId ? ' nouvelle' : ''}`}>
               <span className="sp-date"><small>{moisCourt(s.date_debut)}</small><b>{jour(s.date_debut)}</b></span>
-              <span className="sp-titre"><b>{s.formation_intitule}</b><span>{periode(s)}</span></span>
+              <Link className="sp-titre" to={`/sessions/${s.id}`}><b>{s.formation_intitule}</b><span>{periode(s)}</span></Link>
               <span className="sp-col">{MODALITES[s.modalite]}</span>
               <span className="sp-col">{s.nombre_places ? `${s.nombre_apprenants} / ${s.nombre_places}` : s.nombre_apprenants} apprenants</span>
               <span className="sp-statut">{STATUTS[s.statut] || s.statut}</span>
