@@ -66,12 +66,25 @@ class FormationSerializer(serializers.ModelSerializer):
     sequences = SequenceSerializer(many=True, read_only=True)
     sessions = SessionSerializer(many=True, read_only=True)
     blocs_manquants = serializers.SerializerMethodField()
+    # Lus depuis le compte qui a créé la formation (son centre, son prénom et son nom), y compris pour les formations
+    # enregistrées avec les anciennes valeurs du prototype ; à défaut de compte, la valeur enregistrée.
+    organisme = serializers.SerializerMethodField()
+    preparee_par = serializers.SerializerMethodField()
 
     class Meta:
         model = Formation
         fields = ('id', 'reference', 'version', 'intitule', 'duree_heures', 'modalite', 'statut', 'publication',
                   'organisme', 'preparee_par', 'valeurs', 'autres_informations', 'date_creation', 'date_mise_a_jour',
                   'sequences', 'sessions', 'blocs_manquants')
+
+    def get_organisme(self, formation):
+        centre = formation.proprietaire.organisme if formation.proprietaire else None
+        return centre.raison_sociale if centre else formation.organisme
+
+    def get_preparee_par(self, formation):
+        if formation.proprietaire is None:
+            return formation.preparee_par
+        return formation.proprietaire.nom_complet
 
     def get_blocs_manquants(self, formation):
         return [b.id for b in blocs_manquants(formation.valeurs, formation.modalite, formation.sequences.count())]
@@ -86,8 +99,7 @@ class FormationEcritureSerializer(serializers.Serializer):
     intitule = serializers.CharField(allow_blank=True, max_length=255)
     duree_heures = serializers.DecimalField(max_digits=7, decimal_places=2, allow_null=True, required=False, default=None)
     modalite = serializers.ChoiceField(choices=Formation.Modalite.choices)
-    organisme = serializers.CharField(required=False, default='Cap Compétences')
-    preparee_par = serializers.CharField(required=False, default='Camille Laurent')
+    # Organisme et « Préparée par » ne sont pas saisis : ils viennent du compte connecté (FormationService.enregistrer)
     valeurs = serializers.DictField(required=False, default=dict)
     autres_informations = AutreInformationSerializer(many=True, required=False, default=list)
     sequences = SequenceSerializer(many=True, required=False, default=list)

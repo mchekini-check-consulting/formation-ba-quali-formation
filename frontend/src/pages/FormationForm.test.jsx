@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
-import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { routes } from '../App'
 import { today } from '../formations/catalogue'
 import * as service from '../formations/service'
@@ -16,6 +16,28 @@ async function ouvrir(adresse) {
 }
 const saisir = (label, valeur) => fireEvent.change(screen.getByLabelText(label, { exact: false }), { target: { value: valeur } })
 const derniere = async () => (await service.listerFormations()).find((f) => f.title === 'Excel débutant')
+
+describe('Informations de base : organisme et auteur', () => {
+  afterEach(() => vi.unstubAllGlobals())
+  const identification = () => screen.getByLabelText('Identification de la fiche').textContent
+
+  it('nouvelle formation : centre et prénom-nom du compte connecté, jamais les valeurs du prototype', async () => {
+    const compte = { id: 7, email: 'marie@centre.fr', prenom: 'Marie', nom: 'Arnaud', role: 'GESTIONNAIRE',
+      organisme: { id: 3, raison_sociale: 'Centre Test 112 A' } }
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: true, status: 200, json: async () => compte })))
+    await ouvrir('/formations/nouvelle')
+    await waitFor(() => expect(identification()).toContain('Organisme Centre Test 112 A'))
+    expect(identification()).toContain('Préparée par Marie Arnaud')
+    expect(identification()).not.toMatch(/Cap Compétences|Camille Laurent/)
+  })
+
+  it('compte inconnu (hors connexion) : « — » plutôt qu’un nom inventé', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({ ok: false, status: 401, json: async () => ({}) })))
+    await ouvrir('/formations/nouvelle')
+    expect(identification()).toContain('Organisme —')
+    expect(identification()).toContain('Préparée par —')
+  })
+})
 
 describe('Formulaire de création / modification', () => {
   it('enregistre un brouillon avec le seul intitulé, référence FOR-AAAA-NNN et version 1 (RG02, RG03, RG04)', async () => {

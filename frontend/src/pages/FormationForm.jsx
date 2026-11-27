@@ -5,11 +5,19 @@ import Icone from '../components/Icone'
 import { ConfirmDialog, Modal } from '../components/Modal'
 import { useToast } from '../components/toastContext'
 import { filled, fmt, frDate, hasProg, MOD_LBL, MOD_REQ, MODALITES, missingTiles, num, pluriel, SECTIONS, STATUS, TILES, tileDone, visibleQs } from '../formations/catalogue'
+import { compteConnecte } from '../compte/serviceCompte'
 import AssistantBloc from '../formations/AssistantBloc'
 import * as service from '../formations/donnees'
 
-const NOUVELLE = { id: null, ref: '', title: '', duree: '', modalite: 'Présentiel', organisme: 'Cap Compétences', prepare: 'Camille Laurent', version: 1, statut: 'brouillon', values: {}, others: [], sess: [] }
+const NOUVELLE = { id: null, ref: '', title: '', duree: '', modalite: 'Présentiel', organisme: '', prepare: '', version: 1, statut: 'brouillon', values: {}, others: [], sess: [] }
 const copie = (x) => structuredClone(x)
+
+// Nouvelle formation : organisme = centre du compte connecté, « Préparée par » = son prénom et son nom
+// (le backend enregistre de toute façon ceux du compte connecté)
+async function nouvelleFormation() {
+  const compte = await compteConnecte()
+  return { ...copie(NOUVELLE), organisme: compte?.organisme?.raison_sociale || '', prepare: `${compte?.prenom || ''} ${compte?.nom || ''}`.trim() }
+}
 
 // Aperçu de la réponse d'un bloc complet, affiché sur sa tuile
 function apercuProgramme(vals) {
@@ -94,7 +102,7 @@ function useFormationChargee(id, params, ouvrirBloc) {
   const [erreur, setErreur] = useState(null)         // formation inexistante ou d'un autre compte
   useEffect(() => {
     let actif = true
-    const charger = id ? service.obtenirFormation(id) : Promise.resolve(copie(NOUVELLE))
+    const charger = id ? service.obtenirFormation(id) : nouvelleFormation()
     charger.then((f) => {
       if (!actif) return
       // SCRUM-23 : une formation archivée ne se modifie pas, on reste sur sa fiche
@@ -235,8 +243,8 @@ function FormationForm() {
         <div className="ident" aria-label="Identification de la fiche">
           <span><b>Référence</b> {form.ref || 'attribuée à l’enregistrement'}</span>
           <span><b>Version</b> {form.version || 1}</span>
-          <span><b>Organisme</b> {form.organisme || 'Cap Compétences'}</span>
-          <span><b>Préparée par</b> {form.prepare || 'Camille Laurent'}</span>
+          <span><b>Organisme</b> {form.organisme || '—'}</span>
+          <span><b>Préparée par</b> {form.prepare || '—'}</span>
           {form.created && <span><b>Créée le</b> {frDate(form.created)}</span>}
           {form.maj && <span><b>Mise à jour le</b> {frDate(form.maj)}</span>}
         </div>

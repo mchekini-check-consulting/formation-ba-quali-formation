@@ -101,7 +101,8 @@ def formations_visibles(utilisateur):
     Seul endroit qui décide « qui voit quoi » pour les formations (et donc leurs sessions)."""
     if utilisateur is None or utilisateur.organisme_id is None:
         return Formation.objects.none()
-    return Formation.objects.filter(proprietaire__organisme_id=utilisateur.organisme_id)
+    return (Formation.objects.filter(proprietaire__organisme_id=utilisateur.organisme_id)
+            .select_related('proprietaire__organisme'))
 
 
 def _organisme_requis(utilisateur):
@@ -184,6 +185,10 @@ class FormationService:
             nouvelle = formation is None
             if nouvelle:
                 formation = Formation(proprietaire=utilisateur)
+                if utilisateur is not None:
+                    # Centre et auteur de la formation : ceux du compte connecté, jamais des valeurs saisies
+                    formation.organisme = utilisateur.organisme.raison_sociale if utilisateur.organisme else ''
+                    formation.preparee_par = utilisateur.nom_complet
             else:
                 formation.version += 1  # RG04
             for champ, valeur in donnees.items():
