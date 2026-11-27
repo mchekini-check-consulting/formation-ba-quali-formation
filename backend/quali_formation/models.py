@@ -315,6 +315,11 @@ class Utilisateur(models.Model):
     def __str__(self):
         return self.email
 
+    @property
+    def nom_complet(self):
+        """« Prénom Nom » (renseignés au formulaire de première connexion, SCRUM-221) : « Préparée par » des formations."""
+        return f'{self.prenom} {self.nom}'.strip()
+
 
 class FormationHistorique(models.Model):
     """Une ligne par action sur une formation : création (SCRUM-20), modification, archivage, restauration,
