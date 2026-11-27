@@ -36,7 +36,15 @@ function SessionsPlanning() {
   const lignes = sessions ? sessionsOnglet(sessions, onglet, aujourdhui) : []
 
   return (
-    <div className="wrap">
+    <div className="wrap sp-page">
+      {/* En-tête d'abord : il remonte sur la ligne de la cloche et du profil (sessions.css) ; les bandeaux viennent dessous */}
+      <div className="page-head">
+        <h1>Sessions et planning</h1>
+        <div className="sp-actions">
+          <MenuPartiesPrenantes onChoisir={setPanneau} />
+          <button type="button" className="btn btn-primary" onClick={() => navigate('/sessions/nouvelle')}><Icone nom="plus" taille={18} epaisseur={2.4} />Nouvelle session</button>
+        </div>
+      </div>
       {message && (
         <div className="sp-bandeau" role="status">
           <Icone nom="check" taille={18} epaisseur={2.4} /><span>{message}</span>
@@ -49,13 +57,6 @@ function SessionsPlanning() {
           <button type="button" aria-label="Fermer l’alerte" onClick={() => setAlerte(null)}><Icone nom="x" taille={16} /></button>
         </div>
       )}
-      <div className="page-head">
-        <h1>Sessions et planning</h1>
-        <div className="sp-actions">
-          <MenuPartiesPrenantes onChoisir={setPanneau} />
-          <button type="button" className="btn btn-primary" onClick={() => navigate('/sessions/nouvelle')}><Icone nom="plus" taille={18} epaisseur={2.4} />Nouvelle session</button>
-        </div>
-      </div>
       {panneau && (
         <PanneauPartiePrenante type={panneau} key={panneau} onFermer={() => setPanneau(null)}
           onCree={(p, nonEnregistres = []) => {
