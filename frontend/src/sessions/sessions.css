@@ -38,7 +38,6 @@ a.sp-formation:hover{color:var(--brand-text)}
 .sp-barre{display:block;width:110px;max-width:100%;height:5px;margin-top:5px;border-radius:999px;background:var(--surface-2);overflow:hidden}
 .sp-barre>span{display:block;height:100%;border-radius:999px;background:var(--brand)}
 .sp-aucune{margin:0;padding:36px 16px;text-align:center;font-size:16px;font-weight:700;color:var(--ink)}
-}
 
 /* ---- Formulaire ---- */
 /* Pop-up « Nouvelle session » (maquettes SCRUM-166, centrée) */
