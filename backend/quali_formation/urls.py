@@ -61,6 +61,10 @@ urlpatterns = [
     # POST /modeles/<type>/reinitialiser (le modèle générique du compte redevient celui d'origine)
     path('modeles/<str:type_modele>/origine', views.modele_origine),
     path('modeles/<str:type_modele>/reinitialiser', views.retablir_modele),
+    # Dupliquer un modèle générique pour une formation (SCRUM-218) : GET /modeles/<type>/formations (fenêtre
+    # « Dupliquer »), POST /formations/<id>/modeles/<type>/ (création au clic sur « Enregistrer », RG8)
+    path('modeles/<str:type_modele>/formations', views.formations_pour_duplication),
+    path('formations/<int:pk>/modeles/<str:type_modele>/', views.creer_modele_formation),
     # Variables du panneau de l'éditeur (SCRUM-214) : GET /variables/
     path('variables/', views.variables),
 ]

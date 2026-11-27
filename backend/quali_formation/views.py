@@ -452,6 +452,31 @@ def retablir_modele(request, utilisateur, type_modele):
 
 @api_view(["GET"])
 @_connexion_requise
+def formations_pour_duplication(request, utilisateur, type_modele):
+    """SCRUM-218 : GET /modeles/<type>/formations -> {disponibles, deja_crees} : [{id, intitule}] des formations
+    de l'organisme (hors archivées), avec ou sans modèle pour ce document ; 401, 404. Simple lecture : pas de log."""
+    try:
+        return Response(modele_service.formations_pour_duplication(utilisateur, type_modele))
+    except ErreurMetier as e:
+        return _erreur(e)
+
+
+@api_view(["POST"])
+@_connexion_requise
+def creer_modele_formation(request, utilisateur, pk, type_modele):
+    """SCRUM-218 : POST /formations/<id>/modeles/<type>/ {contenu, nom_fichier_importe?} -> 201 le modèle de la
+    formation (statut FORMATION) ; 400 CONTENU_INVALIDE / FORMATION_ARCHIVEE, 401, 404, 409
+    MODELE_FORMATION_EXISTANT. Journalisé par le service (« Modèle de la formation créé »)."""
+    try:
+        modele = modele_service.creer_modele_formation(utilisateur, pk, type_modele, request.data.get('contenu'),
+                                                       request.data.get('nom_fichier_importe'))
+    except ErreurMetier as e:
+        return _erreur(e)
+    return Response(modele, status=status.HTTP_201_CREATED)
+
+
+@api_view(["GET"])
+@_connexion_requise
 def variables(request, utilisateur):
     """SCRUM-214 : GET /variables/ -> [{code, libelle, categorie, exemple}] triées selon RG10 ; 401.
     Simple lecture : pas de log métier."""

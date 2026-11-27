@@ -2,11 +2,15 @@
 (RG5, RG6, RG8)."""
 
 import json
-import unittest
 
 from django.test import Client, TestCase
 
-from quali_formation.models import ModeleGenerique, ModeleOrigine
+from quali_formation.models import (
+    Formation,
+    ModeleFormation,
+    ModeleGenerique,
+    ModeleOrigine,
+)
 from quali_formation.tests import connecter, connecter_existant
 
 ORIGINE = ModeleGenerique.Statut.ORIGINE
@@ -87,11 +91,17 @@ class RetablirOrigineTests(TestCase):
         self.retablir()
         self.assertEqual(self.client.get('/modeles/convocation').json()['contenu'], self.origine.contenu)
 
-    @unittest.skip('À compléter avec SCRUM-218 (modèles de la formation pas encore créés)')
     def test_ca4_rg5_le_modele_de_la_formation_ne_change_pas(self):
-        # SCRUM-218 : créer un ModeleFormation de convocation pour une formation du compte, rétablir la convocation
-        # d'origine, puis vérifier que son contenu et sa date de mise à jour sont inchangés.
-        self.fail('ModeleFormation n’existe pas encore')
+        # Complété avec SCRUM-218 : une formation a sa propre convocation ; rétablir la convocation générique
+        # d'origine ne change ni son contenu ni sa date de mise à jour
+        self.enregistrer()
+        formation = Formation.objects.create(reference='F-1', intitule='Excel', proprietaire=self.compte)
+        sienne = ModeleFormation.objects.create(formation=formation, type='CONVOCATION', contenu=MA_VERSION,
+                                                nom_fichier_importe='Convocation Excel.docx')
+        self.assertEqual(self.retablir().status_code, 200)
+        apres = ModeleFormation.objects.get(pk=sienne.pk)
+        self.assertEqual((apres.contenu, apres.nom_fichier_importe, apres.date_maj),
+                         (MA_VERSION, 'Convocation Excel.docx', sienne.date_maj))
 
     def test_ca5_modele_jamais_modifie_deja_au_statut_origine(self):
         # Le lien « Rétablir » n'apparaît pas pour un modèle ORIGINE ; rétablir quand même ne change rien

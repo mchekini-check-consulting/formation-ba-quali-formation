@@ -36,7 +36,7 @@ function afficher() {
 const carte = (nom) => screen.findByRole('article', { name: nom })
 
 describe('Modèles génériques (SCRUM-212)', () => {
-  it('CA1 : 4 cartes avec miniature, nom, statut et bouton « Dupliquer » (inactif : SCRUM-218)', async () => {
+  it('CA1 : 4 cartes avec miniature, nom, statut et bouton « Dupliquer » (actif : SCRUM-218)', async () => {
     simulerBackend()
     afficher()
     for (const nom of NOMS) {
@@ -48,7 +48,7 @@ describe('Modèles génériques (SCRUM-212)', () => {
       expect(miniature.textContent).toContain('Ouvrir')
       expect(within(c).getByRole('link', { name: nom })).toBeTruthy()
       expect(within(c).getByText('Modèle d’origine')).toBeTruthy()
-      expect(within(c).getByRole('button', { name: 'Dupliquer' }).disabled).toBe(true)
+      expect(within(c).getByRole('button', { name: 'Dupliquer' }).disabled).toBe(false)
     }
     expect(document.querySelectorAll('.mod-modele')).toHaveLength(4)
   })
