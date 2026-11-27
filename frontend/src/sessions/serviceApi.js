@@ -27,6 +27,14 @@ async function appel(chemin, corps) {
 }
 
 export const listerSessions = () => appel('/sessions/')
+
+// SCRUM-220 : onglet Documents d'une session. GET -> { session, documents: [{ type, nom, source, generes }] } ;
+// source : FORMATION (modèle de la formation) ou GENERIQUE (modèle générique, ou d'origine) (RG20)
+export const documentsSession = (id) => appel(`/sessions/${encodeURIComponent(id)}/documents/`)
+// POST -> 201 { type, source, nombre } ; 400 session sans apprenant / convention sans entreprise cliente
+export const genererDocuments = (id, type) => appel(`/sessions/${encodeURIComponent(id)}/documents/${encodeURIComponent(type)}/generer`, {})
+// PDF figé (RG22), téléchargé avec le cookie de connexion : jamais de lien public
+export const adressePdf = (id, document) => `/sessions/${encodeURIComponent(id)}/documents/${encodeURIComponent(document)}/pdf`
 // SCRUM-119 : formateurs du centre triés par nom, avec leur nombre de sessions, filtrés par `recherche` (nom ou e-mail)
 export const listerFormateurs = (recherche = '') =>
   appel(recherche.trim() ? `/formateurs/?recherche=${encodeURIComponent(recherche.trim())}` : '/formateurs/')

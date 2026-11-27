@@ -7,6 +7,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
+from quali_formation.documents_session import document_session_service
 from quali_formation.entreprises import (
     RechercheTropCourte,
     ServiceEntreprisesIndisponible,
@@ -521,6 +522,45 @@ def exporter_modele_formation(request, utilisateur, pk, type_modele):
         return fichier_word_reponse(modele_service.exporter_word_formation(utilisateur, pk, type_modele))
     except ErreurMetier as e:
         return _erreur(e)
+
+
+@api_view(["GET"])
+@_connexion_requise
+def documents_session(request, utilisateur, pk):
+    """SCRUM-220 : GET /sessions/<id>/documents/ -> {session, documents: [{type, nom, source, generes}]} ; 401, 404.
+    Simple lecture : pas de log métier."""
+    try:
+        return Response(document_session_service.lister(utilisateur, pk))
+    except ErreurMetier as e:
+        return _erreur(e)
+
+
+@api_view(["POST"])
+@_connexion_requise
+def generer_documents_session(request, utilisateur, pk, type_modele):
+    """SCRUM-220 : POST /sessions/<id>/documents/<type>/generer -> 201 {type, source, nombre} ; 400
+    SESSION_SANS_APPRENANT / SANS_ENTREPRISE_CLIENTE, 401, 404, 500 PDF_IMPOSSIBLE. Journalisé par le service
+    (organisme, session, type, nombre de documents ; jamais de nom ni de contenu)."""
+    try:
+        resultat = document_session_service.generer(utilisateur, pk, type_modele)
+    except ErreurMetier as e:
+        return _erreur(e)
+    return Response(resultat, status=status.HTTP_201_CREATED)
+
+
+@api_view(["GET"])
+@_connexion_requise
+def pdf_document_session(request, utilisateur, pk, document):
+    """SCRUM-220 : GET /sessions/<id>/documents/<document>/pdf -> le PDF figé (RG22) ; 401, 404. Données
+    personnelles : seulement l'organisme connecté, jamais de lien public, pas de mise en cache."""
+    try:
+        fichier, nom = document_session_service.pdf(utilisateur, pk, document)
+    except ErreurMetier as e:
+        return _erreur(e)
+    reponse = HttpResponse(fichier, content_type='application/pdf')
+    reponse['Content-Disposition'] = content_disposition_header(True, nom)
+    reponse['Cache-Control'] = 'no-store'
+    return reponse
 
 
 @api_view(["GET"])
