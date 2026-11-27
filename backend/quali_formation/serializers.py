@@ -275,15 +275,21 @@ class SessionPlanningSerializer(serializers.ModelSerializer):
 
     formation_intitule = serializers.CharField(source='formation.intitule', read_only=True)
     nombre_apprenants = serializers.SerializerMethodField()
+    # SCRUM-167 : colonne « Formateur » de la liste (prénom et nom, triés par nom)
+    formateurs_noms = serializers.SerializerMethodField()
 
     class Meta:
         model = Session
         fields = ('id', 'formation', 'formation_intitule', 'date_debut', 'date_fin', 'heure_debut', 'heure_fin',
                   'duree_heures', 'modalite', 'lieu', 'lien_classe_virtuelle', 'nombre_places', 'statut',
-                  'formateurs', 'apprenants', 'nombre_apprenants')
+                  'formateurs', 'formateurs_noms', 'apprenants', 'nombre_apprenants')
 
     def get_nombre_apprenants(self, session):
         return len(session.apprenants.all())  # apprenants préchargés par la vue
+
+    def get_formateurs_noms(self, session):
+        formateurs = sorted(session.formateurs.all(), key=lambda f: (f.nom.lower(), f.prenom.lower(), f.pk))
+        return [{'id': f.pk, 'prenom': f.prenom, 'nom': f.nom} for f in formateurs]  # formateurs préchargés
 
 
 # Champs obligatoires selon la modalité de la session (SCRUM-166)

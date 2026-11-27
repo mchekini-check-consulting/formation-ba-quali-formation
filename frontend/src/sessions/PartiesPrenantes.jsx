@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import PanneauApprenant from '../apprenants/PanneauApprenant'
+import PanneauEntreprise from '../entreprises/PanneauEntreprise'
 import PanneauFormateur from '../formateurs/PanneauFormateur'
 import Icone from '../components/Icone'
-import { PARTIES_PRENANTES } from './typesPersonnes'
+import { CHOIX_PARTIES_PRENANTES } from './typesPersonnes'
 
-// Bouton « Parties prenantes » et sa liste déroulante. onChoisir(type) : 'formateur' ou 'apprenant'.
+// Bouton « Parties prenantes » et sa liste de 3 choix (maquette SCRUM-167).
+// onChoisir(type) : 'apprenant', 'formateur' ou 'entreprise'.
 export function MenuPartiesPrenantes({ onChoisir }) {
   const [ouvert, setOuvert] = useState(false)
   const zone = useRef(null)
@@ -22,15 +24,12 @@ export function MenuPartiesPrenantes({ onChoisir }) {
   return (
     <div className="pp" ref={zone}>
       <button type="button" className="btn btn-outline" aria-expanded={ouvert} aria-haspopup="menu" onClick={() => setOuvert(!ouvert)}>
-        <Icone nom="apprenants" taille={18} />Parties prenantes<span className={`pp-chev${ouvert ? ' ouvert' : ''}`}><Icone nom="chev" taille={16} /></span>
+        Parties prenantes<span className={`pp-chev${ouvert ? ' ouvert' : ''}`}><Icone nom="chev" taille={16} /></span>
       </button>
       {ouvert && (
         <div className="pp-menu" role="menu">
-          {Object.entries(PARTIES_PRENANTES).map(([type, t]) => (
-            <button type="button" role="menuitem" key={type} onClick={() => choisir(type)}>
-              <span className={`pp-ic ${t.classe}`}><Icone nom={t.icone} taille={18} /></span>
-              <span><b>{t.titre}</b><small>{t.aide}</small></span>
-            </button>
+          {CHOIX_PARTIES_PRENANTES.map(({ type, titre }) => (
+            <button type="button" role="menuitem" key={type} onClick={() => choisir(type)}>{titre}</button>
           ))}
         </div>
       )}
@@ -38,10 +37,11 @@ export function MenuPartiesPrenantes({ onChoisir }) {
   )
 }
 
-// Panneau latéral « Nouveau formateur » (SCRUM-26, complété par SCRUM-119) ou « Nouvel apprenant » (SCRUM-27, complété
-// par SCRUM-112). « Annuler », la croix, Échap ou un clic à côté le ferment.
-// onCree(personne, nonEnregistres) : appelé après l'enregistrement (formateur : noms des fichiers non enregistrés).
+// Panneau latéral « Nouveau formateur » (SCRUM-26, complété par SCRUM-119), « Nouvel apprenant » (SCRUM-27, complété
+// par SCRUM-112) ou « Nouvelle entreprise cliente » (SCRUM-113). « Annuler », la croix, Échap ou un clic à côté le ferment.
+// onCree(partie, nonEnregistres) : appelé après l'enregistrement (formateur : noms des fichiers non enregistrés).
 export function PanneauPartiePrenante({ type, onFermer, onCree }) {
+  if (type === 'entreprise') return <PanneauEntreprise onFermer={onFermer} onCree={onCree} />
   return type === 'apprenant'
     ? <PanneauApprenant onFermer={onFermer} onCree={onCree} />
     : <PanneauFormateur onFermer={onFermer} onCree={onCree} />
