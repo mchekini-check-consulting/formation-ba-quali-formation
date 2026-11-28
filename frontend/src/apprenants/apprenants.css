@@ -112,3 +112,19 @@ select.app-inp{padding-right:10px;cursor:pointer}
 .app-alerte{margin:0;padding:12px 16px;border:1px solid var(--c-erreur-bordure);border-radius:12px;background:var(--c-erreur-fond);color:var(--c-erreur-texte);font-weight:600;font-size:14px}
 .app-pied{display:flex;justify-content:flex-end;gap:12px;padding:16px 32px;border-top:1px solid var(--c-bordure)}
 @media (max-width:560px){.app-ligne-champs{grid-template-columns:1fr}.app-tete,.app-corps,.app-pied{padding-left:20px;padding-right:20px}}
+/* SCRUM-179 : présentation « simple » de la fenêtre (maquette 06 « Créer un apprenant ») : sans titres de sections,
+   champs sur une colonne, aides masquées, note en bas. Les champs, règles et messages d'erreur ne changent pas. */
+.app-corps-simple{gap:18px}
+.app-corps-simple section{gap:18px}
+.app-corps-simple .app-masque{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.app-corps-simple .app-aide{display:none}
+.app-colonne{display:flex;flex-direction:column;gap:18px}
+.app-note{margin:0;font-size:13.5px;color:var(--c-texte-2)}
+.app-pied-retour{display:flex;align-items:center;gap:12px;padding:16px 32px;border-top:1px solid var(--c-bordure)}
+.app-pied-retour .app-retour{margin-right:auto}
+.pa.app-panneau-simple{width:min(520px,100%)}
+.app-panneau-simple .app-tete{padding:28px 28px 20px}
+.app-panneau-simple .app-tete h2{font-size:24px;line-height:32px;margin:0 0 4px}
+.app-panneau-simple .app-tete p{font-size:14.5px}
+.app-panneau-simple .app-corps{padding:24px 28px}
+.app-panneau-simple .app-pied-retour{padding:16px 28px}

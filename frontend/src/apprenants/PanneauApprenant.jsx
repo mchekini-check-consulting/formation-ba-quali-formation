@@ -23,7 +23,13 @@ function Champ({ id, label, obligatoire, aide, erreur, children }) {
 // Fenêtre « Nouvel apprenant » (SCRUM-27, complétée par SCRUM-112), la même partout où l'on crée un apprenant :
 // Identité (prénom, nom), Contact (e-mail, téléphone), Situation (statut ; entreprise cliente et poste si « Salarié »).
 // « Annuler », la croix, Échap ou un clic à côté la ferment. onCree(apprenant) : appelé après l'enregistrement.
-export default function PanneauApprenant({ onFermer, onCree }) {
+// Options de présentation (SCRUM-179, « Créer un apprenant » du panneau « Ajouter des apprenants », maquette 06) :
+// titre, sousTitre, `simple` (sans titres de sections, une colonne, note en bas) et pied(enregistrer, envoi) pour
+// d'autres boutons. Champs, règles et messages d'erreur restent les mêmes. Sans ces options : rien ne change.
+export default function PanneauApprenant({
+  onFermer, onCree, titre = 'Nouvel apprenant', sousTitre = 'Les champs marqués d’un astérisque sont obligatoires.',
+  simple = false, pied,
+}) {
   const [a, setA] = useState(VIDE)
   const [erreurs, setErreurs] = useState({})
   const [envoi, setEnvoi] = useState(false)
@@ -62,26 +68,26 @@ export default function PanneauApprenant({ onFermer, onCree }) {
 
   return (
     <Modal onFermer={onFermer} classeFond="pa-fond">
-      <dialog open className="pa app-panneau" aria-modal="true" aria-labelledby="app-titre">
+      <dialog open className={`pa app-panneau${simple ? ' app-panneau-simple' : ''}`} aria-modal="true" aria-labelledby="app-titre">
         <div className="app-tete">
           <div>
-            <h2 id="app-titre">Nouvel apprenant</h2>
-            <p>Les champs marqués d’un astérisque sont obligatoires.</p>
+            <h2 id="app-titre">{titre}</h2>
+            <p>{sousTitre}</p>
           </div>
           <button type="button" className="app-croix" aria-label="Fermer" onClick={onFermer}><Icone nom="x" taille={18} /></button>
         </div>
-        <div className="app-corps">
+        <div className={`app-corps${simple ? ' app-corps-simple' : ''}`}>
           {erreurServeur && <p className="app-alerte" role="alert">{erreurServeur}</p>}
           <section aria-labelledby="app-identite">
-            <h3 id="app-identite">Identité</h3>
+            <h3 id="app-identite" className={simple ? 'app-masque' : undefined}>Identité</h3>
             <div className="app-ligne-champs">
               <Champ id="app-prenom" label="Prénom" obligatoire erreur={erreurs.prenom}><input autoComplete="off" {...saisie('prenom')} /></Champ>
               <Champ id="app-nom" label="Nom" obligatoire erreur={erreurs.nom}><input autoComplete="off" {...saisie('nom')} /></Champ>
             </div>
           </section>
           <section aria-labelledby="app-contact">
-            <h3 id="app-contact">Contact</h3>
-            <div className="app-ligne-champs">
+            <h3 id="app-contact" className={simple ? 'app-masque' : undefined}>Contact</h3>
+            <div className={simple ? 'app-colonne' : 'app-ligne-champs'}>
               <Champ id="app-email" label="E-mail" obligatoire erreur={erreurs.email}><input type="email" autoComplete="off" {...saisie('email')} /></Champ>
               <Champ id="app-telephone" label="Téléphone" aide="Facultatif · 10 chiffres" erreur={erreurs.telephone}>
                 <input type="tel" inputMode="tel" placeholder="Ex. : 06 12 34 56 78" autoComplete="off" {...saisie('telephone', true)} />
@@ -89,7 +95,7 @@ export default function PanneauApprenant({ onFermer, onCree }) {
             </div>
           </section>
           <section aria-labelledby="app-situation">
-            <h3 id="app-situation">Situation</h3>
+            <h3 id="app-situation" className={simple ? 'app-masque' : undefined}>Situation</h3>
             <Champ id="app-statut" label="Statut" obligatoire erreur={erreurs.statut}>
               <select {...saisie('statut')}>
                 <option value="">Choisir un statut</option>
@@ -97,7 +103,7 @@ export default function PanneauApprenant({ onFermer, onCree }) {
               </select>
             </Champ>
             {a.statut === SALARIE && (
-              <div className="app-ligne-champs">
+              <div className={simple ? 'app-colonne' : 'app-ligne-champs'}>
                 <Champ id="app-entreprise_id" label="Entreprise" aide="Facultatif · parmi vos entreprises clientes" erreur={erreurs.entreprise_id}>
                   <select {...saisie('entreprise_id', true)}>
                     <option value="">Choisir une entreprise</option>
@@ -110,11 +116,14 @@ export default function PanneauApprenant({ onFermer, onCree }) {
               </div>
             )}
           </section>
+          {simple && <p className="app-note">Les champs marqués * sont obligatoires. L’apprenant sera aussi visible dans « Parties prenantes ».</p>}
         </div>
-        <div className="app-pied">
-          <button type="button" className="app-btn app-btn-secondaire" onClick={onFermer}>Annuler</button>
-          <button type="button" className="app-btn app-btn-principal" onClick={enregistrer} disabled={envoi}>Enregistrer</button>
-        </div>
+        {pied ? pied(enregistrer, envoi) : (
+          <div className="app-pied">
+            <button type="button" className="app-btn app-btn-secondaire" onClick={onFermer}>Annuler</button>
+            <button type="button" className="app-btn app-btn-principal" onClick={enregistrer} disabled={envoi}>Enregistrer</button>
+          </div>
+        )}
       </dialog>
     </Modal>
   )
