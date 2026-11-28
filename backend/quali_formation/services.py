@@ -291,6 +291,38 @@ class SessionService:
         return (Session.objects.filter(formation__in=formations_visibles(utilisateur))
                 .select_related('formation').prefetch_related('formateurs', 'apprenants'))
 
+    def fiche_session(self, utilisateur, session_id):
+        """SCRUM-168 : en-tête de la fiche d'une session et nombres des onglets Apprenants, Formateurs, Entreprises et
+        Planning. Même filtrage par centre que la liste (SCRUM-167) : 404 SESSION_INTROUVABLE si la session n'existe
+        pas ou appartient à un autre centre (sans dire laquelle des deux). Simple lecture : pas de log métier."""
+        session = (self.lister_sessions(utilisateur).filter(pk=session_id)
+                   .prefetch_related('apprenants__entreprise_cliente').first())
+        if session is None:
+            raise ErreurMetier('SESSION_INTROUVABLE', 'Session introuvable', 404)
+        formateurs = sorted(session.formateurs.all(), key=lambda f: (f.nom.lower(), f.prenom.lower(), f.pk))
+        # Entreprise de chaque apprenant inscrit : l'entreprise cliente, sinon le nom saisi (anciens apprenants)
+        entreprises = {}
+        for a in session.apprenants.all():
+            nom = (a.entreprise_cliente.raison_sociale if a.entreprise_cliente else a.entreprise).strip()
+            if nom:
+                entreprises.setdefault(nom.lower(), nom)
+        return {
+            'id': session.pk,
+            'formation_intitule': session.formation.intitule,
+            'date_debut': session.date_debut,
+            'date_fin': session.date_fin,
+            'modalite': session.modalite,
+            'lieu': session.lieu,
+            'nombre_places': session.nombre_places,
+            'formateurs': [{'id': f.pk, 'prenom': f.prenom, 'nom': f.nom} for f in formateurs],
+            'entreprises': sorted(entreprises.values(), key=str.lower),
+            'nombre_apprenants': len(session.apprenants.all()),
+            'nombre_formateurs': len(formateurs),
+            'nombre_entreprises': len(entreprises),
+            # Planning : nombre de jours, du premier au dernier inclus
+            'nombre_jours': (session.date_fin - session.date_debut).days + 1,
+        }
+
     @log_metier("service", champs=["resultat.taille"])
     def lister_formateurs(self, utilisateur, recherche=''):
         """Formateurs du centre (SCRUM-221 ; aucun tant que le centre n'est pas renseigné), triés par nom, avec leur

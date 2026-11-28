@@ -136,3 +136,37 @@ a.sp-formation:hover{color:var(--brand-text)}
 .sd-telecharger{border:0;background:none;padding:0;font:inherit;font-size:14px;font-weight:600;color:var(--brand-text);text-decoration:underline;cursor:pointer}
 .sd-erreur{margin:10px 0 0;padding:10px 12px;border-radius:10px;background:#FEF2F2;color:#B91C1C;font-size:14px}
 @media (max-width:900px){.sd-table .row{grid-template-columns:1fr;gap:6px}.sd-table .row.head{display:none}.sd-action{text-align:left}}
+
+/* SCRUM-168 : fiche d'une session (maquettes SCRUM-168_01 à 04), en-tête compact remonté en haut de la page
+   (demande de la BA) : titre 24 px, informations 14 px, 9 onglets 13 px qui tiennent sur la largeur sans barre de
+   défilement (ils passent à la ligne sur un petit écran). */
+.fs-page{gap:0;--fs-secondaire:#64748B;--fs-pastille-active:#CCFBF1}
+:root[data-theme="dark"] .fs-page{--fs-secondaire:var(--ink-3);--fs-pastille-active:var(--brand-soft)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .fs-page{--fs-secondaire:var(--ink-3);--fs-pastille-active:var(--brand-soft)}}
+/* Grand écran : le lien de retour remonte sur la ligne de la cloche et du profil (comme le titre de la liste des
+   sessions) ; cette zone laisse passer les clics vers la cloche et le profil, à droite. */
+@media (min-width:1001px){
+  .contenu .fs-page{margin-top:-74px;pointer-events:none}
+  .fs-page>*{pointer-events:auto}
+  .fs-page>.fs-retour{min-height:42px;display:flex;align-items:center}
+}
+a.fs-retour{align-self:flex-start;font-size:14px;line-height:20px;font-weight:600;color:var(--brand);text-decoration:none}
+a.fs-retour:hover{color:var(--brand-text);text-decoration:underline}
+.fs-tete h1{margin:10px 0 0;font-size:24px;line-height:30px;font-weight:700;letter-spacing:-.02em;color:var(--ink)}
+.fs-ligne{margin:4px 0 0;font-size:14px;line-height:21px;color:var(--fs-secondaire)}
+.fs-ligne+.fs-ligne{margin-top:2px}
+.fs-infos{display:flex;flex-wrap:wrap;align-items:center;gap:0 10px}
+.fs-infos>span+span::before{content:'·';margin-right:10px;color:#CBD5E1}
+.fs-onglets{display:flex;flex-wrap:wrap;gap:0 2px;margin-top:16px;border-bottom:1px solid var(--line)}
+.fs-onglet{display:inline-flex;align-items:center;gap:6px;padding:8px 9px;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;background:none;color:var(--ink-2);font:inherit;font-size:13px;line-height:20px;font-weight:500;cursor:pointer;white-space:nowrap}
+.fs-onglet:hover{color:var(--ink)}
+.fs-onglet.actif{color:var(--brand);border-bottom-color:var(--brand)}
+.fs-onglet:focus-visible{outline:3px solid var(--brand-line);outline-offset:-3px}
+.fs-nombre{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:var(--surface-2);color:var(--ink-2);font-size:12px;font-weight:600}
+.fs-onglet.actif .fs-nombre{background:var(--fs-pastille-active);color:var(--brand)}
+.fs-vide{margin-top:20px;padding:40px 24px;text-align:center}
+.fs-vide p{margin:0;font-size:18px;line-height:28px;font-weight:700;color:var(--ink)}
+.fs-introuvable{margin-top:20px}
+.fs-page .chargement{margin-top:20px}
+.sp-tableau tr.sp-ligne{cursor:pointer}
+.sp-tableau tr.sp-ligne:hover td{background:var(--brand-soft)}

@@ -220,6 +220,17 @@ def sessions_planning(request, utilisateur):
     return Response(SessionPlanningSerializer(session_service.lister_sessions(utilisateur), many=True).data)
 
 
+@api_view(["GET"])
+@_connexion_requise
+def fiche_session(request, utilisateur, pk):
+    """SCRUM-168 : GET /sessions/<id>/ -> en-tête de la fiche et nombres des onglets ; 401, 404 SESSION_INTROUVABLE
+    (session inexistante ou d'un autre centre)."""
+    try:
+        return Response(session_service.fiche_session(utilisateur, pk))
+    except ErreurMetier as e:
+        return _erreur(e)
+
+
 def _personnes(request, utilisateur, lister, creer, serializer, creation=PersonneCreationSerializer, **filtres):
     """GET : les personnes du centre (SCRUM-221). POST : création dans le centre ; 201, 400 si un champ manque
     ou si l'e-mail est invalide, 403 ORGANISME_A_RENSEIGNER si le centre n'est pas encore renseigné."""

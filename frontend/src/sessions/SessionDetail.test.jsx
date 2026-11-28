@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { routes } from '../App'
+import { SessionDetail } from './SessionDetail'
 
 // SCRUM-220 « Utiliser le bon modèle pour générer les documents d'une session » : page d'une session, onglet
 // Documents (GET /sessions/<id>/documents/, POST …/<type>/generer, GET …/<doc>/pdf simulés), compte connecté
@@ -49,8 +50,14 @@ beforeEach(() => {
 })
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks() })
 
+// SCRUM-168 : /sessions/:id ouvre désormais la fiche session. La page de la SCRUM-220, plus affichée mais gardée pour
+// le futur onglet Documents, est testée ici à la place de la fiche, sur la même adresse.
+const routes220 = routes.map((r) => (r.children
+  ? { ...r, children: r.children.map((c) => (c.path === '/sessions/:id' ? { ...c, element: <SessionDetail /> } : c)) }
+  : r))
+
 function afficher(adresse = '/sessions/5') {
-  const router = createMemoryRouter(routes, { initialEntries: [adresse] })
+  const router = createMemoryRouter(routes220, { initialEntries: [adresse] })
   render(<RouterProvider router={router} />)
   return router
 }
