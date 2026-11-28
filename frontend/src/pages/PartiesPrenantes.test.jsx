@@ -73,7 +73,7 @@ describe.each([
     expect(panneau()).toBeTruthy()
     expect(screen.queryByRole('menu')).toBeNull()
     // La page reste visible derrière
-    expect(screen.getByRole('heading', { name: 'Sessions et planning' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Sessions' })).toBeTruthy()
   })
 
   it('CA2 : « Annuler », la croix, Échap ou un clic à côté ferment le panneau sans rien créer', async () => {

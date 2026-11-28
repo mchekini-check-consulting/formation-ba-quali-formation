@@ -13,7 +13,7 @@ function BientotDisponible() {
         <span className="bientot-ic" aria-hidden="true"><Icone nom={page?.icone || 'clock'} taille={26} /></span>
         <h2>Bientôt disponible</h2>
         <p className="sub">Cette fonctionnalité est en cours de préparation. Elle sera disponible dans une prochaine version.</p>
-        <Link className="btn btn-line" to="/sessions">Retour à Sessions et planning</Link>
+        <Link className="btn btn-line" to="/sessions">Retour à Sessions</Link>
       </section>
     </div>
   )

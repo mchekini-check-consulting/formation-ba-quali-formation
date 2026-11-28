@@ -103,17 +103,17 @@ describe('Fiche d’une session (SCRUM-168)', () => {
     expect(fetch.mock.calls.length).toBe(appels) // rien n'est rechargé
   })
 
-  it('CA5 : « ‹ Sessions et planning » revient à la liste des sessions', async () => {
+  it('CA5 : « ‹ Sessions » revient à la liste des sessions', async () => {
     const router = afficher('/sessions/5')
     await screen.findByRole('heading', { level: 1, name: 'Excel avancé' })
-    fireEvent.click(screen.getByRole('link', { name: '‹ Sessions et planning' }))
+    fireEvent.click(screen.getByRole('link', { name: '‹ Sessions' }))
     await waitFor(() => expect(router.state.location.pathname).toBe('/sessions'))
   })
 
   it('CA6 : session inexistante ou d’un autre centre : « Session introuvable », lien de retour, pas d’onglets', async () => {
     afficher('/sessions/99')
     expect(await screen.findByText('Session introuvable')).toBeTruthy()
-    expect(screen.getByRole('link', { name: '‹ Sessions et planning' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: '‹ Sessions' })).toBeTruthy()
     expect(screen.queryByRole('tab')).toBeNull()
   })
 
@@ -131,7 +131,7 @@ describe('Fiche d’une session (SCRUM-168)', () => {
     afficher('/sessions/7')
     await waitFor(() => expect(screen.queryByText('Chargement de la session…')).toBeNull())
     expect(screen.queryByText('Session introuvable')).toBeNull()
-    expect(screen.getByRole('link', { name: '‹ Sessions et planning' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: '‹ Sessions' })).toBeTruthy()
   })
 })
 

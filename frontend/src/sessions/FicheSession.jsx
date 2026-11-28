@@ -7,7 +7,7 @@ import { ficheSession } from './serviceApi'
 import './sessions.css'
 
 function Retour() {
-  return <Link className="fs-retour" to="/sessions">‹ Sessions et planning</Link>
+  return <Link className="fs-retour" to="/sessions">‹ Sessions</Link>
 }
 
 function Fiche({ id }) {

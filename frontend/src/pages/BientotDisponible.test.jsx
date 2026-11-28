@@ -31,7 +31,7 @@ describe('Menu latéral (SCRUM-209)', () => {
     afficher()
     expect(textes(menu().querySelectorAll('.nav-titre'))).toEqual(['Organiser', 'Documents', 'Qualité'])
     expect(textes(menu().querySelectorAll('a, .nav-bientot'))).toEqual([
-      'Tableau de bord', 'Formations et programmes', 'Sessions et planning', 'Parties prenantes', 'E-learningBientôt',
+      'Tableau de bord', 'Formations', 'Sessions', 'Parties prenantes', 'E-learningBientôt',
       'Modèles', 'Signature électroniqueBientôt', 'QualiopiBientôt',
     ])
     // Retirés du menu
@@ -69,16 +69,16 @@ describe('Menu latéral (SCRUM-209)', () => {
 
   it('CA3 : un élément développé ouvre sa page, mise en évidence dans le menu', async () => {
     const router = afficher()
-    fireEvent.click(screen.getByRole('link', { name: 'Sessions et planning' }))
-    expect(await screen.findByRole('heading', { level: 1, name: 'Sessions et planning' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('link', { name: 'Sessions' }))
+    expect(await screen.findByRole('heading', { level: 1, name: 'Sessions' })).toBeTruthy()
     expect(router.state.location.pathname).toBe('/sessions')
-    expect(screen.getByRole('link', { name: 'Sessions et planning' }).getAttribute('aria-current')).toBe('page')
+    expect(screen.getByRole('link', { name: 'Sessions' }).getAttribute('aria-current')).toBe('page')
     expect(screen.getByRole('link', { name: 'Tableau de bord' }).getAttribute('aria-current')).toBeNull()
   })
 
   it('CA3 : sur une sous-page (nouvelle formation), son entrée reste mise en évidence', () => {
     afficher('/formations/nouvelle')
-    expect(screen.getByRole('link', { name: 'Formations et programmes' }).getAttribute('aria-current')).toBe('page')
+    expect(screen.getByRole('link', { name: 'Formations' }).getAttribute('aria-current')).toBe('page')
   })
 
   it('Paramètres ouvre la page « Bientôt disponible »', async () => {
@@ -88,10 +88,10 @@ describe('Menu latéral (SCRUM-209)', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Paramètres' })).toBeTruthy()
   })
 
-  it('« Retour à Sessions et planning » quitte la page « Bientôt disponible »', async () => {
+  it('« Retour à Sessions » quitte la page « Bientôt disponible »', async () => {
     const router = afficher('/bientot-disponible/qualiopi')
     expect(screen.getByRole('heading', { level: 1, name: 'Qualiopi' })).toBeTruthy()
-    fireEvent.click(screen.getByRole('link', { name: 'Retour à Sessions et planning' }))
+    fireEvent.click(screen.getByRole('link', { name: 'Retour à Sessions' }))
     expect(router.state.location.pathname).toBe('/sessions')
   })
 

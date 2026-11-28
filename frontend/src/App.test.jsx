@@ -73,9 +73,9 @@ describe('App', () => {
     expect(screen.queryByRole('heading', { level: 1, name: 'Bienvenue dans Quali-formation' })).toBeNull()
   })
 
-  it('le lien « Formations et programmes » de la barre latérale ouvre la liste des formations', async () => {
+  it('le lien « Formations » de la barre latérale ouvre la liste des formations', async () => {
     afficher()
-    fireEvent.click(screen.getByRole('link', { name: 'Formations et programmes' }))
+    fireEvent.click(screen.getByRole('link', { name: 'Formations' }))
     expect((await screen.findByRole('heading', { level: 1 })).textContent).toBe('Formations')
   })
 })

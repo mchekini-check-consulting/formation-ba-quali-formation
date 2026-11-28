@@ -203,7 +203,7 @@ describe('Formulaire « Première connexion »', () => {
   it('CA6 : centre déjà enregistré, le formulaire ne s’affiche plus', async () => {
     serveur({ compte: AVEC_CENTRE })
     const router = afficher()
-    expect(await screen.findByRole('heading', { level: 1, name: 'Sessions et planning' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Sessions' })).toBeTruthy()
     expect(router.state.location.pathname).toBe('/sessions')
   })
 
