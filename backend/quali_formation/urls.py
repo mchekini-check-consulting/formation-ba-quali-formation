@@ -40,6 +40,9 @@ urlpatterns = [
     path('sessions/', views.sessions_planning),
     # Fiche d'une session (SCRUM-168) : en-tête et nombres des onglets
     path('sessions/<int:pk>/', views.fiche_session),
+    # Apprenants d'une session (SCRUM-179) : liste, ajout, retrait
+    path('sessions/<int:pk>/apprenants/', views.apprenants_session),
+    path('sessions/<int:pk>/apprenants/<int:apprenant>/', views.retirer_apprenant_session),
     # Documents d'une session (SCRUM-220) : liste et modèle utilisé, génération (un PDF par apprenant ou par
     # entreprise cliente), téléchargement du PDF figé (organisme connecté seulement)
     path('sessions/<int:pk>/documents/', views.documents_session),

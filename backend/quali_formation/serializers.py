@@ -314,6 +314,26 @@ CHAMPS_MODALITE = {
 }
 
 
+class ApprenantInscritSerializer(serializers.ModelSerializer):
+    """SCRUM-179 : un apprenant inscrit à une session (onglet Apprenants). `entreprise` : raison sociale de son
+    entreprise cliente, à défaut l'ancien texte libre ; vide = « Individuel »."""
+
+    entreprise = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Apprenant
+        fields = ('id', 'prenom', 'nom', 'email', 'statut', 'entreprise', 'poste')
+
+    def get_entreprise(self, apprenant):
+        return apprenant.entreprise_cliente.raison_sociale if apprenant.entreprise_cliente_id else apprenant.entreprise
+
+
+class AjoutApprenantsSerializer(serializers.Serializer):
+    """SCRUM-179 : POST /sessions/<id>/apprenants/ -> {"apprenants": [identifiants]} (au moins un)."""
+
+    apprenants = serializers.ListField(child=serializers.IntegerField(min_value=1), allow_empty=False)
+
+
 class SessionCreationSerializer(serializers.Serializer):
     """Écriture : étape 1 (tous les champs obligatoires, plus d'heures depuis SCRUM-166), formateurs (étape 2)
     et apprenants (étape 3).

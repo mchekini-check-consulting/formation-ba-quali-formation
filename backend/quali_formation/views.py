@@ -18,7 +18,9 @@ from quali_formation.logging.log_metier import log_metier
 from quali_formation.logging.middleware import DEJA_ECRIT
 from quali_formation.models import Utilisateur
 from quali_formation.serializers import (
+    AjoutApprenantsSerializer,
     ApprenantCreationSerializer,
+    ApprenantInscritSerializer,
     ApprenantSerializer,
     EntrepriseCreationSerializer,
     EntrepriseSerializer,
@@ -227,6 +229,39 @@ def fiche_session(request, utilisateur, pk):
     (session inexistante ou d'un autre centre)."""
     try:
         return Response(session_service.fiche_session(utilisateur, pk))
+    except ErreurMetier as e:
+        return _erreur(e)
+
+
+def _inscrits(session, apprenants):
+    """SCRUM-179 : réponse de l'onglet Apprenants (nombre de places et apprenants inscrits)."""
+    return {'nombre_places': session.nombre_places,
+            'apprenants': ApprenantInscritSerializer(apprenants, many=True).data}
+
+
+@api_view(["GET", "POST"])
+@_connexion_requise
+def apprenants_session(request, utilisateur, pk):
+    """SCRUM-179 : GET /sessions/<id>/apprenants/ -> {nombre_places, apprenants} ; POST {apprenants: [id]} -> 201 avec
+    la liste à jour ; 400 TROP_APPRENANTS / PERSONNE_INTROUVABLE, 401, 404 SESSION_INTROUVABLE."""
+    try:
+        if request.method == 'POST':
+            entree = AjoutApprenantsSerializer(data=request.data)
+            entree.is_valid(raise_exception=True)
+            session, apprenants, _ = session_service.ajouter_apprenants(utilisateur, pk, entree.validated_data['apprenants'])
+            return Response(_inscrits(session, apprenants), status=status.HTTP_201_CREATED)
+        return Response(_inscrits(*session_service.apprenants_session(utilisateur, pk)))
+    except ErreurMetier as e:
+        return _erreur(e)
+
+
+@api_view(["DELETE"])
+@_connexion_requise
+def retirer_apprenant_session(request, utilisateur, pk, apprenant):
+    """SCRUM-179 : DELETE /sessions/<id>/apprenants/<apprenant_id>/ -> la liste à jour ; 400 DERNIER_APPRENANT, 401,
+    404 SESSION_INTROUVABLE / APPRENANT_INTROUVABLE."""
+    try:
+        return Response(_inscrits(*session_service.retirer_apprenant(utilisateur, pk, apprenant)))
     except ErreurMetier as e:
         return _erreur(e)
 

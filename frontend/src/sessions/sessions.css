@@ -170,3 +170,32 @@ a.fs-retour:hover{color:var(--brand-text);text-decoration:underline}
 .fs-page .chargement{margin-top:20px}
 .sp-tableau tr.sp-ligne{cursor:pointer}
 .sp-tableau tr.sp-ligne:hover td{background:var(--brand-soft)}
+
+/* SCRUM-179 : onglet Apprenants de la fiche session (maquettes SCRUM-179_01 à 04), en version compacte (charte
+   « Fiche à onglets ») : carte, tableau Nom / Inscrit via, menu ⋯, fenêtre de retrait, panneau d'ajout. */
+.oa-carte{margin-top:20px;padding:18px 20px 8px}
+.oa-tete{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
+.oa-tete h2{margin:0;font-size:18px;line-height:26px;font-weight:700;color:var(--ink)}
+.oa-places{font-size:14px;font-weight:500;color:var(--fs-secondaire)}
+.oa-ajouter{min-height:38px;padding:0 16px;font-size:14px;gap:6px}
+.oa-message{margin:12px 0 0;padding:10px 14px;border:1px solid #FCA5A5;border-radius:12px;background:#FEF2F2;color:#991B1B;font-size:14px;font-weight:600}
+.oa-table{width:100%;margin-top:12px;border-collapse:collapse}
+.oa-table th{padding:8px 12px 8px 0;border-bottom:1px solid var(--line);text-align:left;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--fs-secondaire)}
+.oa-table td{padding:10px 12px 10px 0;vertical-align:middle;font-size:14px;line-height:20px;color:var(--ink)}
+.oa-table tbody tr+tr td{border-top:1px solid var(--line)}
+.oa-table td b{display:block;font-weight:600}
+.oa-table td span:not(.oa-avatar){display:block;font-size:13px;color:var(--fs-secondaire);overflow-wrap:anywhere}
+.oa-col-avatar{width:46px}
+.ns-avatar.oa-avatar{width:34px;height:34px;font-size:12.5px;font-weight:800}
+.oa-col-actions{width:44px;padding-right:0 !important;text-align:right}
+.oa-menu{position:relative;display:inline-block}
+.oa-points{display:grid;place-items:center;width:34px;height:34px;border:0;border-radius:10px;background:none;color:var(--ink-3);cursor:pointer}
+.oa-points:hover,.oa-points[aria-expanded="true"]{background:var(--surface-2);color:var(--ink)}
+.oa-liste{position:absolute;z-index:20;right:0;top:calc(100% + 4px);min-width:210px;padding:6px;border:1px solid var(--line);border-radius:12px;background:var(--surface);box-shadow:0 16px 40px rgba(15,23,42,.16)}
+.oa-liste button{display:block;width:100%;padding:10px 12px;border:0;border-radius:8px;background:none;text-align:left;font:inherit;font-size:14px;font-weight:500;color:#B91C1C;cursor:pointer;white-space:nowrap}
+.oa-liste button:hover{background:#FEF2F2}
+.oa-dialogue{max-width:520px}
+.oa-dialogue-tete{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.oa-dialogue h2{margin:0;font-size:20px;line-height:28px}
+.oa-croix{display:grid;place-items:center;flex-shrink:0;width:36px;height:36px;border:0;border-radius:50%;background:var(--surface-2);color:var(--ink-2);cursor:pointer}
+.oa-panneau .ns-info a{color:var(--brand-text);font-weight:600}

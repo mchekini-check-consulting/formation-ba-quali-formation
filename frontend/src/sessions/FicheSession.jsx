@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import ErreurChargement from '../components/ErreurChargement'
+import { OngletApprenants } from './OngletApprenants'
 import { datesEtLieu, ONGLETS_FICHE, resumeParticipants } from './regleFiche'
 import { ficheSession } from './serviceApi'
 import './sessions.css'
@@ -50,8 +51,12 @@ function Fiche({ id }) {
           </button>
         ))}
       </div>
-      <div className="card fs-vide" role="tabpanel" id="fs-panneau" aria-labelledby={`fs-onglet-${onglet}`}>
-        <p>Bientôt disponible</p>
+      <div role="tabpanel" id="fs-panneau" aria-labelledby={`fs-onglet-${onglet}`}>
+        {onglet === 'apprenants'
+          // SCRUM-179 : après un ajout ou un retrait, l'en-tête et les nombres des onglets sont relus
+          ? <OngletApprenants sessionId={id} titreSession={session.formation_intitule}
+                              onModifie={() => ficheSession(id).then(setSession).catch(() => {})} />
+          : <div className="card fs-vide"><p>Bientôt disponible</p></div>}
       </div>
     </div>
   )

@@ -9,12 +9,14 @@ export class ErreurSession extends Error {
   constructor(code, message, champs = {}) { super(message); this.code = code; this.champs = champs }
 }
 
-async function appel(chemin, corps) {
+// `methode` : 'DELETE' pour un retrait (sans corps) ; sinon POST si `corps` est donné, GET sinon
+async function appel(chemin, corps, methode) {
+  let options = { credentials: 'include' }
+  if (corps) options = { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corps) }
+  if (methode) options = { ...options, method: methode }
   let reponse
   try {
-    reponse = await fetch(`${apiBase()}${chemin}`, corps
-      ? { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corps) }
-      : { credentials: 'include' })
+    reponse = await fetch(`${apiBase()}${chemin}`, options)
   } catch {
     throw new ErreurSession('RESEAU', 'Le serveur ne répond pas : vérifiez que le backend est lancé.')
   }
@@ -30,6 +32,13 @@ export const listerSessions = () => appel('/sessions/')
 // SCRUM-168 : fiche d'une session. GET -> en-tête (formation, dates, modalité, lieu, places, formateurs, entreprises) et
 // nombres des onglets ; 404 SESSION_INTROUVABLE si la session n'existe pas ou appartient à un autre centre
 export const ficheSession = (id) => appel(`/sessions/${encodeURIComponent(id)}/`)
+// SCRUM-179 : onglet Apprenants. Chaque appel renvoie { nombre_places, apprenants: [{ id, prenom, nom, email, statut,
+// entreprise, poste }] } ; 400 TROP_APPRENANTS (ajout au-delà des places), 400 DERNIER_APPRENANT (retrait du dernier)
+const urlApprenants = (id) => `/sessions/${encodeURIComponent(id)}/apprenants/`
+export const apprenantsSession = (id) => appel(urlApprenants(id))
+export const ajouterApprenantsSession = (id, apprenants) => appel(urlApprenants(id), { apprenants })
+export const retirerApprenantSession = (id, apprenant) =>
+  appel(`${urlApprenants(id)}${encodeURIComponent(apprenant)}/`, null, 'DELETE')
 
 // SCRUM-220 : onglet Documents d'une session. GET -> { session, documents: [{ type, nom, source, generes }] } ;
 // source : FORMATION (modèle de la formation) ou GENERIQUE (modèle générique, ou d'origine) (RG20)
