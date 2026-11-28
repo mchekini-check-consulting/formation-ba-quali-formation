@@ -49,7 +49,7 @@ export function erreurServeur(e) {
 // ---- Choix des formateurs et des apprenants (SCRUM-166) ----
 
 // Minuscules, sans accents : « Lefèvre » est trouvé avec « lefevre »
-const normaliser = (texte) => (texte || '').normalize('NFD').replaceAll(/\p{Diacritic}/gu, '').toLowerCase()
+export const normaliser = (texte) => (texte || '').normalize('NFD').replaceAll(/\p{Diacritic}/gu, '').toLowerCase()
 
 // Personnes dont le nom, l'entreprise ou l'e-mail contient la recherche ; les personnes cochées en tête
 export function filtrerPersonnes(personnes, recherche, choisis) {

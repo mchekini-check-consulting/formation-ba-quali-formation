@@ -1,4 +1,5 @@
 // SCRUM-168 : règles d'affichage de la fiche d'une session (onglets et textes de l'en-tête)
+import { normaliser } from './regles'
 import { pluriel } from '../formations/catalogue'
 import { dateFr, MODALITES } from './serviceApi'
 
@@ -54,4 +55,16 @@ export function inscritVia(a) {
   const statut = LIBELLES_STATUT[a.statut] || ''
   if (a.entreprise) return { titre: a.entreprise, detail: [statut, a.poste].filter(Boolean).join(' · ') }
   return { titre: 'Individuel', detail: statut }
+}
+
+// ---- Panneau « Ajouter des apprenants » (SCRUM-179, maquettes 04 à 06) ----
+// « Société Durand · Salarié · e-mail » ; « Individuel · Demandeur d’emploi · e-mail » ; « Individuel · e-mail »
+export const detailApprenant = (p) =>
+  [p.entreprise || 'Individuel', LIBELLES_STATUT[p.statut], p.email].filter(Boolean).join(' · ')
+
+// Filtre au fil de la saisie, sans appel serveur : prénom, nom et entreprise, sans tenir compte des accents ni de la casse
+export function filtrerApprenants(personnes, recherche) {
+  const r = normaliser(recherche.trim())
+  if (!r) return personnes
+  return personnes.filter((p) => [p.prenom, p.nom, `${p.prenom} ${p.nom}`, p.entreprise].some((t) => normaliser(t).includes(r)))
 }

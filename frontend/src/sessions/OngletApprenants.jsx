@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
 import ErreurChargement from '../components/ErreurChargement'
 import Icone from '../components/Icone'
 import Modal from '../components/Modal'
-import { ListePersonnes } from '../pages/NouvelleSession'
-import { inscritVia, placesRestantes, resumePlaces } from './regleFiche'
+import PanneauApprenant from '../apprenants/PanneauApprenant'
+import { detailApprenant, filtrerApprenants, inscritVia, placesRestantes, resumePlaces } from './regleFiche'
 import {
   ajouterApprenantsSession, apprenantsSession, initiales, listerApprenants, retirerApprenantSession,
 } from './serviceApi'
@@ -60,15 +59,21 @@ function ConfirmerRetrait({ apprenant, envoi, onAnnuler, onOk }) {
   )
 }
 
-// Panneau « Ajouter des apprenants » (maquette SCRUM-179_04) : apprenants du centre pas encore inscrits, recherche,
-// cases à cocher, sans dépasser les places restantes (CA3 : ajout bloqué avec un message)
+// Panneau « Ajouter des apprenants » (maquettes SCRUM-179_04 et 05) : apprenants du centre pas encore inscrits, triés par
+// nom (GET /apprenants/), filtrés au fil de la saisie (prénom, nom, entreprise ; sans accents ni casse), cases cochées
+// gardées pendant la recherche, blocage au-delà des places restantes. « + Créer un apprenant » ouvre, à la place du
+// panneau, la fenêtre « Nouvel apprenant » de la SCRUM-112 telle quelle : après son enregistrement, l'apprenant est
+// inscrit ; « Annuler » revient à la liste sans perdre les cases cochées.
 function PanneauAjout({ titreSession, donnees, onFermer, onAjouter }) {
   const [personnes, setPersonnes] = useState(null)
   const [erreurChargement, setErreurChargement] = useState(null)
+  const [recherche, setRecherche] = useState('')
   const [choisis, setChoisis] = useState([])
   const [erreur, setErreur] = useState(null)
   const [envoi, setEnvoi] = useState(false)
+  const [creation, setCreation] = useState(false)
   const restantes = placesRestantes(donnees)
+  const trop = restantes !== null && choisis.length > restantes
 
   useEffect(() => {
     const inscrits = new Set(donnees.apprenants.map((a) => a.id))
@@ -81,10 +86,6 @@ function PanneauAjout({ titreSession, donnees, onFermer, onAjouter }) {
   }
 
   async function ajouter() {
-    if (restantes !== null && choisis.length > restantes) {
-      setErreur(msgTrop(choisis.length, restantes))
-      return
-    }
     setEnvoi(true)
     setErreur(null)
     try {
@@ -95,8 +96,40 @@ function PanneauAjout({ titreSession, donnees, onFermer, onAjouter }) {
     }
   }
 
+  // Après « Enregistrer » dans « Nouvel apprenant » : inscription du nouvel apprenant. Si elle échoue, il reste créé :
+  // retour à la liste (où il apparaît désormais) avec un message.
+  async function creerPuisInscrire(cree) {
+    try {
+      await onAjouter([cree.id])
+    } catch (e) {
+      setPersonnes((liste) => [...(liste || []), cree])
+      setErreur(`L’apprenant « ${nomComplet(cree)} » a été créé, mais n’a pas pu être ajouté à la session : ${e.message}`)
+      setCreation(false)
+    }
+  }
+
+  // Maquette 06 : la fenêtre « Nouvel apprenant » de la SCRUM-112 (mêmes champs, règles et messages), présentée
+  // « Créer un apprenant » ; « ‹ Retour à la liste » garde les cases cochées, « Annuler » et la croix ferment le panneau
+  if (creation) {
+    return (
+      <PanneauApprenant titre="Créer un apprenant" simple onFermer={onFermer} onCree={creerPuisInscrire}
+        sousTitre={`Il sera ajouté à la session « ${titreSession} » après enregistrement`}
+        pied={(enregistrer, envoiCreation) => (
+          <div className="app-pied-retour">
+            <button type="button" className="app-btn app-btn-secondaire app-retour" onClick={() => setCreation(false)}>‹ Retour à la liste</button>
+            <button type="button" className="app-btn app-btn-secondaire" onClick={onFermer}>Annuler</button>
+            <button type="button" className="app-btn app-btn-principal" onClick={enregistrer} disabled={envoiCreation}>Enregistrer et ajouter</button>
+          </div>
+        )} />
+    )
+  }
+
+  const affichees = personnes ? filtrerApprenants(personnes, recherche) : []
   const sousTitre = restantes === null ? titreSession
     : `${titreSession} · ${restantes} ${restantes > 1 ? 'places restantes' : 'place restante'}`
+  let vide = null
+  if (personnes?.length === 0) vide = 'Tous les apprenants du centre sont déjà inscrits à cette session.'
+  else if (personnes && affichees.length === 0) vide = `Aucun apprenant ne correspond à « ${recherche.trim()} ».`
   return (
     <Modal onFermer={onFermer} classeFond="pa-fond">
       <dialog open className="pa oa-panneau" aria-modal="true" aria-labelledby="oa-ajout">
@@ -111,19 +144,47 @@ function PanneauAjout({ titreSession, donnees, onFermer, onAjouter }) {
           {personnes === null
             ? (erreurChargement ? <ErreurChargement erreur={erreurChargement} /> : <p className="chargement">Chargement des apprenants…</p>)
             : (
-              <ListePersonnes titre="Apprenants du centre" placeholder="Rechercher un apprenant ou une entreprise"
-                personnes={personnes} choisis={choisis} onBasculer={basculer}
-                detail={(p) => `${p.entreprise || 'Individuel'} · ${p.email}`} />
+              <div className="ns-choix">
+                <div className="ns-choix-haut">
+                  <span className="ns-recherche">
+                    <input type="search" className="inp" placeholder="Rechercher un apprenant ou une entreprise"
+                      aria-label="Rechercher un apprenant ou une entreprise" value={recherche} autoComplete="off" autoFocus
+                      onChange={(e) => setRecherche(e.target.value)} />
+                    {recherche && (
+                      <button type="button" className="ns-effacer" aria-label="Effacer la recherche" onClick={() => setRecherche('')}>
+                        <Icone nom="x" taille={16} epaisseur={2.6} />
+                      </button>
+                    )}
+                  </span>
+                  <span className="ns-compteur">{choisis.length} {choisis.length > 1 ? 'sélectionnés' : 'sélectionné'}</span>
+                </div>
+                <ul className="ns-personnes" aria-label="Apprenants du centre">
+                  {affichees.map((p) => (
+                    <li key={p.id} className={choisis.includes(p.id) ? 'on' : ''}>
+                      <label>
+                        <span className={`ns-avatar oa-av oa-av${p.id % 6}`} aria-hidden="true">{initiales(p)}</span>
+                        <span className="ns-nom"><b>{nomComplet(p)}</b><span>{detailApprenant(p)}</span></span>
+                        <input type="checkbox" checked={choisis.includes(p.id)} onChange={() => basculer(p.id)} />
+                      </label>
+                    </li>
+                  ))}
+                  {vide && <li className="ns-vide">{vide}</li>}
+                </ul>
+              </div>
             )}
+          {trop && <p className="errtxt ns-erreur" role="alert">{msgTrop(choisis.length, restantes)}</p>}
           {erreur && <p className="errtxt ns-erreur" role="alert">{erreur}</p>}
-          <p className="ns-info">
-            Un apprenant absent de la liste ? Déclarez-le dans <Link to="/parties-prenantes">« Parties prenantes »</Link>.
-          </p>
+          <div className="oa-absent">
+            <span>Un apprenant absent de la liste ?</span>
+            <button type="button" className="btn btn-line oa-creer" onClick={() => { setErreur(null); setCreation(true) }}>
+              + Créer un apprenant
+            </button>
+          </div>
         </div>
         <div className="pa-pied">
           <button type="button" className="btn btn-line" onClick={onFermer}>Annuler</button>
-          <button type="button" className="btn btn-primary" disabled={envoi || choisis.length === 0} onClick={ajouter}>
-            {envoi ? 'Ajout…' : 'Ajouter'}
+          <button type="button" className="btn btn-primary" disabled={envoi || trop || choisis.length === 0} onClick={ajouter}>
+            {choisis.length ? `Ajouter (${choisis.length})` : 'Ajouter'}
           </button>
         </div>
       </dialog>

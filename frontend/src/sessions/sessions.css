@@ -199,3 +199,39 @@ a.fs-retour:hover{color:var(--brand-text);text-decoration:underline}
 .oa-dialogue h2{margin:0;font-size:20px;line-height:28px}
 .oa-croix{display:grid;place-items:center;flex-shrink:0;width:36px;height:36px;border:0;border-radius:50%;background:var(--surface-2);color:var(--ink-2);cursor:pointer}
 .oa-panneau .ns-info a{color:var(--brand-text);font-weight:600}
+/* Panneau « Ajouter des apprenants » : « Un apprenant absent de la liste ? » et « + Créer un apprenant » (maquette 04) */
+.oa-absent{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;font-size:14px;color:var(--ink-3)}
+.oa-creer{min-height:40px;padding:0 16px;border-radius:999px;font-size:14px;gap:6px}
+/* Panneau « Ajouter des apprenants » au plus près des maquettes SCRUM-179_04 et 05 (écran 1440 px) : police de la
+   charte, panneau de 520 px, liste entière sans barre de défilement, lignes sur une ligne, bulles d'initiales de 34 px
+   aux couleurs de la charte, croix ronde, boutons en pilule. */
+.pa.oa-panneau{width:min(520px,100%);font-family:'Plus Jakarta Sans',var(--police)}
+.oa-panneau .pa-tete{padding:28px 28px 20px}
+.oa-panneau .pa-tete h2{font-size:24px;line-height:32px;margin:0 0 4px}
+.oa-panneau .pa-tete .sub{font-size:15px;color:#64748B}
+.oa-panneau .pa-croix{width:40px;height:40px;border:0;border-radius:50%;background:var(--surface-2)}
+.oa-panneau .pa-corps{padding:20px 28px;gap:20px}
+.oa-panneau .ns-choix{border-radius:16px}
+.oa-panneau .ns-choix-haut{padding:8px 10px;gap:10px}
+.oa-panneau .ns-recherche .inp{height:40px;border:1px solid #CBD5E1;border-radius:12px;font-size:15px;padding:0 36px 0 14px}
+.oa-panneau .ns-recherche .inp:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px #99F6E4}
+.oa-panneau .ns-compteur{font-size:13.5px}
+.oa-panneau .ns-personnes{max-height:none;overflow:visible}
+.oa-panneau .ns-personnes label{gap:12px;padding:9px 12px}
+.oa-panneau .ns-nom b{font-size:15px;font-weight:600;line-height:21px}
+.oa-panneau .ns-nom span{font-size:13px;line-height:19px;color:#64748B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.oa-panneau .ns-personnes input{width:20px;height:20px}
+.oa-panneau .ns-vide{font-size:14px}
+.ns-avatar.oa-av{width:34px;height:34px;font-size:12.5px;font-weight:800}
+.oa-av0{background:#CCFBF1;color:#115E59}.oa-av1{background:#E0F2FE;color:#0369A1}.oa-av2{background:#EDE9FE;color:#6D28D9}
+.oa-av3{background:#FFEDD5;color:#C2410C}.oa-av4{background:#FCE7F3;color:#BE185D}.oa-av5{background:#DCFCE7;color:#15803D}
+.oa-panneau .oa-absent{font-size:13.5px;color:#475569}
+.oa-panneau .oa-creer{min-height:40px;padding:0 18px;border:1px solid #CBD5E1;font-size:15px;font-weight:600;color:var(--ink)}
+.oa-panneau .pa-pied{padding:16px 28px}
+.oa-panneau .pa-pied .btn{min-height:42px;padding:0 20px;border-radius:999px;font-size:15px}
+.oa-panneau .ns-recherche .inp{font-size:14.5px;padding-right:32px}
+.oa-panneau .ns-nom b{font-weight:700}
+.oa-panneau .ns-nom span{font-size:12.5px}
+.oa-panneau .ns-personnes input[type="checkbox"]{appearance:none;flex-shrink:0;width:20px;height:20px;margin:0 0 0 auto;border:1.5px solid #CBD5E1;border-radius:6px;background:var(--surface);cursor:pointer;display:grid;place-items:center}
+.oa-panneau .ns-personnes input[type="checkbox"]:checked{border-color:var(--brand);background:var(--brand) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12l5 5L20 7'/%3E%3C/svg%3E") center/14px no-repeat}
+.oa-panneau .ns-personnes input[type="checkbox"]:focus-visible{outline:3px solid var(--brand-line);outline-offset:2px}
