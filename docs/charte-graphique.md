@@ -28,3 +28,15 @@
 - Encadré d'information : fond #F0FDFA, bordure #99F6E4, texte #115E59, arrondi 12 px.
 - Encadré d'erreur : fond #FEF2F2, bordure #FCA5A5, texte #991B1B.
 - Panneau latéral à droite pour les créations, fond assombri derrière.
+
+## Fiche à onglets (en-tête et onglets compacts)
+Règle à appliquer à toute page avec un en-tête et des onglets, même si la maquette de l'US montre plus grand
+(modèle : fiche session SCRUM-168, classes `fs-*` de `frontend/src/sessions/sessions.css`).
+- En-tête remonté tout en haut : sur grand écran (≥ 1001 px), le lien de retour se place sur la ligne de la cloche et du profil.
+- Lien de retour « ‹ … » : 14 px, 600, #0F766E.
+- Titre : 24 px, 700, à 10 px sous le lien de retour (au lieu des 28 px du titre de page).
+- Lignes d'informations : 14 px, #64748B, 4 px sous le titre, 2 px entre elles ; éléments séparés par « · » (#CBD5E1).
+- Onglets : 16 px sous l'en-tête, 13 px, 500, #334155 ; onglet actif #0F766E souligné de 2 px ; trait gris #E2E8F0 sous la rangée.
+- Nombre d'un onglet : pastille de 20 px de haut, 12 px, 600, fond #F1F5F9 (onglet actif : fond #CCFBF1, texte #0F766E).
+- Tous les onglets visibles sans barre de défilement : sur un petit écran, ils passent à la ligne.
+- Contenu de l'onglet : 20 px sous les onglets.
