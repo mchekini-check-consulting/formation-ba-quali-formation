@@ -12,7 +12,7 @@ applications:
     # Garder une valeur par ligne, sans commentaire en fin de ligne : Kargo
     # remplace tout jusqu'à la fin de la ligne.
     tag:
-      dev: 8a44705
+      dev: 51b8701
       qualif: 8a44705
       preprod: ""
       prod: ""
@@ -64,7 +64,7 @@ applications:
     # Garder une valeur par ligne, sans commentaire en fin de ligne : Kargo
     # remplace tout jusqu'à la fin de la ligne.
     tag:
-      dev: 8a44705
+      dev: 51b8701
       qualif: 8a44705
       preprod: ""
       prod: ""
