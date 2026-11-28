@@ -11,7 +11,10 @@ async function creer(requete, chemin, data) {
   return reponse.json()
 }
 
-test('générer les convocations avec le modèle de la formation, télécharger, document figé, générer à nouveau', async ({ page }) => {
+// EN PAUSE depuis SCRUM-168 : la fiche session remplace la page session de la 220 (onglet Documents « Bientôt
+// disponible »). À réactiver (test.skip -> test) quand l'onglet Documents de la fiche affichera les documents.
+// Le backend de la 220 reste vérifié par test_documents_session.py.
+test.skip('générer les convocations avec le modèle de la formation, télécharger, document figé, générer à nouveau', async ({ page }) => {
   await creerCompteParApi(page.request)
   await creerFormationBrouillon(page, 'Excel intermédiaire')
   const [formation] = await (await page.request.get('/api/formations/')).json()

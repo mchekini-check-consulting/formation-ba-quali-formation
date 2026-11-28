@@ -11,7 +11,7 @@ import Items from './pages/Items'
 import BientotDisponible from './pages/BientotDisponible'
 import NouvelleSession from './pages/NouvelleSession'
 import SessionsPlanning from './pages/SessionsPlanning'
-import { SessionDetail } from './sessions/SessionDetail'
+import { FicheSession } from './sessions/FicheSession'
 import ListePartiesPrenantes from './pages/ListePartiesPrenantes'
 import LandingPage from './landing/LandingPage'
 import {
@@ -38,8 +38,8 @@ export const routes = [
       { path: '/formations/:id', element: <FormationDetail /> },
       // Sessions et planning (SCRUM-25)
       { path: '/sessions', element: <SessionsPlanning /> },
-      // SCRUM-220 : page d'une session, onglet Documents
-      { path: '/sessions/:id', element: <SessionDetail /> },
+      // Fiche d'une session (SCRUM-168) : remplace la page de la SCRUM-220 (sessions/SessionDetail, plus affichée)
+      { path: '/sessions/:id', element: <FicheSession /> },
       { path: '/sessions/nouvelle', element: <><SessionsPlanning key="sous-panneau" /><NouvelleSession /></> }, // panneau par-dessus la liste (SCRUM-166) ; key : liste rechargée à la fermeture
       // Modèles de documents par dossiers (SCRUM-210) : dossiers vides pour l'instant (US suivantes de l'épic)
       { path: '/parties-prenantes', element: <ListePartiesPrenantes /> }, // SCRUM-209

@@ -27,6 +27,9 @@ async function appel(chemin, corps) {
 }
 
 export const listerSessions = () => appel('/sessions/')
+// SCRUM-168 : fiche d'une session. GET -> en-tête (formation, dates, modalité, lieu, places, formateurs, entreprises) et
+// nombres des onglets ; 404 SESSION_INTROUVABLE si la session n'existe pas ou appartient à un autre centre
+export const ficheSession = (id) => appel(`/sessions/${encodeURIComponent(id)}/`)
 
 // SCRUM-220 : onglet Documents d'une session. GET -> { session, documents: [{ type, nom, source, generes }] } ;
 // source : FORMATION (modèle de la formation) ou GENERIQUE (modèle générique, ou d'origine) (RG20)

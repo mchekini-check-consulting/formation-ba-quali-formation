@@ -38,6 +38,8 @@ urlpatterns = [
     path('formations/<int:pk>/sessions/', views.sessions),
     # Sessions et planning (SCRUM-25)
     path('sessions/', views.sessions_planning),
+    # Fiche d'une session (SCRUM-168) : en-tête et nombres des onglets
+    path('sessions/<int:pk>/', views.fiche_session),
     # Documents d'une session (SCRUM-220) : liste et modèle utilisé, génération (un PDF par apprenant ou par
     # entreprise cliente), téléchargement du PDF figé (organisme connecté seulement)
     path('sessions/<int:pk>/documents/', views.documents_session),

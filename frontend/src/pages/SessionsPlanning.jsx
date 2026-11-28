@@ -87,7 +87,9 @@ function SessionsPlanning() {
                   </thead>
                   <tbody>
                     {lignes.map((s) => (
-                      <tr key={s.id} className={s.id === nouvelleId ? 'nouvelle' : undefined}>
+                      // SCRUM-168 : un clic sur la ligne ouvre la fiche de la session (le lien reste pour le clavier)
+                      <tr key={s.id} className={`sp-ligne${s.id === nouvelleId ? ' nouvelle' : ''}`}
+                          onClick={(e) => { if (!e.target.closest('a')) navigate(`/sessions/${s.id}`) }}>
                         <td className="sp-dates">{datesCourtes(s)}</td>
                         <td>
                           <Link className="sp-formation" to={`/sessions/${s.id}`}>{s.formation_intitule}</Link>
