@@ -34,7 +34,8 @@ const selectionnes = (n) => (n > 1 ? `${n} sélectionnés` : `${n} sélectionné
 
 // Liste à cocher des formateurs ou des apprenants : recherche (nom, entreprise, e-mail), personnes cochées en tête.
 // detail(p) : 2e ligne de chaque personne
-function ListePersonnes({ titre, placeholder, personnes, choisis, onBasculer, detail }) {
+// Reprise par le panneau « Ajouter des apprenants » de la fiche session (SCRUM-179)
+export function ListePersonnes({ titre, placeholder, personnes, choisis, onBasculer, detail }) {
   const [recherche, setRecherche] = useState('')
   const affichees = filtrerPersonnes(personnes, recherche, choisis)
   return (

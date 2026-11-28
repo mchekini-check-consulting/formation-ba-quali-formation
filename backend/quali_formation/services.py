@@ -291,14 +291,64 @@ class SessionService:
         return (Session.objects.filter(formation__in=formations_visibles(utilisateur))
                 .select_related('formation').prefetch_related('formateurs', 'apprenants'))
 
-    def fiche_session(self, utilisateur, session_id):
-        """SCRUM-168 : en-tête de la fiche d'une session et nombres des onglets Apprenants, Formateurs, Entreprises et
-        Planning. Même filtrage par centre que la liste (SCRUM-167) : 404 SESSION_INTROUVABLE si la session n'existe
-        pas ou appartient à un autre centre (sans dire laquelle des deux). Simple lecture : pas de log métier."""
+    def _session_du_centre(self, utilisateur, session_id):
+        """Session du centre du compte (même filtrage que la liste, SCRUM-167) ; 404 SESSION_INTROUVABLE si elle
+        n'existe pas ou appartient à un autre centre (sans dire laquelle des deux)."""
         session = (self.lister_sessions(utilisateur).filter(pk=session_id)
                    .prefetch_related('apprenants__entreprise_cliente').first())
         if session is None:
             raise ErreurMetier('SESSION_INTROUVABLE', 'Session introuvable', 404)
+        return session
+
+    @staticmethod
+    def _inscrits(session):
+        """Apprenants inscrits, triés par nom, avec leur entreprise cliente."""
+        return list(session.apprenants.select_related('entreprise_cliente').order_by(Lower('nom'), Lower('prenom'), 'id'))
+
+    def apprenants_session(self, utilisateur, session_id):
+        """SCRUM-179 : (session, apprenants inscrits) de l'onglet Apprenants. Simple lecture : pas de log métier."""
+        session = self._session_du_centre(utilisateur, session_id)
+        return session, self._inscrits(session)
+
+    @log_metier("service", champs=["session_id"])  # SCRUM-179 : champs approuvés par la BA
+    def ajouter_apprenants(self, utilisateur, session_id, apprenants):
+        """SCRUM-179 : inscrit des apprenants du centre à la session. Ceux déjà inscrits sont ignorés. 400
+        PERSONNE_INTROUVABLE si un apprenant n'est pas du centre, 400 TROP_APPRENANTS si les inscrits dépasseraient le
+        nombre de places (aucune limite pour une session sans nombre de places). Rend (session, inscrits, nombre ajouté)."""
+        session = self._session_du_centre(utilisateur, session_id)
+        ids = set(apprenants)
+        trouves = list(Apprenant.objects.filter(pk__in=ids, organisme_id=utilisateur.organisme_id))
+        if len(trouves) != len(ids):
+            raise ErreurMetier('PERSONNE_INTROUVABLE', 'Un apprenant choisi n’existe pas dans votre centre.')
+        deja = {a.pk for a in session.apprenants.all()}
+        nouveaux = [a for a in trouves if a.pk not in deja]
+        if session.nombre_places and len(deja) + len(nouveaux) > session.nombre_places:
+            restantes = max(session.nombre_places - len(deja), 0)
+            raise ErreurMetier('TROP_APPRENANTS',
+                               f'Trop d’apprenants : {len(nouveaux)} cochés pour {restantes} '
+                               f'{"place restante" if restantes <= 1 else "places restantes"}.')
+        session.apprenants.add(*nouveaux)
+        return session, self._inscrits(session), len(nouveaux)
+
+    @log_metier("service", champs=["session_id"])  # SCRUM-179 : champs approuvés par la BA
+    def retirer_apprenant(self, utilisateur, session_id, apprenant_id):
+        """SCRUM-179 : retire un apprenant de la session. 404 APPRENANT_INTROUVABLE s'il n'y est pas inscrit, 400
+        DERNIER_APPRENANT s'il est le seul (une session garde au moins un apprenant). Rend (session, inscrits)."""
+        session = self._session_du_centre(utilisateur, session_id)
+        inscrits = {a.pk for a in session.apprenants.all()}
+        if apprenant_id not in inscrits:
+            raise ErreurMetier('APPRENANT_INTROUVABLE', 'Cet apprenant n’est pas inscrit à cette session.', 404)
+        if len(inscrits) == 1:
+            raise ErreurMetier('DERNIER_APPRENANT',
+                               'Impossible de retirer le dernier apprenant : une session doit garder au moins un apprenant.')
+        session.apprenants.remove(apprenant_id)
+        return session, self._inscrits(session)
+
+    def fiche_session(self, utilisateur, session_id):
+        """SCRUM-168 : en-tête de la fiche d'une session et nombres des onglets Apprenants, Formateurs, Entreprises et
+        Planning. Même filtrage par centre que la liste (SCRUM-167) : 404 SESSION_INTROUVABLE si la session n'existe
+        pas ou appartient à un autre centre (sans dire laquelle des deux). Simple lecture : pas de log métier."""
+        session = self._session_du_centre(utilisateur, session_id)
         formateurs = sorted(session.formateurs.all(), key=lambda f: (f.nom.lower(), f.prenom.lower(), f.pk))
         # Entreprise de chaque apprenant inscrit : l'entreprise cliente, sinon le nom saisi (anciens apprenants)
         entreprises = {}

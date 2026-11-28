@@ -31,3 +31,27 @@ export function resumeParticipants(s) {
   const noms = s.formateurs.map((f) => `${f.prenom} ${f.nom}`).join(', ') || '—'
   return [inscrits, `${pluriel(s.formateurs.length, 'Formateur')} : ${noms}`, s.entreprises.join(', ')].filter(Boolean)
 }
+
+// ---- Onglet Apprenants (SCRUM-179) ----
+const LIBELLES_STATUT = {
+  SALARIE: 'Salarié', DEMANDEUR_EMPLOI: 'Demandeur d’emploi', INDEPENDANT: 'Indépendant', PARTICULIER: 'Particulier',
+}
+
+// Places restantes ; null pour une session sans nombre de places (pas de limite)
+export const placesRestantes = ({ nombre_places: places, apprenants }) =>
+  (places ? Math.max(places - apprenants.length, 0) : null)
+
+// « 3 / 8 · 5 places restantes » ; « 3 inscrits » sans nombre de places
+export function resumePlaces(donnees) {
+  const n = donnees.apprenants.length
+  const restantes = placesRestantes(donnees)
+  if (restantes === null) return `${n} ${pluriel(n, 'inscrit')}`
+  return `${n} / ${donnees.nombre_places} · ${restantes} ${pluriel(restantes, 'place restante', 'places restantes')}`
+}
+
+// Colonne « Inscrit via » : l'entreprise et « Salarié · poste », sinon « Individuel » et le statut
+export function inscritVia(a) {
+  const statut = LIBELLES_STATUT[a.statut] || ''
+  if (a.entreprise) return { titre: a.entreprise, detail: [statut, a.poste].filter(Boolean).join(' · ') }
+  return { titre: 'Individuel', detail: statut }
+}

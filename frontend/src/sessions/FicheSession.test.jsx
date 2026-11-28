@@ -92,7 +92,7 @@ describe('Fiche d’une session (SCRUM-168)', () => {
     afficher('/sessions/5')
     await screen.findByRole('heading', { level: 1, name: 'Excel avancé' })
     const appels = fetch.mock.calls.length
-    for (const nom of [/Apprenants/, /Planning/, /Suivi des envois/]) {
+    for (const nom of [/Formateurs/, /Planning/, /Suivi des envois/]) { // Apprenants : contenu SCRUM-179
       const onglet = screen.getByRole('tab', { name: nom })
       fireEvent.click(onglet)
       expect(onglet.getAttribute('aria-selected')).toBe('true')
