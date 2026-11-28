@@ -39,7 +39,7 @@ function SessionsPlanning() {
     <div className="wrap sp-page">
       {/* En-tête d'abord : il remonte sur la ligne de la cloche et du profil (sessions.css) ; les bandeaux viennent dessous */}
       <div className="page-head">
-        <h1>Sessions et planning</h1>
+        <h1>Sessions</h1>
         <div className="sp-actions">
           <MenuPartiesPrenantes onChoisir={setPanneau} />
           <button type="button" className="btn btn-primary" onClick={() => navigate('/sessions/nouvelle')}><Icone nom="plus" taille={18} epaisseur={2.4} />Nouvelle session</button>

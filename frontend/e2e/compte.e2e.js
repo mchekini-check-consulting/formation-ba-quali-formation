@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test'
 import { creerCompteParApi, emailUnique, motDePasse, siretUnique } from './outils'
 
 test.describe('Créer un compte', () => {
-  test('le responsable crée son compte, renseigne son centre puis arrive sur Sessions et planning (SCRUM-221)', async ({ page }) => {
+  test('le responsable crée son compte, renseigne son centre puis arrive sur Sessions (SCRUM-221)', async ({ page }) => {
     const mdp = motDePasse()
     await page.goto('/creer-un-compte')
     await page.getByLabel('Adresse e-mail').fill(emailUnique('nouveau'))

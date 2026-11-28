@@ -8,8 +8,8 @@ export const SECTIONS_MENU = [
   {
     titre: 'Organiser',
     entrees: [
-      { code: 'formations', icone: 'formations', titre: 'Formations et programmes', lien: '/formations' },
-      { code: 'sessions', icone: 'sessions', titre: 'Sessions et planning', lien: '/sessions' },
+      { code: 'formations', icone: 'formations', titre: 'Formations', lien: '/formations' },
+      { code: 'sessions', icone: 'sessions', titre: 'Sessions', lien: '/sessions' },
       { code: 'parties-prenantes', icone: 'apprenants', titre: 'Parties prenantes', lien: '/parties-prenantes' },
       { code: 'e-learning', icone: 'elearning', titre: 'E-learning', bientot: true },
     ],

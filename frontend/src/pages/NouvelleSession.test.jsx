@@ -96,8 +96,8 @@ describe('Page Sessions et planning', () => {
   it('est accessible depuis le menu', async () => {
     installerFauxBackend()
     afficher('/tableau-de-bord')
-    fireEvent.click(screen.getByRole('link', { name: 'Sessions et planning' }))
-    expect(await screen.findByRole('heading', { name: 'Sessions et planning' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('link', { name: 'Sessions' }))
+    expect(await screen.findByRole('heading', { name: 'Sessions' })).toBeTruthy()
   })
 })
 
@@ -109,7 +109,7 @@ describe('Nouvelle session (SCRUM-25, SCRUM-166)', () => {
     expect(await screen.findByRole('heading', { name: 'Informations' })).toBeTruthy()
     expect(screen.getByRole('dialog', { name: 'Nouvelle session' })).toBeTruthy()
     // Le panneau s'ouvre par-dessus la page Sessions et planning
-    expect(screen.getByRole('heading', { level: 1, name: 'Sessions et planning' })).toBeTruthy()
+    expect(screen.getByRole('heading', { level: 1, name: 'Sessions' })).toBeTruthy()
     expect(router.state.location.pathname).toBe('/sessions/nouvelle')
     expect(screen.getByRole('option', { name: 'Management d’équipe — les fondamentaux' })).toBeTruthy()
   })

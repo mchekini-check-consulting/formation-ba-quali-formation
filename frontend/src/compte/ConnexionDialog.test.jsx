@@ -227,7 +227,7 @@ describe('Se connecter : connexion mémorisée (session)', () => {
     seConnecter()
     expect(await screen.findByText('Vous êtes connecté. Bienvenue sur Quali-formation !', {}, { timeout: 3000 })).toBeTruthy()
     expect(router.state.location.pathname).toBe('/sessions')
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Sessions et planning')
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Sessions')
     expect(screen.getByRole('navigation', { name: 'Menu principal' })).toBeTruthy()
     await vi.waitFor(() => expect(document.querySelector('.avatar')?.textContent).toBe('RE'))
   })
